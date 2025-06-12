@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: scratch
+    entrypoint: ["echo", "App is not started in dev mode"]
+    ports: [ ]
+    environment: { }

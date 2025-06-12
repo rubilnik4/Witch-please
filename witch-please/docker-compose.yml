@@ -1,0 +1,92 @@
+name: arbitration-scala
+
+services:
+  app:
+    container_name: arbitration-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - otel-collector
+    ports:
+      - "8080:8080"
+      - "9464:9464"
+    environment:
+      POSTGRES_HOST: arbitration-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://arbitration-otel-collector:4317
+      LOG_LEVEL: DEBUG
+      PROMETHEUS_PORT: 9464
+    volumes:
+      - .:/app
+
+  postgres:
+    container_name: arbitration-postgres
+    image: postgres:17
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  loki:
+    container_name: arbitration-loki
+    image: grafana/loki:3.4
+    ports:
+      - "3100:3100"
+    command: ["--config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - loki_data:/loki
+      - ./config/loki-config.yaml:/etc/loki/local-config.yaml
+
+  tempo:
+    container_name: arbitration-tempo
+    image: grafana/tempo:2.3.0
+    command: ["--config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200"
+
+  prometheus:
+    container_name: arbitration-prometheus
+    image: prom/prometheus:v2.47.2
+    command: ["--config.file=/etc/prometheus/prometheus.yaml"]
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    container_name: arbitration-grafana
+    image: grafana/grafana:10.1.5
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+
+  otel-collector:
+    container_name: arbitration-otel-collector
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+volumes:
+  postgres_data:
+  loki_data:
+  grafana_data:
+  prometheus-data:
