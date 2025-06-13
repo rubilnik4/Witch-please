@@ -1,0 +1,48 @@
+package tarot.api.dto
+
+import tarot.domain.models.TarotError
+import zio.*
+import zio.json.*
+import zio.schema.{DeriveSchema, Schema}
+
+sealed trait TarotErrorResponse
+
+object TarotErrorResponse {
+  case class NotFoundError(message: String) extends TarotErrorResponse
+
+  case class BadRequestError(message: String) extends TarotErrorResponse
+
+  case class InternalServerError(message: String, cause: Option[String] = None)
+    extends TarotErrorResponse
+
+  given JsonCodec[TarotErrorResponse] = DeriveJsonCodec.gen
+  given Schema[TarotErrorResponse] = DeriveSchema.gen
+}
+
+object TarotErrorMapper {
+  def toResponse(error: TarotError): TarotErrorResponse = error match {
+    case TarotError.NotFound(msg) =>
+      TarotErrorResponse.NotFoundError(msg)
+
+    case TarotError.DatabaseError(msg, ex) =>
+      TarotErrorResponse.InternalServerError(s"Database error: $msg", Some(ex.getMessage))
+
+    case TarotError.CacheError(msg, ex) =>
+      TarotErrorResponse.InternalServerError(s"Cache error: $msg", Some(ex.getMessage))
+
+    case TarotError.ApiError(provider, code, msg) =>
+      TarotErrorResponse.InternalServerError(
+        s"External API error from $provider with code $code: $msg",
+        Some("External API call failed")
+      )
+
+    case TarotError.ServiceUnavailable(service, ex) =>
+      TarotErrorResponse.InternalServerError(
+        s"Service '$service' is currently unavailable",
+        Some(ex.getMessage)
+      )
+
+    case TarotError.Unknown =>
+      TarotErrorResponse.InternalServerError("Unknown error occurred", Some("No additional info"))
+  }
+}
