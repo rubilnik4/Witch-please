@@ -16,16 +16,14 @@ object SpreadEndpoint {
       .in[SpreadRequest](MediaType.application.json)
       .out[String]
       .outErrors(
-        HttpCodec.error[TarotErrorMapper](Status.BadRequest),
-        HttpCodec.error[TarotErrorMapper](Status.InternalServerError)
+        HttpCodec.error[TarotErrorResponse](Status.BadRequest),
+        HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
       .tag(tag)
 
-  private val postSpreadRoute = postSpreadEndpoint.implement { request =>
-    val assetSpreadId = AssetSpreadId(AssetId(assetIdA), AssetId(assetIdB))
-    val spreadQuery = SpreadQuery(assetSpreadId)
+  private val postSpreadRoute = postSpreadEndpoint.implement { request =>   
     for {
-      _ <- ZIO.logInfo(s"Received request for assert spread: $assetSpreadId")
+      _ <- ZIO.logInfo(s"Received request for spread: ${request.title}")
 
       spreadQueryHandler <- ZIO.serviceWith[AppEnv](_.marketQueryHandler.spreadQueryHandler)
       result <- spreadQueryHandler.handle(spreadQuery)
