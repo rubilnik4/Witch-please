@@ -1,5 +1,5 @@
 package tarot.application.commands
 
-import tarot.domain.models.spreads.Spread
+import tarot.domain.models.spreads.{ExternalSpread, Spread}
 
-case class SpreadCommand(spread: Spread)
+case class SpreadCommand(externalSpread: ExternalSpread)

@@ -1,4 +1,4 @@
-package tarot.infrastructure.services
+package tarot.infrastructure.services.photo
 
 import tarot.domain.models.TarotError
 import zio.ZIO
