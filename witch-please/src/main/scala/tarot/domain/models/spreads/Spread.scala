@@ -1,6 +1,6 @@
 package tarot.domain.models.spreads
 
-import tarot.domain.models.photo.{PhotoFile, PhotoLocation}
+import tarot.domain.models.photo.{PhotoFile, PhotoSource}
 import tarot.infrastructure.services.common.DateTimeService
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.schema.{DeriveSchema, Schema}
@@ -13,14 +13,14 @@ final case class Spread(
     title: String,
     cardCount: Integer,
     spreadStatus: SpreadStatus,
-    coverPhoto: PhotoLocation,
+    coverPhoto: PhotoSource,
     time: Instant)
 {
   override def toString: String = s"id: $id; title:$title"
 }
 
 object SpreadMapper {
-  def fromExternal(externalSpread: ExternalSpread, coverPhoto: PhotoLocation): Spread =
+  def fromExternal(externalSpread: ExternalSpread, coverPhoto: PhotoSource): Spread =
     Spread(
       id = UUID.randomUUID(),
       title = externalSpread.title,

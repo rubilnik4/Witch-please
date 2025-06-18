@@ -3,7 +3,7 @@ package tarot.application.handlers
 import tarot.application.commands.SpreadCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.contracts.SpreadId
-import tarot.domain.models.photo.PhotoLocation
+import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadMapper}
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -29,10 +29,16 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       photoService <- ZIO.serviceWith[AppEnv](_.photoService)
 
       coverPhoto <- externalSpread.coverPhotoId match {
-        case PhotoLocation.Telegram(fileId) => photoService.fetchAndStore(fileId)
-        case _ => ZIO.fail(s"Unresolved photo location type")
+        case PhotoSource.Telegram(fileId) => photoService.fetchAndStore(fileId)
+        case other =>
+          ZIO.fail(
+            TarotError.SerializationError(
+              s"Unresolved photo store location type: ${other.getClass.getSimpleName}"
+            )
+          )
+            .tapError(err => ZIO.logError(s"Failed to fetch photo: ${externalSpread.coverPhotoId}. Error: $err"))
       }
-      spread <- SpreadMapper.fromExternal(externalSpread, coverPhoto)
+      spread = SpreadMapper.fromExternal(externalSpread, coverPhoto)
     } yield spread
   }
 }

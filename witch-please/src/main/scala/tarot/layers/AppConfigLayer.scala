@@ -1,5 +1,6 @@
 package tarot.layers
 
+import tarot.application.configurations.AppConfig
 import zio.*
 import zio.config.*
 import zio.config.typesafe.TypesafeConfigProvider

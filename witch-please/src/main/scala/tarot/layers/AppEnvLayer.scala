@@ -1,14 +1,19 @@
 package tarot.layers
 
+import tarot.application.configurations.AppConfig
+import tarot.application.handlers.TarotCommandHandler
+import tarot.application.telemetry.metrics.TarotMeter
+import tarot.application.telemetry.tracing.TarotTracing
+import tarot.infrastructure.repositories.TarotRepository
 import zio.ZLayer
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object AppEnvLayer {
   val appEnvLive: ZLayer[
     AppConfig
-      with MarketCache with MarketRepository with MarketData
-      with MarketApi with MarketQueryHandler with MarketCommandHandler
-      with MarketMeter with MarketTracing,
+      & TarotRepository 
+      & TarotCommandHandler
+      & TarotMeter & TarotTracing,
     Nothing,
     AppEnv
   ] =

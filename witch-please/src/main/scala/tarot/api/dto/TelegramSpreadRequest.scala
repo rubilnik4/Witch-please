@@ -1,8 +1,8 @@
 package tarot.api.dto
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.photo.PhotoLocation
+import TarotError.ValidationError
+import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadStatus}
 import zio.{IO, ZIO}
 import zio.json.{DeriveJsonCodec, JsonCodec}
@@ -23,12 +23,10 @@ object TelegramSpreadRequest {
       _ <- ZIO.fail(ValidationError("coverPhotoId must not be empty")).when(req.coverPhotoId.trim.isEmpty)
     } yield req
   }
-}
-
-object TelegramSpread {
+  
   def fromTelegram(request: TelegramSpreadRequest): ExternalSpread =
     ExternalSpread(
       title = request.title,
       cardCount = request.cardCount,
-      coverPhotoId = PhotoLocation.Telegram(request.coverPhotoId))
+      coverPhotoId = PhotoSource.Telegram(request.coverPhotoId))
 }

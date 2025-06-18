@@ -1,7 +1,7 @@
 package tarot.infrastructure.services.photo
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.{PhotoFile, PhotoLocation}
+import tarot.domain.models.photo.{PhotoFile, PhotoSource}
 import tarot.infrastructure.services.photo.PhotoStorageService
 import zio.ZIO
 
@@ -9,7 +9,7 @@ import java.nio.file.{Files, Path, Paths}
 
 final class LocalPhotoStorageServiceLive (rootPath: Path) extends PhotoStorageService:
 
-  def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, PhotoLocation] =
+  def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, PhotoSource] =
     val fullPath = rootPath.resolve(photoFile.fileName)
 
     for {
@@ -21,4 +21,4 @@ final class LocalPhotoStorageServiceLive (rootPath: Path) extends PhotoStorageSe
           ZIO.logError(s"[LocalPhotoStorage] Failed to store photo: ${photoFile.fileName}. Exception: ${ex.getMessage}")
         )
         .mapError(ex => TarotError.StorageError(s"Failed to write file to $fullPath", ex))
-    } yield PhotoLocation.Local(url)
+    } yield PhotoSource.Local(url)

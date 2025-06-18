@@ -12,5 +12,6 @@ object TarotError {
   final case class ApiError(provider: String, code: Int, message: String) extends TarotError
   final case class ServiceUnavailable(service: String, ex: Throwable) extends TarotError
   final case class ValidationError(message: String) extends TarotError
+  final case class SerializationError(message: String) extends TarotError
   case object Unknown extends TarotError
 }

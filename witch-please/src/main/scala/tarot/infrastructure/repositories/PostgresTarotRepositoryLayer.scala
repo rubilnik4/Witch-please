@@ -3,11 +3,13 @@ package tarot.infrastructure.repositories
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
+import tarot.application.configurations.AppConfig
+import tarot.infrastructure.database.Migration
 import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource
 
-object PostgresMarketRepositoryLayer {
+object PostgresTarotRepositoryLayer {
   private val dataSourceLayer: ZLayer[AppConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
       for {
@@ -48,8 +50,7 @@ object PostgresMarketRepositoryLayer {
         dataSource <- ZIO.service[DataSource]
         _ <- Migration.applyMigrations(dataSource)
         layer =
-          PostgresMarketRepositoryLayer.quillLayer >>>
-            PostgresMarketRepositoryLayer.postgresMarketRepositoryLayer
+          PostgresTarotRepositoryLayer.quillLayer >>> PostgresTarotRepositoryLayer.postgresMarketRepositoryLayer
         repository <- layer.build.map(_.get[TarotRepository])
       } yield repository
   }

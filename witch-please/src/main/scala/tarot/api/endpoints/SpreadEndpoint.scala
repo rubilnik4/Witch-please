@@ -1,6 +1,7 @@
 package tarot.api.endpoints
 
-import tarot.api.dto.{TarotErrorResponse, TelegramSpreadRequest}
+import tarot.api.dto.{TarotErrorMapper, TarotErrorResponse, TelegramSpreadRequest}
+import tarot.application.commands.SpreadCommand
 import tarot.domain.models.contracts.TarotChannelType
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -23,18 +24,19 @@ object SpreadEndpoint {
       )
       .tag(tag)
 
-  private val postSpreadRoute = postSpreadEndpoint.implement { request =>   
-    for {
+  private val postSpreadRoute = postSpreadEndpoint.implement { request =>
+    (for {
       _ <- ZIO.logInfo(s"Received request for create spread: ${request.title}")      
       _ <- TelegramSpreadRequest.validate(request)
-      externalSpread = TelegramSpreadRequest.
+      externalSpread = TelegramSpreadRequest.fromTelegram(request)
       
       spreadCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCommandHandler)
-      result <- spreadCommandHandler.handle(request)
-        .mapBoth(
-          error => MarketErrorMapper.toResponse(error),
-          spread => SpreadMapper.toResponse(spread))
-    } yield result
+      spreadCommand = SpreadCommand(externalSpread)
+      spread <- spreadCommandHandler.handle(spreadCommand)
+    } yield spread)
+      .mapBoth(
+        error => TarotErrorMapper.toResponse(error),
+        spread => spread.id.toString)
   }
 
 //  private val computeSpreadEndpoint = {

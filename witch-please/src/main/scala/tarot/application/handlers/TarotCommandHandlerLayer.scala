@@ -6,7 +6,7 @@ object TarotCommandHandlerLayer {
   private val spreadCommandHandlerLive: ULayer[SpreadCommandHandler] =
     ZLayer.succeed(new SpreadCommandHandlerLive)
 
-  val marketCommandHandlerLive: ULayer[TarotCommandHandlerLive] =
+  val tarotCommandHandlerLive: ULayer[TarotCommandHandlerLive] =
     (spreadCommandHandlerLive) >>> ZLayer.fromFunction {
     (spread: SpreadCommandHandler) =>
       TarotCommandHandlerLive(spread)
