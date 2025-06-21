@@ -15,21 +15,20 @@ enum PhotoStorageType { case Local, S3 }
 final case class PhotoSourceEntity(
     id: UUID,
     storageType: PhotoStorageType,
-    data: Json)
+    data: String)
 
 object PhotoSourceMapper {
   def toDomain(photoSource: PhotoSourceEntity): ZIO[Any, TarotError, PhotoSource] =
     ZIO.fromEither(
         photoSource.storageType match {
-          case Local => photoSource.data.as[PhotoSource.Local]
-          case S3 => photoSource.data.as[PhotoSource.S3]
+          case Local => photoSource.data.fromJson[PhotoSource.Local]
+          case S3 => photoSource.data.fromJson[PhotoSource.S3]
       })
       .mapError(error => TarotError.SerializationError(s"Can't decode PhotoSource: $error"))
 
   def toEntity(photoSource: PhotoSource): ZIO[Any, TarotError, PhotoSourceEntity] =
-    for {
-      json <- ZIO.fromEither(photoSource.toJsonAST)
-        .mapError(error => TarotError.SerializationError(s"Can't encode PhotoSource: $error"))
+    val json = photoSource.toJson
+    for {      
       storage <- detectStorage(photoSource)
     } yield PhotoSourceEntity(UUID.randomUUID(), storage, json)
         
@@ -40,6 +39,6 @@ object PhotoSourceMapper {
       case PhotoSource.S3 => 
         ZIO.succeed(S3)
       case PhotoSource.Telegram =>
-        ZIO.fail(TarotError.SerializationError(s"Can't encode telegram PhotoSource"))
+        ZIO.fail(TarotError.ParsingError(photoSource.toString, s"Can't encode telegram PhotoSource"))
     }
 }

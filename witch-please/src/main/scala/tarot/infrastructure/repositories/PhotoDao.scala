@@ -13,7 +13,9 @@ import java.util.UUID
 
 final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
-  import PhotoStorageTypeMapping.given
+
+  given MappedEncoding[PhotoStorageType, String] = MappedEncoding(_.toString)
+  given MappedEncoding[String, PhotoStorageType] = MappedEncoding(PhotoStorageType.valueOf)
 
   private inline def photoTable = quote {
     querySchema[PhotoSourceEntity](TarotTableNames.Photos)
@@ -27,12 +29,3 @@ final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 }
-
-object PhotoStorageTypeMapping:
-  import io.getquill.MappedEncoding
-
-  given encodePhotoStorageType: MappedEncoding[PhotoStorageType, String] =
-    MappedEncoding(_.toString)
-
-  given decodePhotoStorageType: MappedEncoding[String, PhotoStorageType] =
-    MappedEncoding(PhotoStorageType.valueOf)

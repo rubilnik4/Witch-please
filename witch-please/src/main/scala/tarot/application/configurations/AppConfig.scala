@@ -5,10 +5,12 @@ import zio.config.derivation.*
 import zio.config.magnolia.deriveConfig
 
 final case class AppConfig(
-  project: ProjectConfig,
-  cache: CacheConfig,
-  postgres: Option[PostgresConfig],
-  telemetry: Option[TelemetryConfig]
+    project: ProjectConfig,
+    cache: CacheConfig,
+    telegram: TelegramConfig,
+    localStorage: Option[LocalStorageConfig],                      
+    postgres: Option[PostgresConfig],
+    telemetry: Option[TelemetryConfig]
 )
 
 object AppConfig {

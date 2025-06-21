@@ -65,7 +65,7 @@ object SpreadEndpoint {
 //    } yield result
 //  }
 
-  val allEndpoints: List[Endpoint[_, _, _, _, _]] =
+  val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
     List(postSpreadEndpoint)
 
   val allRoutes: Routes[AppEnv, Response] =

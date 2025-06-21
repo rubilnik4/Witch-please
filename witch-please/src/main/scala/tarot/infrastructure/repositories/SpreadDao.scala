@@ -12,7 +12,9 @@ import java.util.UUID
 
 final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
-  import SpreadStatusMapping.given
+
+  given MappedEncoding[SpreadStatus, String] = MappedEncoding(_.toString)
+  given MappedEncoding[String, SpreadStatus] = MappedEncoding(SpreadStatus.valueOf)
 
   private inline def spreadTable = quote {
     querySchema[SpreadEntity](TarotTableNames.Spreads)
@@ -26,12 +28,3 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 }
-
-object SpreadStatusMapping:
-  import io.getquill.MappedEncoding
-
-  given encodeSpreadStatus: MappedEncoding[SpreadStatus, String] =
-    MappedEncoding(_.toString)
-
-  given decodeSpreadStatus: MappedEncoding[String, SpreadStatus] =
-    MappedEncoding(SpreadStatus.valueOf)

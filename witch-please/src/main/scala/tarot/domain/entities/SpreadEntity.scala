@@ -12,7 +12,7 @@ import java.util.UUID
 final case class SpreadEntity(
     id: UUID,
     title: String,
-    cardCount: Integer,
+    cardCount: Int,
     spreadStatus: SpreadStatus,
     coverPhotoId: UUID,
     time: Instant

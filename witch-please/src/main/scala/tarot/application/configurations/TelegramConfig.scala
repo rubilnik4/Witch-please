@@ -3,11 +3,10 @@ package tarot.application.configurations
 import zio.config.magnolia.deriveConfig
 import zio.{Config, Duration}
 
-final case class CacheConfig(
-//  priceExpiration: Duration,
-//  spreadExpiration: Duration
+final case class TelegramConfig(
+  token: String
 )
 
-object CacheConfig {
+object TelegramConfig {
   implicit val config: Config[LocalStorageConfig] = deriveConfig[LocalStorageConfig]
 }

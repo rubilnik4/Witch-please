@@ -13,5 +13,6 @@ object TarotError {
   final case class ServiceUnavailable(service: String, ex: Throwable) extends TarotError
   final case class ValidationError(message: String) extends TarotError
   final case class SerializationError(message: String) extends TarotError
+  final case class ParsingError(raw: String, message: String) extends TarotError
   case object Unknown extends TarotError
 }
