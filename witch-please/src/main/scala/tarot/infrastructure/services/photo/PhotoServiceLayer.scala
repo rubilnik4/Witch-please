@@ -9,13 +9,14 @@ import java.nio.file.Paths
 import javax.sql.DataSource
 
 object PhotoServiceLayer {
-  private val telegramDownloaderLive: ZLayer[AppConfig, Throwable, TelegramDownloader] =
+
+  private val telegramDownloaderLayer: ZLayer[AppConfig, Throwable, TelegramDownloader] =
     AsyncHttpClientZioBackend.layer() ++ ZLayer.service[AppConfig] >>>
       ZLayer.fromFunction { (env: AppConfig, client: SttpBackend[Task, Any]) =>
         TelegramDownloaderLive(env.telegram.token, client)
       }
 
-  private val localFileStorageServiceLive: ZLayer[AppConfig, Throwable, FileStorageService] =
+  private val localFileStorageServiceLayer: ZLayer[AppConfig, Throwable, FileStorageService] =
     ZLayer.fromZIO {
       for {
         config <- ZIO.service[AppConfig]
@@ -27,7 +28,11 @@ object PhotoServiceLayer {
         path <- ZIO
           .attempt(Paths.get(localStorageConfig.path))
           .mapError(ex => new RuntimeException(s"Invalid path '${localStorageConfig.path}': ${ex.getMessage}", ex))
-        
+
       } yield new LocalFileStorageServiceLive(path)
     }
+    
+  val photoServiceLive: ZLayer[AppConfig, Throwable, PhotoService] =
+    (telegramDownloaderLayer ++ localFileStorageServiceLayer) >>>
+      ZLayer.fromFunction(PhotoServiceLive.apply)  
 }
