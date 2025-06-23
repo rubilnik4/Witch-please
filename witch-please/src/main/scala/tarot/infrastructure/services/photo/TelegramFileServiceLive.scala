@@ -1,29 +1,24 @@
 package tarot.infrastructure.services.photo
 
-import sttp.client3.{SttpBackend, UriContext}
+import sttp.client3.ziojson.asJsonEither
+import sttp.client3.*
+import sttp.model.MediaType
+import tarot.api.dto.telegram.{TelegramErrorResponse, TelegramFileResponse, TelegramSendPhotoResponse}
 import tarot.domain.models.TarotError
 import tarot.domain.models.photo.PhotoFile
 import zio.*
 import zio.json.*
-import zio.http.*
-import zio.http.Client
-import sttp.client3.*
-import sttp.client3.ziojson.{asJson, asJsonEither}
-import sttp.model.Uri
-import tarot.api.dto.telegram.{TelegramErrorResponse, TelegramFileResponse}
-import zio.*
 
-import java.time.Instant
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-final class TelegramDownloaderLive(token: String, client: SttpBackend[Task, Any]) extends TelegramDownloader:
+final class TelegramFileServiceLive(token: String, client: SttpBackend[Task, Any]) extends TelegramFileService:
   private final val baseUrl = s"https://api.telegram.org/bot$token"
   private final val fileBaseUrl = s"https://api.telegram.org/file/bot$token"
   private val timeout: FiniteDuration = 30.seconds
 
-  def download(fileId: String): ZIO[Any, TarotError, PhotoFile] =
+  def downloadPhoto(fileId: String): ZIO[Any, TarotError, PhotoFile] =
     for {
-      _ <- ZIO.logDebug(s"Fetching telegram file path for fileId=$fileId")
+      _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
       fileRequest = getFileRequest(fileId)
       telegramFile <- sendJson(fileRequest)
 
@@ -34,6 +29,19 @@ final class TelegramDownloaderLive(token: String, client: SttpBackend[Task, Any]
       imageRequest = getImageRequest(filePath)
       telegramImage <- sendBytes(imageRequest)
     } yield PhotoFile(fileName, telegramImage)
+
+  def sendPhoto(chatId: String, photo: PhotoFile): ZIO[Any, TarotError, String] = {
+    for {
+      _ <- ZIO.logDebug(s"Sending telegram file ${photo.fileName} to chat $chatId")
+      imageRequest = getSendImageRequest(chatId, photo)
+      response <- sendJson(imageRequest)
+      fileId <- ZIO
+        .fromOption(response.result.photo.lastOption.map(_.fileId))
+        .tapError(e =>
+          ZIO.logError(s"No photo id found for file ${photo.fileName}"))
+        .orElseFail(TarotError.NotFound(s"No photo id found for file ${photo.fileName}"))
+    } yield fileId
+  }
 
   private def sendJson[A](
       request: RequestT[Identity, Either[ResponseException[TelegramErrorResponse, String], A], Any]
@@ -86,4 +94,18 @@ final class TelegramDownloaderLive(token: String, client: SttpBackend[Task, Any]
       .get(uri)
       .readTimeout(timeout)
       .response(asByteArray)
+  }
+
+  private def getSendImageRequest(chatId: String, photo: PhotoFile) = {
+    val uri = uri"$baseUrl/sendPhoto"
+    basicRequest
+      .post(uri)
+      .readTimeout(timeout)
+      .multipartBody(
+        multipart("chat_id", chatId),
+        multipart("photo", photo.bytes)
+          .fileName(photo.fileName)
+          .contentType(MediaType.ImageJpeg)
+      )
+      .response(asJsonEither[TelegramErrorResponse, TelegramSendPhotoResponse])
   }

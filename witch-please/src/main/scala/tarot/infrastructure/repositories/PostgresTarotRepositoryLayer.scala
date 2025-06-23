@@ -41,7 +41,7 @@ object PostgresTarotRepositoryLayer {
       )
     }
 
-  val postgresMarketRepositoryLayer : ZLayer[Quill.Postgres[SnakeCase], Nothing, TarotRepository] =
+  val postgresTarotRepositoryLayer : ZLayer[Quill.Postgres[SnakeCase], Nothing, TarotRepository] =
     ZLayer.fromFunction(quill => new PostgresTarotRepositoryLive(quill))
 
   val postgresMarketRepositoryLive : ZLayer[AppConfig, Throwable, TarotRepository] =
@@ -50,7 +50,7 @@ object PostgresTarotRepositoryLayer {
         dataSource <- ZIO.service[DataSource]
         _ <- Migration.applyMigrations(dataSource)
         layer =
-          PostgresTarotRepositoryLayer.quillLayer >>> PostgresTarotRepositoryLayer.postgresMarketRepositoryLayer
+          PostgresTarotRepositoryLayer.quillLayer >>> PostgresTarotRepositoryLayer.postgresTarotRepositoryLayer
         repository <- layer.build.map(_.get[TarotRepository])
       } yield repository
   }

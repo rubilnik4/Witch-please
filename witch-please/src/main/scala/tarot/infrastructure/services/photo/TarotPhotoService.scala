@@ -5,6 +5,6 @@ import tarot.domain.models.photo.PhotoSource
 import tarot.layers.AppEnv
 import zio.ZIO
 
-trait PhotoService {
+trait TarotPhotoService {
   def fetchAndStore(fileId: String): ZIO[Any, TarotError, PhotoSource]
 }

@@ -3,17 +3,16 @@ package tarot.infrastructure.services.photo
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import tarot.application.configurations.AppConfig
-import zio.{Task, ULayer, ZIO, ZLayer}
+import zio.{Task, ZIO, ZLayer}
 
 import java.nio.file.Paths
-import javax.sql.DataSource
 
-object PhotoServiceLayer {
+object TarotPhotoServiceLayer {
 
-  private val telegramDownloaderLayer: ZLayer[AppConfig, Throwable, TelegramDownloader] =
+  private val telegramDownloaderLayer: ZLayer[AppConfig, Throwable, TelegramFileService] =
     AsyncHttpClientZioBackend.layer() ++ ZLayer.service[AppConfig] >>>
       ZLayer.fromFunction { (env: AppConfig, client: SttpBackend[Task, Any]) =>
-        TelegramDownloaderLive(env.telegram.token, client)
+        TelegramFileServiceLive(env.telegram.token, client)
       }
 
   private val localFileStorageServiceLayer: ZLayer[AppConfig, Throwable, FileStorageService] =
@@ -32,7 +31,7 @@ object PhotoServiceLayer {
       } yield new LocalFileStorageServiceLive(path)
     }
     
-  val photoServiceLive: ZLayer[AppConfig, Throwable, PhotoService] =
+  val tarotPhotoServiceLive: ZLayer[AppConfig, Throwable, TarotPhotoService] =
     (telegramDownloaderLayer ++ localFileStorageServiceLayer) >>>
-      ZLayer.fromFunction(PhotoServiceLive.apply)  
+      ZLayer.fromFunction(TarotPhotoServiceLive.apply)  
 }

@@ -4,6 +4,6 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.photo.PhotoFile
 import zio.ZIO
 
-trait TelegramDownloader {
-  def download(fileId: String): ZIO[Any, TarotError, PhotoFile]
+trait TelegramFileService {
+  def downloadPhoto(fileId: String): ZIO[Any, TarotError, PhotoFile]
 }

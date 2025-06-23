@@ -7,15 +7,18 @@ import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadStatus}
 import zio.{IO, ZIO}
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.schema.{DeriveSchema, Schema}
+import zio.json._
+import zio.schema._
 
 import java.util.UUID
 
-final case class TelegramSpreadRequest(title: String, cardCount: Int, coverPhotoId: String)
+final case class TelegramSpreadRequest(
+  title: String, 
+  cardCount: Int, 
+  coverPhotoId: String
+) derives JsonCodec, Schema
 
 object TelegramSpreadRequest {
-  given JsonCodec[TelegramSpreadRequest] = DeriveJsonCodec.gen
-  given Schema[TelegramSpreadRequest] = DeriveSchema.gen
-
   def validate(req: TelegramSpreadRequest): IO[TarotError, TelegramSpreadRequest] = {
     for {
       _ <- ZIO.fail(ValidationError("title must not be empty")).when(req.title.trim.isEmpty)
