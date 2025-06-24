@@ -26,7 +26,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
 
   private def fetchAndStorePhoto(externalSpread: ExternalSpread): ZIO[AppEnv, TarotError, Spread] = {
     for {
-      photoService <- ZIO.serviceWith[AppEnv](_.photoService)
+      photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
 
       coverPhoto <- externalSpread.coverPhotoId match {
         case PhotoSource.Telegram(fileId) => photoService.fetchAndStore(fileId)

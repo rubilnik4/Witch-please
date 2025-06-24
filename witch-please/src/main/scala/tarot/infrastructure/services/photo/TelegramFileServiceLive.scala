@@ -49,7 +49,7 @@ final class TelegramFileServiceLive(token: String, client: SttpBackend[Task, Any
     for {
       response <- client.send(request)
         .tapError(e =>
-          ZIO.logError(s"Failed to send telegram json request. Exception: ${e.getMessage}"))
+          ZIO.logErrorCause(s"Failed to send telegram json request", Cause.fail(e)))
         .mapError(e => TarotError.ServiceUnavailable(s"Failed to send telegram json request", e))
 
       result <- ZIO.fromEither(response.body).foldZIO(
@@ -70,12 +70,12 @@ final class TelegramFileServiceLive(token: String, client: SttpBackend[Task, Any
     for {
       response <- client.send(request)
         .tapError(e =>
-          ZIO.logError(s"Failed to send telegram bytes request. Exception: ${e.getMessage}"))
+          ZIO.logErrorCause(s"Failed to send telegram bytes request", Cause.fail(e)))
         .mapError(e => TarotError.ServiceUnavailable(s"Failed to send telegram bytes request", e))
 
       bytes <- ZIO.fromEither(response.body)
         .tapError(e =>
-          ZIO.logError(s"Failed to download bytes. Exception: $e"))
+          ZIO.logErrorCause(s"Failed to download bytes", Cause.fail(e)))
         .mapError(e => TarotError.SerializationError(s"Failed to download bytes: $e"))
     } yield bytes
 

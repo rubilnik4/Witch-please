@@ -6,4 +6,6 @@ import zio.ZIO
 
 trait TelegramFileService {
   def downloadPhoto(fileId: String): ZIO[Any, TarotError, PhotoFile]
+
+  def sendPhoto(chatId: String, photo: PhotoFile): ZIO[Any, TarotError, String]
 }

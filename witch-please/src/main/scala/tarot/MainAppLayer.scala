@@ -6,7 +6,8 @@ import tarot.application.handlers.TarotCommandHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
 import tarot.application.telemetry.tracing.TarotTracingLayer
 import tarot.infrastructure.repositories.PostgresTarotRepositoryLayer
-import tarot.infrastructure.services.photo.TarotPhotoServiceLayer
+import tarot.infrastructure.services.TarotServiceLayer
+import tarot.infrastructure.services.photo.PhotoServiceLayer
 import tarot.infrastructure.telemetry.TelemetryLayer
 import tarot.layers.{AppConfigLayer, AppEnv, AppEnvLayer}
 import zio.{ZIO, ZLayer}
@@ -20,7 +21,7 @@ object MainAppLayer {
     val combinedLayers =
       TarotMeterLayer.tarotMeterLive ++
         TarotTracingLayer.tarotTracingLive ++
-        repositoryLayer ++ TarotPhotoServiceLayer.tarotPhotoServiceLive ++
+        repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++
         TarotCommandHandlerLayer.tarotCommandHandlerLive
     combinedLayers >>> AppEnvLayer.appEnvLive
   }

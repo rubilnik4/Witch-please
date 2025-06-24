@@ -6,3 +6,4 @@ import zio.ZIO
 
 trait FileStorageService:
   def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, PhotoSource]
+  def getResourcePhoto(resourcePath: String): ZIO[Any, TarotError, PhotoFile]

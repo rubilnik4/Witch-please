@@ -1,28 +1,34 @@
 package tarot.infrastructure.services
 
-import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-import tarot.infrastructure.services.photo.TarotPhotoService
+import tarot.domain.models.photo.PhotoSource
+import tarot.layers.{AppEnv, TestAppEnvLayer}
 import zio.*
+import zio.nio.file.{Files, Path}
 import zio.test.*
-import zio.test.TestAspect.*
 
 object PhotoServiceSpec extends ZIOSpecDefault {
-  override def spec = suite("Full Telegram Photo Download and Store")(
+  final val resourcePath = "photos/test.png"
+  
+  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Telegram Photo Download and Store")(
     test("Photo uploaded to Telegram can be fetched and stored") {
       for {
-        photoService <- ZIO.service[TarotPhotoService]
-        fileId <- photoService.fetchAndStore()
+        fileStorageService <- ZIO.serviceWith[AppEnv](_.tarotService.fileStorageService)
+        photo <- fileStorageService.getResourcePhoto(resourcePath)
 
-        service <- ZIO.service[TarotPhotoService]
-        source <- service.fetchAndStore(fileId)
+        telegramService <- ZIO.serviceWith[AppEnv](_.tarotService.telegramFileService)
+        telegramConfig <- ZIO.serviceWith[AppEnv](_.appConfig.telegram)
+        photoId <- telegramService.sendPhoto(telegramConfig.chatId, photo)
 
-        result <- source match {
+        photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
+        photoSource <- photoService.fetchAndStore(photoId)
+
+        result <- photoSource match {
           case PhotoSource.Local(path) =>
-            ZIO.attempt(JFiles.exists(Paths.get(path))).map(assertTrue)
+            Files.exists(Path(path)).map(assertTrue(_))
           case _ =>
             ZIO.fail("Expected Local photo source")
         }
       } yield result
     }
-  ).provideShared(appConfigLayer, AsyncHttpClientZioBackend.layer(), photoServiceLayer)
+  ).provideShared(TestAppEnvLayer.testAppEnvLive)
 }

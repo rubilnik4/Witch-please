@@ -4,6 +4,7 @@ import zio.config.magnolia.deriveConfig
 import zio.{Config, Duration}
 
 final case class TelegramConfig(
+  chatId: String,                             
   token: String
 )
 
