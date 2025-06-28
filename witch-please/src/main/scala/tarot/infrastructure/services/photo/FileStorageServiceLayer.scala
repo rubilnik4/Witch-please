@@ -2,8 +2,8 @@ package tarot.infrastructure.services.photo
 
 import tarot.application.configurations.AppConfig
 import zio.{ZIO, ZLayer}
-
-import java.nio.file.Paths
+import zio.nio.file.Path
+import zio.nio.file.Files
 
 object FileStorageServiceLayer {
   val localFileStorageServiceLive: ZLayer[AppConfig, Throwable, FileStorageService] =
@@ -15,8 +15,7 @@ object FileStorageServiceLayer {
           .tapError(_ => ZIO.logError("Missing local storage config"))
           .orElseFail(new RuntimeException("Local storage config is missing"))
 
-        path <- ZIO
-          .attempt(Paths.get(localStorageConfig.path))
+        path <-  ZIO.attempt(Path(localStorageConfig.path))
           .mapError(ex => new RuntimeException(s"Invalid path '${localStorageConfig.path}': ${ex.getMessage}", ex))
 
       } yield new LocalFileStorageServiceLive(path)

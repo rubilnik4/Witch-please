@@ -4,10 +4,7 @@ import zio.{Config, Duration}
 import zio.config.magnolia.deriveConfig
 
 final case class ProjectConfig(
-//    maxHistorySize: Int,
-//    spreadThreshold: BigDecimal,
-//    assetLoadingDelay: Duration,
-//    assets: AssetConfig
+    maxHistorySize: Int
 )
 
 object ProjectConfig {
