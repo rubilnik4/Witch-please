@@ -1,8 +1,8 @@
-name: arbitration-scala
+name: witch
 
 services:
   app:
-    container_name: arbitration-app
+    container_name: witch-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,19 +13,20 @@ services:
       - "8080:8080"
       - "9464:9464"
     environment:
-      POSTGRES_HOST: arbitration-postgres
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      POSTGRES_HOST: witch-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://arbitration-otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://witch-otel-collector:4317
       LOG_LEVEL: DEBUG
       PROMETHEUS_PORT: 9464
     volumes:
       - .:/app
 
   postgres:
-    container_name: arbitration-postgres
+    container_name: witch-postgres
     image: postgres:17
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -33,7 +34,7 @@ services:
       - "5432:5432"
 
   loki:
-    container_name: arbitration-loki
+    container_name: witch-loki
     image: grafana/loki:3.4
     ports:
       - "3100:3100"
@@ -43,7 +44,7 @@ services:
       - ./config/loki-config.yaml:/etc/loki/local-config.yaml
 
   tempo:
-    container_name: arbitration-tempo
+    container_name: witch-tempo
     image: grafana/tempo:2.3.0
     command: ["--config.file=/etc/tempo.yaml"]
     volumes:
@@ -52,7 +53,7 @@ services:
       - "3200:3200"
 
   prometheus:
-    container_name: arbitration-prometheus
+    container_name: witch-prometheus
     image: prom/prometheus:v2.47.2
     command: ["--config.file=/etc/prometheus/prometheus.yaml"]
     volumes:
@@ -62,7 +63,7 @@ services:
       - "9090:9090"
 
   grafana:
-    container_name: arbitration-grafana
+    container_name: witch-grafana
     image: grafana/grafana:10.1.5
     ports:
       - "3000:3000"
@@ -76,7 +77,7 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
 
   otel-collector:
-    container_name: arbitration-otel-collector
+    container_name: witch-otel-collector
     image: otel/opentelemetry-collector-contrib:0.99.0
     volumes:
       - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml

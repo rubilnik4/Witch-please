@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://config-loki:3100
+    version: 1
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://config-tempo:3200
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://config-prometheus:9090

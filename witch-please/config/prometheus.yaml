@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "config-otel-self-metrics"
+    static_configs:
+      - targets: ["config-otel-collector:8888"]
+
+  - job_name: "config-otel-collector"
+    static_configs:
+      - targets: ["config-otel-collector:4317"]
+
+  - job_name: "config-app"
+    static_configs:
+      - targets: ["config-app:8080"]
+
+  - job_name: "config-app-metrics"
+    static_configs:
+      - targets: [ "config-app:9464" ]
+
+  - job_name: "config-tempo"
+    static_configs:
+      - targets: ["config-tempo:3200"]
+
+  - job_name: "config-loki"
+    static_configs:
+      - targets: ["config-loki:3100"]

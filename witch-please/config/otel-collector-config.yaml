@@ -1,0 +1,40 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: basic
+
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+
+  loki:
+    endpoint: http://config-loki:3100/loki/api/v1/push
+  
+  otlphttp:
+    endpoint: "http://config-tempo:4318"
+    tls:
+      insecure: true
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+      
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus, debug]
+
+    logs:
+      receivers: [otlp]
+      exporters: [loki, debug]
+
+    traces:
+      receivers: [otlp]
+      exporters: [otlphttp, debug]
