@@ -2,7 +2,6 @@ package tarot.domain.entities
 
 import io.getquill.MappedEncoding
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.{Spread, SpreadStatus}
 import zio.ZIO
 

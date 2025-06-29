@@ -3,9 +3,7 @@ package tarot.domain.entities
 import tarot.domain.entities.PhotoStorageType.{Local, S3}
 import tarot.domain.models.TarotError
 import tarot.domain.models.photo.PhotoSource
-import tarot.domain.models.spreads.Spread
 import zio.ZIO
-import zio.json.ast.Json
 import zio.json.*
 
 import java.util.UUID
@@ -34,11 +32,11 @@ object PhotoSourceMapper {
         
   private def detectStorage(photoSource: PhotoSource): ZIO[Any, TarotError, PhotoStorageType] =
     photoSource match {
-      case PhotoSource.Local => 
+      case PhotoSource.Local(_) =>
         ZIO.succeed(Local)
-      case PhotoSource.S3 => 
+      case PhotoSource.S3(_,_) =>
         ZIO.succeed(S3)
-      case PhotoSource.Telegram =>
+      case PhotoSource.Telegram(_) =>
         ZIO.fail(TarotError.ParsingError(photoSource.toString, s"Can't encode telegram PhotoSource"))
     }
 }

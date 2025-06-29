@@ -1,21 +1,14 @@
-CREATE TABLE IF NOT EXISTS prices (
+CREATE TABLE photo_source_entity (
     id UUID PRIMARY KEY,
-    asset_id TEXT NOT NULL,
-    value NUMERIC NOT NULL,
-    time TIMESTAMPTZ NOT NULL,
-    UNIQUE (asset_id, time)
-    );
+    storage_type TEXT NOT NULL CHECK (storage_type IN ('Local', 'S3')),
+    data TEXT NOT NULL
+);
 
-CREATE INDEX IF NOT EXISTS idx_prices_asset_time ON prices (asset_id, time DESC);
-
-CREATE TABLE IF NOT EXISTS spreads (
+CREATE TABLE spread_entity (
     id UUID PRIMARY KEY,
-    price_a_id UUID NOT NULL REFERENCES prices(id),
-    price_b_id UUID NOT NULL REFERENCES prices(id),
-    asset_spread_id TEXT NOT NULL,
-    value NUMERIC NOT NULL,
-    time TIMESTAMPTZ NOT NULL,
-    UNIQUE (asset_spread_id, time)
-    );
-
-CREATE INDEX IF NOT EXISTS idx_spreads_unique ON spreads (asset_spread_id, time);
+    title TEXT NOT NULL,
+    card_count INT NOT NULL,
+    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Published', 'Archived')),
+    cover_photo_id UUID NOT NULL REFERENCES photo_source_entity(id) ON DELETE CASCADE,
+    time TIMESTAMP NOT NULL
+);

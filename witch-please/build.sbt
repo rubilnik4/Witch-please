@@ -16,6 +16,7 @@ lazy val root = (project in file("."))
       "dev.zio" %% "zio-nio" % "2.0.2",
       "dev.zio" %% "zio-test" % "2.1.19" % Test,
       "dev.zio" %% "zio-test-sbt" % "2.1.19" % Test,
+      "dev.zio" %% "zio-http-testkit" % "3.3.3" % Test,
       "dev.zio" %% "zio-config" % "4.0.4",
       "dev.zio" %% "zio-config-magnolia" % "4.0.4",
       "dev.zio" %% "zio-config-typesafe" % "4.0.4",
