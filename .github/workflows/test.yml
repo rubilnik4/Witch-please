@@ -20,6 +20,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      
+      - name: Set up sbt
+        uses: coursier/setup-action@v1
+        with:
+          apps: sbt   
 
       - name: Cache Scala build
         uses: actions/cache@v3
