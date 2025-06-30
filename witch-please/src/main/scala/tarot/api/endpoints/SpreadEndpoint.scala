@@ -13,9 +13,10 @@ import zio.http.endpoint.Endpoint
 object SpreadEndpoint {
   private final val path = "spread"
   private final val tag = "spread"
-
+  final val spreadPath = Root / PathBuilder.apiPath / path / TarotChannelType.Telegram
+  
   private val postSpreadEndpoint =
-    Endpoint(POST / PathBuilder.apiPath / path / TarotChannelType.Telegram)
+    Endpoint(POST / spreadPath)
       .in[TelegramSpreadRequest](MediaType.application.json)
       .out[String]
       .outErrors(

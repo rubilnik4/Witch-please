@@ -4,7 +4,7 @@ import zio.{Config, Duration}
 import zio.config.magnolia.deriveConfig
 
 final case class ProjectConfig(
-    maxHistorySize: Int
+    serverUrl: String
 )
 
 object ProjectConfig {
