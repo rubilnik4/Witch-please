@@ -2,6 +2,7 @@ package tarot.integration
 
 import tarot.api.dto.TelegramSpreadRequest
 import tarot.api.endpoints.{PathBuilder, SpreadEndpoint}
+import tarot.api.routes.RoutesLayer
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.AppEnv
@@ -22,9 +23,16 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   private def getSpreadUrl(serverUrl: String) =
     PathBuilder.getRoutePath(serverUrl, SpreadEndpoint.spreadPath)
 
+  private val serverConfig: ULayer[Server.Config] = ZLayer.succeed(
+    Server.Config.default.port(8080)
+  )
+
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
     test("should send photo, get fileId, and create spread") {
       for {
+        routes <- RoutesLayer.apiRoutesLive.build.map(_.get)
+        _ <- TestServer.addRoutes(routes)
+
         fileStorageService <- ZIO.serviceWith[AppEnv](_.tarotService.fileStorageService)
         photo <- fileStorageService.getResourcePhoto(resourcePath)
         
@@ -41,8 +49,11 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     }
 
   ).provideShared(
-    Scope.default,
+    testAppEnvLive,
+    TestServer.layer,
     Client.default,
-    testAppEnvLive
+    serverConfig,
+    Driver.default,
+    Scope.default
   )
 }
