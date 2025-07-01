@@ -1,10 +1,10 @@
 package tarot.infrastructure.services.photo
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.{PhotoFile, PhotoSource}
+import tarot.domain.models.photo.{PhotoFile, PhotoSource, StoredPhotoSource}
 import tarot.layers.AppEnv
 import zio.ZIO
 
 trait PhotoService {
-  def fetchAndStore(fileId: String): ZIO[Any, TarotError, PhotoSource]
+  def fetchAndStore(fileId: String): ZIO[Any, TarotError, StoredPhotoSource]
 }

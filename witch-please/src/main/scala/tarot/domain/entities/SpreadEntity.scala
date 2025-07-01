@@ -28,8 +28,7 @@ object SpreadMapper {
           spreadStatus = spread.spreadStatus,
           coverPhoto = coverPhoto,
           time = spread.time
-        ))
-    
+      ))    
     
   def toEntity(spread: Spread, coverPhotoId: UUID): SpreadEntity =
     SpreadEntity(

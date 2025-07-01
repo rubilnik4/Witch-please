@@ -1,7 +1,7 @@
 package tarot.api.endpoints
 
-import tarot.api.dto.{TarotErrorMapper, TarotErrorResponse, TelegramSpreadRequest}
-import tarot.application.commands.SpreadCommand
+import tarot.api.dto.{TarotErrorMapper, TarotErrorResponse, TelegramCardRequest, TelegramSpreadRequest}
+import tarot.application.commands.{CardCommand, SpreadCommand}
 import tarot.domain.models.contracts.TarotChannelType
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -11,12 +11,15 @@ import zio.http.codec.HttpCodec
 import zio.http.endpoint.Endpoint
 
 object SpreadEndpoint {
-  private final val path = "spread"
+  private final val spreadPath = "spread"
+  private final val cardsPath = "cards"
   private final val tag = "spread"
-  final val spreadPath = Root / PathBuilder.apiPath / path / TarotChannelType.Telegram
-  
+  final val spreadRoute = Root / PathBuilder.apiPath / TarotChannelType.Telegram / spreadPath
+  final val cardRoute = 
+    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spreadPath / uuid("spreadId") / cardsPath / int("index")
+
   private val postSpreadEndpoint =
-    Endpoint(POST / spreadPath)
+    Endpoint(POST / spreadRoute)
       .in[TelegramSpreadRequest](MediaType.application.json)
       .out[String]
       .outErrors(
@@ -27,44 +30,42 @@ object SpreadEndpoint {
 
   private val postSpreadRoute = postSpreadEndpoint.implement { request =>
     (for {
-      _ <- ZIO.logInfo(s"Received request for create spread: ${request.title}")      
-      _ <- TelegramSpreadRequest.validate(request)
-      externalSpread = TelegramSpreadRequest.fromTelegram(request)
+      _ <- ZIO.logInfo(s"Received request to create spread: ${request.title}")    
+      externalSpread <- TelegramSpreadRequest.fromTelegram(request)
       
       spreadCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCommandHandler)
       spreadCommand = SpreadCommand(externalSpread)
-      spread <- spreadCommandHandler.handle(spreadCommand)
-    } yield spread)
+      spreadId <- spreadCommandHandler.handle(spreadCommand)
+    } yield spreadId)
       .mapBoth(
         error => TarotErrorMapper.toResponse(error),
-        spread => spread.id.toString)
+        spreadId => spreadId.id.toString)
   }
 
-//  private val computeSpreadEndpoint = {
-//    Endpoint(POST / path)
-//      .in[ComputeSpreadRequest](MediaType.application.json)
-//      .out[SpreadResponse]
-//      .outErrors(
-//        HttpCodec.error[MarketErrorResponse](Status.BadRequest),
-//        HttpCodec.error[MarketErrorResponse](Status.NotFound),
-//        HttpCodec.error[MarketErrorResponse](Status.InternalServerError)
-//      )
-//      .tag(tag)
-//  }
-//
-//  private val computeSpreadRoute = computeSpreadEndpoint.implement { request =>
-//    val assetSpreadId = AssetSpreadId(AssetId(request.assetIdA), AssetId(request.assetIdB))
-//    val spreadCommand = SpreadCommand(SpreadState.Init(), assetSpreadId)
-//    for {
-//      _ <- ZIO.logInfo(s"Received request for computing spread for assets: $assetSpreadId")
-//
-//      spreadCommandHandler <- ZIO.serviceWith[AppEnv](_.marketCommandHandler.spreadCommandHandler)
-//      result <- spreadCommandHandler.handle(spreadCommand)
-//        .mapBoth(
-//          error => MarketErrorMapper.toResponse(error),
-//          spreadResult => SpreadMapper.toResponse(spreadResult.spread))
-//    } yield result
-//  }
+  private val postCardEndpoint =
+    Endpoint(POST / cardRoute)
+      .in[TelegramCardRequest](MediaType.application.json)
+      .out[String]
+      .outErrors(
+        HttpCodec.error[TarotErrorResponse](Status.BadRequest),
+        HttpCodec.error[TarotErrorResponse](Status.NotFound),
+        HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
+      )
+      .tag(tag)
+
+  private val postCardRoute = postCardEndpoint.implement { case (spreadId, index, request) =>
+    (for {
+      _ <- ZIO.logInfo(s"Received request to create card number $index for spread $spreadId")
+      externalCard <- TelegramCardRequest.fromTelegram(request, index, spreadId)
+
+      cardCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCommandHandler)
+      cardCommand = CardCommand(externalCard)
+      cardId <- cardCommandHandler.handle(cardCommand)
+    } yield cardId)
+      .mapBoth(
+        error => TarotErrorMapper.toResponse(error),
+        cardId => cardId.id.toString)
+  }
 
   val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
     List(postSpreadEndpoint)

@@ -21,7 +21,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     )
 
   private def getSpreadUrl(serverUrl: String) =
-    PathBuilder.getRoutePath(serverUrl, SpreadEndpoint.spreadPath)
+    PathBuilder.getRoutePath(serverUrl, SpreadEndpoint.spreadRoute)
 
   private val serverConfig: ULayer[Server.Config] = ZLayer.succeed(
     Server.Config.default.port(8080)

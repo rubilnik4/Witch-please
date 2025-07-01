@@ -1,7 +1,7 @@
 package tarot.infrastructure.services.photo
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.{PhotoFile, PhotoSource}
+import tarot.domain.models.photo.{PhotoFile, PhotoSource, StoredPhotoSource}
 import zio.{Cause, Chunk, ZIO}
 import zio.nio.file.Files
 import zio.nio.file.Path
@@ -9,7 +9,7 @@ import zio.stream.ZStream
 
 final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:
   
-  def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, PhotoSource] =
+  def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, StoredPhotoSource] =
     val fullPath = rootPath / photoFile.fileName
 
     for {
@@ -17,7 +17,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
 
       _ <- ZIO
         .fromOption(fullPath.parent)
-        .orElseFail(TarotError.NotFound(s"Cannot determine parent for path: $fullPath"))
+        .orElseFail(TarotError.ParsingError(fullPath.toString, s"Cannot determine parent for path: $fullPath"))
         .flatMap { parent =>
           Files.createDirectories(parent)
             .tapError(ex => ZIO.logErrorCause(s"[LocalPhotoStorage] Failed to create parent directories for: $fullPath", Cause.fail(ex)))
@@ -27,7 +27,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
       _ <- Files.writeBytes(fullPath, Chunk.fromArray(photoFile.bytes))
         .tapError(ex => ZIO.logErrorCause(s"[LocalPhotoStorage] Failed to store photo: ${photoFile.fileName}", Cause.fail(ex)))
         .mapError(ex => TarotError.StorageError(s"Failed to write file to $fullPath", ex))
-    } yield PhotoSource.Local(fullPath.toString)
+    } yield StoredPhotoSource.Local(fullPath.toString)
 
   def getResourcePhoto(resourcePath: String): ZIO[Any, TarotError, PhotoFile] =
     for {
@@ -42,7 +42,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
       stream <- ZIO.fromOption(Option(getClass.getClassLoader.getResourceAsStream(resourcePath)))
         .tapError(_ =>
           ZIO.logError(s"[LocalPhotoStorage] Resource not found: $resourcePath"))
-        .orElseFail(TarotError.NotFound(s"[LocalPhotoStorage] Resource not found: $resourcePath"))
+        .orElseFail(TarotError.ParsingError(resourcePath, s"[LocalPhotoStorage] Resource not found: $resourcePath"))
 
       photoBytes <- ZStream.fromInputStream(stream).runCollect.map(_.toArray)
         .tapError(ex =>

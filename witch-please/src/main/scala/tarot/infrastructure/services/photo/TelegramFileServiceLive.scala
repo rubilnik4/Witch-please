@@ -39,7 +39,7 @@ final class TelegramFileServiceLive(token: String, client: SttpBackend[Task, Any
         .fromOption(response.result.photo.lastOption.map(_.fileId))
         .tapError(e =>
           ZIO.logError(s"No photo id found for file ${photo.fileName}"))
-        .orElseFail(TarotError.NotFound(s"No photo id found for file ${photo.fileName}"))
+        .orElseFail(TarotError.ApiError("Telegram API error", 500, s"No photo id found for file ${photo.fileName}"))
     } yield fileId
   }
 
