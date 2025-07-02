@@ -2,9 +2,10 @@ package tarot.application.handlers
 
 import tarot.application.commands.{CardCommand, SpreadCommand}
 import tarot.domain.models.TarotError
+import tarot.domain.models.cards.{Card, CardMapper, ExternalCard}
 import tarot.domain.models.contracts.{CardId, SpreadId}
 import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}
-import tarot.domain.models.spreads.{Card, CardMapper, ExternalCard, ExternalSpread, Spread, SpreadMapper}
+import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadMapper}
 import tarot.layers.AppEnv
 import zio.ZIO
 

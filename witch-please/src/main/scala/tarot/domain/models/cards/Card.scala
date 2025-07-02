@@ -1,7 +1,8 @@
-package tarot.domain.models.spreads
+package tarot.domain.models.cards
 
 import tarot.domain.models.contracts.SpreadId
 import tarot.domain.models.photo.{PhotoFile, PhotoOwnerType, PhotoSource, StoredPhotoSource}
+import tarot.domain.models.spreads.Card
 import tarot.infrastructure.services.common.DateTimeService
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.schema.{DeriveSchema, Schema}

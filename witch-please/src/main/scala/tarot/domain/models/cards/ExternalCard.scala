@@ -1,4 +1,4 @@
-package tarot.domain.models.spreads
+package tarot.domain.models.cards
 
 import tarot.domain.models.contracts.SpreadId
 import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}

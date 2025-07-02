@@ -17,17 +17,22 @@ final case class SpreadEntity(
     time: Instant
 )
 
+final case class SpreadPhotoEntity(
+   spread: SpreadEntity,
+   coverPhoto: PhotoSourceEntity
+)
+
 object SpreadMapper {
-  def toDomain(spread: SpreadEntity, coverPhoto: PhotoSourceEntity): ZIO[Any, TarotError, Spread] =
-    PhotoSourceMapper.toDomain(coverPhoto)
+  def toDomain(spread: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] =
+    PhotoSourceMapper.toDomain(spread.coverPhoto)
       .map(coverPhoto =>
         Spread(
-          id = spread.id,
-          title = spread.title,
-          cardCount = spread.cardCount,
-          spreadStatus = spread.spreadStatus,
+          id = spread.spread.id,
+          title = spread.spread.title,
+          cardCount = spread.spread.cardCount,
+          spreadStatus = spread.spread.spreadStatus,
           coverPhoto = coverPhoto,
-          time = spread.time
+          time = spread.spread.time
       ))    
     
   def toEntity(spread: Spread, coverPhotoId: UUID): SpreadEntity =
@@ -40,9 +45,3 @@ object SpreadMapper {
       time = spread.time
     )
 }
-
-given encodeStatus: MappedEncoding[SpreadStatus, String] =
-  MappedEncoding(_.toString)
-
-given decodeStatus: MappedEncoding[String, SpreadStatus] =
-  MappedEncoding(SpreadStatus.valueOf)
