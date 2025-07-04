@@ -11,25 +11,30 @@ import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.Spread
 import zio.*
 
+import java.sql.SQLException
 import java.util.UUID
 
 final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends TarotRepository {
+  import quill.*
 
   private val spreadDao = SpreadDao(quill)
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
 
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
-    (for {
-      photoId <- createPhoto(spread.coverPhoto)
+    quill.transaction {
+      for {
+        photoId <- createPhoto(spread.coverPhoto)
 
-      spreadEntity = SpreadMapper.toEntity(spread, photoId)
-      spreadId <- createSpread(spreadEntity)
-    } yield spreadId)
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to create spread $spread to database", Cause.fail(e)),
-        _ => ZIO.logDebug(s"Successfully create spread $spread to database")
-      )
+        spreadEntity = SpreadMapper.toEntity(spread, photoId)
+        spreadId <- createSpread(spreadEntity)
+      } yield spreadId
+    }
+    .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
+    .tapBoth(
+      e => ZIO.logErrorCause(s"Failed to create spread $spread to database", Cause.fail(e)),
+      _ => ZIO.logDebug(s"Successfully create spread $spread to database")
+    )
 
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
     spreadDao
@@ -56,38 +61,34 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
       )
 
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
-    (for {
-      photoId <- createPhoto(card.coverPhoto)
+    quill.transaction {
+      for {
+        photoId <- createPhoto(card.coverPhoto)
 
-      cardEntity = CardMapper.toEntity(card, photoId)
-      cardId <- createCard(cardEntity)
-    } yield cardId)
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to create card $card to database", Cause.fail(e)),
-        _ => ZIO.logDebug(s"Successfully create card $card to database")
-      )
+        cardEntity = CardMapper.toEntity(card, photoId)
+        cardId <- createCard(cardEntity)
+      } yield cardId
+    }
+    .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
+    .tapBoth(
+      e => ZIO.logErrorCause(s"Failed to create card $card to database", Cause.fail(e)),
+      _ => ZIO.logDebug(s"Successfully create card $card to database")
+    )
 
-  private def createSpread(spreadEntity: SpreadEntity): ZIO[Any, TarotError, SpreadId] =
+  private def createSpread(spreadEntity: SpreadEntity): ZIO[Any, SQLException, SpreadId] =
     spreadDao
       .insertSpread(spreadEntity)
-      .mapBoth(
-        e => DatabaseError(s"Failed to create spread ${spreadEntity.id}", e),
-        spreadId => SpreadId(spreadId)
-      )
+      .map(spreadId => SpreadId(spreadId))
 
-  private def createCard(cardEntity: CardEntity): ZIO[Any, TarotError, CardId] =
+  private def createCard(cardEntity: CardEntity): ZIO[Any, SQLException, CardId] =
     cardDao
       .insertCard(cardEntity)
-      .mapBoth(
-        e => DatabaseError(s"Failed to create card ${cardEntity.id}", e),
-        cardId => CardId(cardId)
-      )
+      .map(cardId => CardId(cardId))
 
-  private def createPhoto(photo: Photo): ZIO[Any, TarotError, UUID] = {
+  private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] = {
     val photoEntity = PhotoSourceMapper.toEntity(photo)
     for {
       photoId <- photoDao.insertPhoto(photoEntity)
-        .mapError(e => DatabaseError("Failed to create photo", e))
     } yield photoId
   }
 }
