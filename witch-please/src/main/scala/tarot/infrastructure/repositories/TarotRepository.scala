@@ -9,6 +9,7 @@ import zio.ZIO
 trait TarotRepository {
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]]  
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
+  def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId]  
   def createCard(card: Card): ZIO[Any, TarotError, CardId]
 }

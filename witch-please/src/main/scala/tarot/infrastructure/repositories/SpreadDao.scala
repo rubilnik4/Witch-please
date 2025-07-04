@@ -2,8 +2,7 @@ package tarot.infrastructure.repositories
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
+import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
 import tarot.domain.models.spreads.SpreadStatus
 import zio.ZIO
 
@@ -12,16 +11,8 @@ import java.time.Instant
 import java.util.UUID
 
 final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
-  import quill.*
   import QuillMappings.given
-
-  private inline def spreadTable = quote {
-    querySchema[SpreadEntity](TarotTableNames.Spreads)
-  }
-
-  private inline def photoTable = quote {
-    querySchema[PhotoEntity](TarotTableNames.Photos)
-  }
+  import quill.*
 
   def getSpread(spreadId: UUID): ZIO[Any, SQLException, Option[SpreadPhotoEntity]] =
     run(
@@ -44,6 +35,20 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .nonEmpty
       })
 
+  def validateSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
+    run(
+      quote {
+        spreadTable
+          .filter(_.id == lift(spreadId))
+          .join(cardTable)
+          .on((spread, card) => spread.id == card.spreadId)
+          .groupBy(_._1)
+          .map { case (spread, grouped) => (spread.id, spread.cardCount, grouped.size)}
+          .filter { case (_, expected, actual) => expected == actual }
+          .take(1)
+          .nonEmpty
+    })
+
   def insertSpread(spread: SpreadEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {
@@ -51,4 +56,16 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .insertValue(lift(spread))
           .returning(_.id)
       })
+
+  private inline def spreadTable = quote {
+    querySchema[SpreadEntity](TarotTableNames.Spreads)
+  }
+
+  private inline def cardTable = quote {
+    querySchema[CardEntity](TarotTableNames.Cards)
+  }
+
+  private inline def photoTable = quote {
+    querySchema[PhotoEntity](TarotTableNames.Photos)
+  }
 }

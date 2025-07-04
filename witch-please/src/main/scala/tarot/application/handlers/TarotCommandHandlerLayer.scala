@@ -3,15 +3,15 @@ package tarot.application.handlers
 import zio.{ULayer, ZLayer}
 
 object TarotCommandHandlerLayer {
-  private val spreadCommandHandlerLive: ULayer[SpreadCommandHandler] =
-    ZLayer.succeed(new SpreadCommandHandlerLive)
+  private val spreadCommandHandlerLive: ULayer[SpreadCreateCommandHandler] =
+    ZLayer.succeed(new SpreadCreateCommandHandlerLive)
 
-  private val cardCommandHandlerLive: ULayer[CardCommandHandler] =
-    ZLayer.succeed(new CardCommandHandlerLive)
+  private val cardCommandHandlerLive: ULayer[CardCreateCommandHandler] =
+    ZLayer.succeed(new CardCreateCommandHandlerLive)
 
   val tarotCommandHandlerLive: ULayer[TarotCommandHandlerLive] =
     (spreadCommandHandlerLive ++ cardCommandHandlerLive) >>> ZLayer.fromFunction {
-    (spread: SpreadCommandHandler, card: CardCommandHandler) =>
+    (spread: SpreadCreateCommandHandler, card: CardCreateCommandHandler) =>
       TarotCommandHandlerLive(spread, card)
   }
 }

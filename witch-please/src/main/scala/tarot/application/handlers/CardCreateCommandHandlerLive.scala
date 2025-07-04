@@ -1,6 +1,6 @@
 package tarot.application.handlers
 
-import tarot.application.commands.{CardCommand, SpreadCommand}
+import tarot.application.commands.{CardCreateCommand, SpreadCreateCommand}
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.{Card, CardMapper, ExternalCard}
 import tarot.domain.models.contracts.{CardId, SpreadId}
@@ -11,10 +11,10 @@ import zio.ZIO
 
 import java.time.Instant
 
-final class CardCommandHandlerLive extends CardCommandHandler {
-  override def handle(command: CardCommand): ZIO[AppEnv, TarotError, CardId] = {
+final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
+  def handle(command: CardCreateCommand): ZIO[AppEnv, TarotError, CardId] = {
     for {
-      _ <- ZIO.logInfo(s"Executing card command for ${command.externalCard}")
+      _ <- ZIO.logInfo(s"Executing create card command for ${command.externalCard}")
 
       tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
 

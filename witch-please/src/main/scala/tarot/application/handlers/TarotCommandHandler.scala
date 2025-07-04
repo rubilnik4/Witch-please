@@ -1,6 +1,6 @@
 package tarot.application.handlers
 
 trait TarotCommandHandler {
-  def spreadCommandHandler: SpreadCommandHandler
-  def cardCommandHandler: CardCommandHandler
+  def spreadCommandHandler: SpreadCreateCommandHandler
+  def cardCommandHandler: CardCreateCommandHandler
 }

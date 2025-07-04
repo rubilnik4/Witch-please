@@ -1,6 +1,6 @@
 package tarot.application.handlers
 
-import tarot.application.commands.SpreadCommand
+import tarot.application.commands.SpreadCreateCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.contracts.SpreadId
 import tarot.domain.models.photo.{ExternalPhoto, Photo}
@@ -10,10 +10,10 @@ import zio.ZIO
 
 import java.time.Instant
 
-final class SpreadCommandHandlerLive extends SpreadCommandHandler {
-  override def handle(command: SpreadCommand): ZIO[AppEnv, TarotError, SpreadId] = {
+final class SpreadCreateCommandHandlerLive extends SpreadCreateCommandHandler {
+  def handle(command: SpreadCreateCommand): ZIO[AppEnv, TarotError, SpreadId] = {
     for {
-      _ <- ZIO.logInfo(s"Executing spread command for ${command.externalSpread}")
+      _ <- ZIO.logInfo(s"Executing create spread command for ${command.externalSpread}")
 
       spread <- fetchAndStorePhoto(command.externalSpread)
 

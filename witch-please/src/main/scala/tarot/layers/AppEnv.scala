@@ -1,7 +1,7 @@
 package tarot.layers
 
 import tarot.application.configurations.AppConfig
-import tarot.application.handlers.{SpreadCommandHandler, TarotCommandHandler}
+import tarot.application.handlers.{SpreadCreateCommandHandler, TarotCommandHandler}
 import tarot.application.telemetry.metrics.TarotMeter
 import tarot.application.telemetry.tracing.TarotTracing
 import tarot.infrastructure.repositories.TarotRepository

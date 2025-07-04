@@ -60,6 +60,15 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
         _ => ZIO.logDebug(s"Successfully check spread $spreadId from database")
       )
 
+  def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
+    spreadDao
+      .validateSpread(spreadId.id)
+      .mapError(e => DatabaseError("Failed to validate spread", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to validate spread $spreadId from database", Cause.fail(e)),
+        _ => ZIO.logDebug(s"Successfully validate spread $spreadId from database")
+      )
+
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
     quill.transaction {
       for {
