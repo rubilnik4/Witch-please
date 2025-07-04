@@ -7,7 +7,7 @@ import tarot.domain.entities.{CardEntity, CardMapper, PhotoSourceMapper, SpreadE
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.Card
 import tarot.domain.models.contracts.{CardId, SpreadId}
-import tarot.domain.models.photo.PhotoSource
+import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.Spread
 import zio.*
 
@@ -56,12 +56,12 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
       )
 
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
-    for {
+    (for {
       photoId <- createPhoto(card.coverPhoto)
 
       cardEntity = CardMapper.toEntity(card, photoId)
       cardId <- createCard(cardEntity)
-    } yield cardId
+    } yield cardId)
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to create card $card to database", Cause.fail(e)),
         _ => ZIO.logDebug(s"Successfully create card $card to database")
@@ -83,7 +83,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
         cardId => CardId(cardId)
       )
 
-  private def createPhoto(photo: PhotoSource): ZIO[Any, TarotError, UUID] = {
+  private def createPhoto(photo: Photo): ZIO[Any, TarotError, UUID] = {
     val photoEntity = PhotoSourceMapper.toEntity(photo)
     for {
       photoId <- photoDao.insertPhoto(photoEntity)

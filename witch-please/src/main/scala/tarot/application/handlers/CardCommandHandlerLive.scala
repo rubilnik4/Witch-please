@@ -4,7 +4,7 @@ import tarot.application.commands.{CardCommand, SpreadCommand}
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.{Card, CardMapper, ExternalCard}
 import tarot.domain.models.contracts.{CardId, SpreadId}
-import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}
+import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadMapper}
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -33,7 +33,7 @@ final class CardCommandHandlerLive extends CardCommandHandler {
       photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
 
       storedPhoto <- externalCard.coverPhotoId match {
-        case ExternalPhotoSource.Telegram(fileId) => photoService.fetchAndStore(fileId)
+        case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
       card = CardMapper.fromExternal(externalCard, storedPhoto)
     } yield card

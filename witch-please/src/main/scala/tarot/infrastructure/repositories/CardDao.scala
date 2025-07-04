@@ -2,7 +2,7 @@ package tarot.infrastructure.repositories
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{CardEntity, PhotoSourceEntity, SpreadEntity, SpreadPhotoEntity}
+import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
 import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
 import tarot.domain.models.spreads.SpreadStatus
 import zio.ZIO

@@ -4,7 +4,7 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.ExternalCard
 import tarot.domain.models.contracts.SpreadId
-import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}
+import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.ExternalSpread
 import zio.json.*
 import zio.schema.*
@@ -31,5 +31,5 @@ object TelegramCardRequest {
       index = index,
       spreadId = SpreadId(spreadId),
       description = request.description,
-      coverPhotoId = ExternalPhotoSource.Telegram(request.coverPhotoId))
+      coverPhotoId = ExternalPhoto.Telegram(request.coverPhotoId))
 }

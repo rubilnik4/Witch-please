@@ -2,30 +2,22 @@ package tarot.infrastructure.repositories
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{PhotoSourceEntity, SpreadEntity}
-import tarot.domain.models.spreads.SpreadStatus
-import zio.ZIO
-import io.getquill.MappedEncoding
+import tarot.domain.entities.PhotoEntity
 import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
+import zio.ZIO
 
 import java.sql.SQLException
-import java.time.Instant
 import java.util.UUID
 
 final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
-
-  given MappedEncoding[PhotoStorageType, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, PhotoStorageType] = MappedEncoding(PhotoStorageType.valueOf)
-
-  given MappedEncoding[PhotoOwnerType, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, PhotoOwnerType] = MappedEncoding(PhotoOwnerType.valueOf)
+  import QuillMappings.given
   
   private inline def photoTable = quote {
-    querySchema[PhotoSourceEntity](TarotTableNames.Photos)
+    querySchema[PhotoEntity](TarotTableNames.Photos)
   }
 
-  def insertPhoto(photo: PhotoSourceEntity): ZIO[Any, SQLException, UUID] =
+  def insertPhoto(photo: PhotoEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {
         photoTable

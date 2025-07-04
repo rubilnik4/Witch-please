@@ -1,6 +1,6 @@
 package tarot.infrastructure.services
 
-import tarot.domain.models.photo.PhotoSource
+import tarot.domain.models.photo.{Photo, PhotoSource}
 import tarot.layers.{AppEnv, TestAppEnvLayer}
 import zio.*
 import zio.nio.file.{Files, Path}

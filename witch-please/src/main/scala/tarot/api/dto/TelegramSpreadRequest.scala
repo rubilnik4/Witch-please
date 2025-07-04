@@ -2,7 +2,7 @@ package tarot.api.dto
 
 import tarot.domain.models.TarotError
 import TarotError.ValidationError
-import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}
+import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadStatus}
 import zio.{IO, ZIO}
 import zio.json.{DeriveJsonCodec, JsonCodec}
@@ -31,5 +31,5 @@ object TelegramSpreadRequest {
     ExternalSpread(
       title = request.title,
       cardCount = request.cardCount,
-      coverPhotoId = ExternalPhotoSource.Telegram(request.coverPhotoId))
+      coverPhotoId = ExternalPhoto.Telegram(request.coverPhotoId))
 }

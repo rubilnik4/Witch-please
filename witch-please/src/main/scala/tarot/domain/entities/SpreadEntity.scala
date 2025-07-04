@@ -19,7 +19,7 @@ final case class SpreadEntity(
 
 final case class SpreadPhotoEntity(
    spread: SpreadEntity,
-   coverPhoto: PhotoSourceEntity
+   coverPhoto: PhotoEntity
 )
 
 object SpreadMapper {

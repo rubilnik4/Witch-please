@@ -3,7 +3,7 @@ package tarot.application.handlers
 import tarot.application.commands.SpreadCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.contracts.SpreadId
-import tarot.domain.models.photo.{ExternalPhotoSource, PhotoSource}
+import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadMapper}
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -29,7 +29,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
 
       storedPhoto <- externalSpread.coverPhotoId match {
-        case ExternalPhotoSource.Telegram(fileId) => photoService.fetchAndStore(fileId)
+        case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
       spread = SpreadMapper.fromExternal(externalSpread, storedPhoto)
     } yield spread

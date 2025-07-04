@@ -20,7 +20,7 @@ final case class CardEntity(
 
 final case class CardPhotoEntity(
    card: CardEntity,
-   coverPhoto: PhotoSourceEntity
+   coverPhoto: PhotoEntity
 )
 
 object CardMapper {

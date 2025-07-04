@@ -15,7 +15,7 @@ object SpreadEndpoint {
   private final val cardsPath = "cards"
   private final val tag = "spread"
   final val spreadRoute = Root / PathBuilder.apiPath / TarotChannelType.Telegram / spreadPath
-  final val cardRoute = 
+  private final val cardRoute =
     Root / PathBuilder.apiPath / TarotChannelType.Telegram / spreadPath / uuid("spreadId") / cardsPath / int("index")
 
   private val postSpreadEndpoint =
@@ -68,8 +68,8 @@ object SpreadEndpoint {
   }
 
   val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
-    List(postSpreadEndpoint)
+    List(postSpreadEndpoint, postCardEndpoint)
 
   val allRoutes: Routes[AppEnv, Response] =
-    Routes(postSpreadRoute)
+    Routes(postSpreadRoute, postCardRoute)
 }

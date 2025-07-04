@@ -2,7 +2,7 @@ package tarot.infrastructure.repositories
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{PhotoSourceEntity, SpreadEntity, SpreadPhotoEntity}
+import tarot.domain.entities.{PhotoEntity, SpreadEntity, SpreadPhotoEntity}
 import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
 import tarot.domain.models.spreads.SpreadStatus
 import zio.ZIO
@@ -13,23 +13,14 @@ import java.util.UUID
 
 final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
-  import QuillMappings.*
-
-  given MappedEncoding[SpreadStatus, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, SpreadStatus] = MappedEncoding(SpreadStatus.valueOf)
-
-  given MappedEncoding[PhotoStorageType, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, PhotoStorageType] = MappedEncoding(PhotoStorageType.valueOf)
-
-  given MappedEncoding[PhotoOwnerType, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, PhotoOwnerType] = MappedEncoding(PhotoOwnerType.valueOf)
+  import QuillMappings.given
 
   private inline def spreadTable = quote {
     querySchema[SpreadEntity](TarotTableNames.Spreads)
   }
 
   private inline def photoTable = quote {
-    querySchema[PhotoSourceEntity](TarotTableNames.Photos)
+    querySchema[PhotoEntity](TarotTableNames.Photos)
   }
 
   def getSpread(spreadId: UUID): ZIO[Any, SQLException, Option[SpreadPhotoEntity]] =

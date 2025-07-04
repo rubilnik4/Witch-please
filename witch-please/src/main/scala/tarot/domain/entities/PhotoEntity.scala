@@ -1,13 +1,13 @@
 package tarot.domain.entities
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.{PhotoOwnerType, PhotoSource, PhotoStorageType}
+import tarot.domain.models.photo.{PhotoOwnerType, Photo, PhotoStorageType}
 import zio.ZIO
 import zio.json.*
 
 import java.util.UUID
 
-final case class PhotoSourceEntity(
+final case class PhotoEntity(
     id: UUID,
     storageType: PhotoStorageType,
     ownerType: PhotoOwnerType,
@@ -17,13 +17,13 @@ final case class PhotoSourceEntity(
     key: Option[String])
 
 object PhotoSourceMapper {
-  def toDomain(photoSource: PhotoSourceEntity): ZIO[Any, TarotError, PhotoSource] =
+  def toDomain(photoSource: PhotoEntity): ZIO[Any, TarotError, Photo] =
     photoSource.storageType match {
       case PhotoStorageType.Local =>
         for {
           path <- ZIO.fromOption(photoSource.path)
             .orElseFail(TarotError.SerializationError("Missing 'path' for Local photo source"))
-        } yield PhotoSource.Local(path, photoSource.ownerType, photoSource.ownerId)
+        } yield Photo.Local(path, photoSource.ownerType, photoSource.ownerId)
 
       case PhotoStorageType.S3 =>
         for {
@@ -31,15 +31,15 @@ object PhotoSourceMapper {
             .orElseFail(TarotError.SerializationError("Missing 'bucket' for S3 photo source"))
           key <- ZIO.fromOption(photoSource.key)
             .orElseFail(TarotError.SerializationError("Missing 'key' for S3 photo source"))
-        } yield PhotoSource.S3(bucket, key, photoSource.ownerType, photoSource.ownerId)
+        } yield Photo.S3(bucket, key, photoSource.ownerType, photoSource.ownerId)
     }
 
 
-  def toEntity(photoSource: PhotoSource): PhotoSourceEntity =
+  def toEntity(photoSource: Photo): PhotoEntity =
     photoSource match {
-      case PhotoSource.Local(path, ownerType, ownerId) =>
-        PhotoSourceEntity(UUID.randomUUID(), PhotoStorageType.Local, ownerType, ownerId, Some(path), None, None)
-      case PhotoSource.S3(bucket, key, ownerType, ownerId) =>
-        PhotoSourceEntity(UUID.randomUUID(), PhotoStorageType.S3, ownerType, ownerId, None, Some(bucket), Some(key))
+      case Photo.Local(path, ownerType, ownerId) =>
+        PhotoEntity(UUID.randomUUID(), PhotoStorageType.Local, ownerType, ownerId, Some(path), None, None)
+      case Photo.S3(bucket, key, ownerType, ownerId) =>
+        PhotoEntity(UUID.randomUUID(), PhotoStorageType.S3, ownerType, ownerId, None, Some(bucket), Some(key))
     }
 }
