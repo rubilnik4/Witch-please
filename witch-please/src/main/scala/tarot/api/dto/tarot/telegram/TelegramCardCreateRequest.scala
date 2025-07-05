@@ -1,24 +1,23 @@
-package tarot.api.dto
+package tarot.api.dto.tarot.telegram
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.ExternalCard
-import tarot.domain.models.contracts.SpreadId
 import tarot.domain.models.photo.{ExternalPhoto, Photo}
-import tarot.domain.models.spreads.ExternalSpread
+import tarot.domain.models.spreads.{ExternalSpread, SpreadId}
 import zio.json.*
 import zio.schema.*
 import zio.{IO, ZIO}
 
 import java.util.UUID
 
-final case class TelegramCardRequest(
+final case class TelegramCardCreateRequest(
   description: String,
   coverPhotoId: String
 ) derives JsonCodec, Schema
 
-object TelegramCardRequest {
-  def fromTelegram(request: TelegramCardRequest, index: Int, spreadId: UUID): IO[TarotError, ExternalCard] = {
+object TelegramCardCreateRequest {
+  def fromTelegram(request: TelegramCardCreateRequest, index: Int, spreadId: UUID): IO[TarotError, ExternalCard] = {
     for {
       _ <- ZIO.fail(ValidationError("index must not be positive")).when(index < 0)
       _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
@@ -26,7 +25,7 @@ object TelegramCardRequest {
     } yield toDomain(request, index, spreadId)
   }
   
-  private def toDomain(request: TelegramCardRequest, index: Int, spreadId: UUID): ExternalCard =
+  private def toDomain(request: TelegramCardCreateRequest, index: Int, spreadId: UUID): ExternalCard =
     ExternalCard(
       index = index,
       spreadId = SpreadId(spreadId),

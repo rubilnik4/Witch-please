@@ -2,7 +2,7 @@ package tarot.domain.entities
 
 import io.getquill.MappedEncoding
 import tarot.domain.models.TarotError
-import tarot.domain.models.spreads.{Spread, SpreadStatus}
+import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus}
 import zio.ZIO
 
 import java.time.Instant
@@ -14,7 +14,9 @@ final case class SpreadEntity(
     cardCount: Int,
     spreadStatus: SpreadStatus,
     coverPhotoId: UUID,
-    time: Instant
+    createdAt: Instant,
+    scheduledAt: Option[Instant],
+    publishedAt: Option[Instant]
 )
 
 final case class SpreadPhotoEntity(
@@ -23,25 +25,30 @@ final case class SpreadPhotoEntity(
 )
 
 object SpreadMapper {
-  def toDomain(spread: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] =
-    PhotoSourceMapper.toDomain(spread.coverPhoto)
-      .map(coverPhoto =>
-        Spread(
-          id = spread.spread.id,
-          title = spread.spread.title,
-          cardCount = spread.spread.cardCount,
-          spreadStatus = spread.spread.spreadStatus,
-          coverPhoto = coverPhoto,
-          time = spread.spread.time
-      ))    
-    
+  def toDomain(spreadPhoto: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] = {
+    for {
+      coverPhoto <- PhotoSourceMapper.toDomain(spreadPhoto.coverPhoto)
+      spread = Spread(
+        id = SpreadId(spreadPhoto.spread.id),
+        title = spreadPhoto.spread.title,
+        cardCount = spreadPhoto.spread.cardCount,
+        spreadStatus = spreadPhoto.spread.spreadStatus,
+        coverPhoto = coverPhoto,
+        createdAt = spreadPhoto.spread.createdAt,
+        scheduledAt = spreadPhoto.spread.scheduledAt,
+        publishedAt = spreadPhoto.spread.publishedAt)
+    } yield spread
+  }
+
   def toEntity(spread: Spread, coverPhotoId: UUID): SpreadEntity =
     SpreadEntity(
-      id = spread.id,
+      id = spread.id.id,
       title = spread.title,
       cardCount = spread.cardCount,
       spreadStatus = spread.spreadStatus,
       coverPhotoId = coverPhotoId,
-      time = spread.time
+      createdAt = spread.createdAt,
+      scheduledAt = spread.scheduledAt,
+      publishedAt = spread.publishedAt
     )
 }

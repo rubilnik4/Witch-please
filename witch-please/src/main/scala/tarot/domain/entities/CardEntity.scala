@@ -2,9 +2,8 @@ package tarot.domain.entities
 
 import io.getquill.MappedEncoding
 import tarot.domain.models.TarotError
-import tarot.domain.models.cards.Card
-import tarot.domain.models.contracts.SpreadId
-import tarot.domain.models.spreads.{Spread, SpreadStatus}
+import tarot.domain.models.cards.{Card, CardId}
+import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus}
 import zio.ZIO
 
 import java.time.Instant
@@ -15,7 +14,7 @@ final case class CardEntity(
     spreadId: UUID,
     description: String,
     coverPhotoId: UUID,
-    time: Instant
+    createAt: Instant
 )
 
 final case class CardPhotoEntity(
@@ -24,23 +23,23 @@ final case class CardPhotoEntity(
 )
 
 object CardMapper {
-  def toDomain(card: CardPhotoEntity): ZIO[Any, TarotError, Card] =
-    PhotoSourceMapper.toDomain(card.coverPhoto)
-      .map(coverPhoto =>
-        Card(
-          id = card.card.id,
-          spreadId = SpreadId(card.card.spreadId),
-          description = card.card.description,
-          coverPhoto = coverPhoto,
-          time = card.card.time
-      ))    
-    
+  def toDomain(cardPhoto: CardPhotoEntity): ZIO[Any, TarotError, Card] =
+    for {
+      coverPhoto <- PhotoSourceMapper.toDomain(cardPhoto.coverPhoto)
+      card = Card(
+        id = CardId(cardPhoto.card.id),
+        spreadId = SpreadId(cardPhoto.card.spreadId),
+        description = cardPhoto.card.description,
+        coverPhoto = coverPhoto,
+        createdAt = cardPhoto.card.createAt)
+    } yield card
+      
   def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
     CardEntity(
-      id = card.id,
+      id = card.id.id,
       spreadId = card.spreadId.id,
       description = card.description,
       coverPhotoId = coverPhotoId,
-      time = card.time
+      createAt = card.createdAt
     )
 }

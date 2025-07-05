@@ -1,6 +1,6 @@
 package tarot.api.dto.telegram
 
-import tarot.api.dto.TelegramSpreadRequest
+import tarot.api.dto.tarot.telegram.TelegramSpreadCreateRequest
 import zio.json.{DeriveJsonCodec, JsonCodec, jsonField}
 import zio.schema.{DeriveSchema, Schema}
 import zio.json._

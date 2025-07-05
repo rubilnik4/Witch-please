@@ -1,4 +1,4 @@
-package tarot.domain.models.contracts
+package tarot.domain.models.spreads
 
 import java.util.UUID
 

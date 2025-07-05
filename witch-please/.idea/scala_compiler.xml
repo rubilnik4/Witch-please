@@ -2,11 +2,6 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="witch-please" />
-    <profile name="sbt 2" modules="witch-please.main,witch-please.test">
-      <parameters>
-        <parameter value="-Dquill.macro.log=false" />
-      </parameters>
-    </profile>
+    <profile name="sbt 1" modules="witch-please,witch-please.main,witch-please.test" />
   </component>
 </project>

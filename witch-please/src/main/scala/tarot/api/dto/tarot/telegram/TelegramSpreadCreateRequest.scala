@@ -1,25 +1,23 @@
-package tarot.api.dto
+package tarot.api.dto.tarot.telegram
 
 import tarot.domain.models.TarotError
-import TarotError.ValidationError
+import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadStatus}
-import zio.{IO, ZIO}
-import zio.json.{DeriveJsonCodec, JsonCodec}
-import zio.schema.{DeriveSchema, Schema}
 import zio.json.*
 import zio.schema.*
+import zio.{IO, ZIO}
 
 import java.util.UUID
 
-final case class TelegramSpreadRequest(
-  title: String, 
-  cardCount: Int, 
+final case class TelegramSpreadCreateRequest(
+  title: String,
+  cardCount: Int,
   coverPhotoId: String
 ) derives JsonCodec, Schema
 
-object TelegramSpreadRequest {
-  def fromTelegram(request: TelegramSpreadRequest): IO[TarotError, ExternalSpread] = {
+object TelegramSpreadCreateRequest {
+  def fromTelegram(request: TelegramSpreadCreateRequest): IO[TarotError, ExternalSpread] = {
     for {
       _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
       _ <- ZIO.fail(ValidationError("cardCount must be > 0")).when(request.cardCount <= 0)
@@ -27,7 +25,7 @@ object TelegramSpreadRequest {
     } yield toDomain(request)
   }
   
-  private def toDomain(request: TelegramSpreadRequest): ExternalSpread =
+  private def toDomain(request: TelegramSpreadCreateRequest): ExternalSpread =
     ExternalSpread(
       title = request.title,
       cardCount = request.cardCount,

@@ -3,7 +3,7 @@ package tarot.infrastructure.repositories
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.spreads.SpreadStatus
+import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
 import zio.ZIO
 
 import java.sql.SQLException
@@ -57,14 +57,32 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def updateSpreadStatus(spreadId: UUID, spreadStatus: SpreadStatus): ZIO[Any, SQLException, Long] =
-    run(
-      quote {
-        spreadTable
-          .filter(_.id == lift(spreadId))
-          .update(_.spreadStatus -> lift(spreadStatus))
-      }
-    )
+  def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, SQLException, Long] =
+    update match {
+      case SpreadStatusUpdate.Ready(spreadId, spreadStatus, scheduledAt) =>
+        run(
+          quote {
+            spreadTable
+              .filter(_.id == lift(spreadId.id))
+              .update(
+                _.spreadStatus -> lift(spreadStatus),
+                _.scheduledAt -> lift(Option(scheduledAt))
+              )
+          }
+        )
+
+      case SpreadStatusUpdate.Published(spreadId, spreadStatus, publishedAt) =>
+        run(
+          quote {
+            spreadTable
+              .filter(_.id == lift(spreadId.id))
+              .update(
+                _.spreadStatus -> lift(spreadStatus),
+                _.publishedAt -> lift(Option(publishedAt))
+              )
+          }
+        )
+    }
     
   private inline def spreadTable = quote {
     querySchema[SpreadEntity](TarotTableNames.Spreads)

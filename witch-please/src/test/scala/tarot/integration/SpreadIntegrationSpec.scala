@@ -1,10 +1,9 @@
 package tarot.integration
 
-import tarot.api.dto.{TelegramCardRequest, TelegramSpreadRequest}
-import tarot.api.endpoints.{PathBuilder, SpreadEndpoint}
+import tarot.api.dto.tarot.telegram.{TelegramCardCreateRequest, TelegramSpreadCreateRequest}
+import tarot.api.endpoints.{SpreadEndpoint, PathBuilder}
 import tarot.domain.models.TarotError
-import tarot.domain.models.contracts.SpreadId
-import tarot.domain.models.spreads.SpreadStatus
+import tarot.domain.models.spreads.{SpreadId, SpreadStatus}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
@@ -45,7 +44,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
         spreadUrl = createSpreadUrl(projectConfig.serverUrl)
         spreadRequest = createSpreadRequest(photoId)
-        response <- ZIOHttpClient.sendPost[TelegramSpreadRequest, String](spreadUrl, spreadRequest)
+        response <- ZIOHttpClient.sendPost[TelegramSpreadCreateRequest, String](spreadUrl, spreadRequest)
 
         spreadId <- ZIO
           .attempt(UUID.fromString(response))
@@ -67,7 +66,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
           val cardRequest = createCardRequest(photoId)
 
           for {
-            response <- ZIOHttpClient.sendPost[TelegramCardRequest, String](cardUrl, cardRequest)
+            response <- ZIOHttpClient.sendPost[TelegramCardCreateRequest, String](cardUrl, cardRequest)
             cardId <- ZIO
               .attempt(UUID.fromString(response))
               .orElseFail(TarotError.ParsingError("UUID", s"Invalid card UUID returned: $response"))
@@ -104,14 +103,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private def createSpreadRequest(photoId: String) =
-    TelegramSpreadRequest(
+    TelegramSpreadCreateRequest(
       title = "Spread integration test",
       cardCount = cardCount,
       coverPhotoId = photoId
     )
 
   private def createCardRequest(photoId: String) =
-    TelegramCardRequest(
+    TelegramCardCreateRequest(
       description = "Card integration test",
       coverPhotoId = photoId
     )
@@ -121,7 +120,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     PathBuilder.getRoutePath(serverUrl, path)
 
   private def publishSpreadUrl(serverUrl: String, spreadId: UUID) =
-    val path = s"/api/telegram/spread/$spreadId/publish"
+    val path = s"/api/spread/$spreadId/publish"
     PathBuilder.getRoutePath(serverUrl, path)
 
   private def createCardUrl(serverUrl: String, spreadId: UUID, index: Int): URL = {

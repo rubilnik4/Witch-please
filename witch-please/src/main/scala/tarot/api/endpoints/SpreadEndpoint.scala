@@ -1,9 +1,9 @@
 package tarot.api.endpoints
 
-import tarot.api.dto.*
-import tarot.api.endpoints.SpreadRoutes.*
+import tarot.api.dto.tarot.*
+import tarot.api.dto.tarot.telegram.*
 import tarot.application.commands.*
-import tarot.domain.models.contracts.{SpreadId, TarotChannelType}
+import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
 import zio.http.*
@@ -13,20 +13,20 @@ import zio.http.endpoint.Endpoint
 
 object SpreadEndpoint {
   private val postSpreadEndpoint =
-    Endpoint(POST / spreadPath)
-      .in[TelegramSpreadRequest](MediaType.application.json)
+    Endpoint(POST / SpreadPaths.spreadCreatePath)
+      .in[TelegramSpreadCreateRequest](MediaType.application.json)
       .out[String]
       .outErrors(
         HttpCodec.error[TarotErrorResponse](Status.BadRequest),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(spreadTag)
+      .tag(SpreadPaths.spreadTag)
 
   private val postSpreadRoute = postSpreadEndpoint.implement { request =>
     (for {
-      _ <- ZIO.logInfo(s"Received request to create spread: ${request.title}")    
-      externalSpread <- TelegramSpreadRequest.fromTelegram(request)
-      
+      _ <- ZIO.logInfo(s"Received request to create spread: ${request.title}")
+      externalSpread <- TelegramSpreadCreateRequest.fromTelegram(request)
+
       spreadCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
       spreadCreateCommand = SpreadCreateCommand(externalSpread)
       spreadId <- spreadCreateCommandHandler.handle(spreadCreateCommand)
@@ -37,20 +37,20 @@ object SpreadEndpoint {
   }
 
   private val postCardEndpoint =
-    Endpoint(POST / cardPath)
-      .in[TelegramCardRequest](MediaType.application.json)
+    Endpoint(POST / SpreadPaths.cardCreatePath)
+      .in[TelegramCardCreateRequest](MediaType.application.json)
       .out[String]
       .outErrors(
         HttpCodec.error[TarotErrorResponse](Status.BadRequest),
         HttpCodec.error[TarotErrorResponse](Status.NotFound),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(spreadTag)
+      .tag(SpreadPaths.spreadTag)
 
   private val postCardRoute = postCardEndpoint.implement { case (spreadId, index, request) =>
     (for {
       _ <- ZIO.logInfo(s"Received request to create card number $index for spread $spreadId")
-      externalCard <- TelegramCardRequest.fromTelegram(request, index, spreadId)
+      externalCard <- TelegramCardCreateRequest.fromTelegram(request, index, spreadId)
 
       cardCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
       cardCreateCommand = CardCreateCommand(externalCard)
@@ -62,7 +62,8 @@ object SpreadEndpoint {
   }
 
   private val publishSpreadEndpoint =
-    Endpoint(PUT / publishSpreadPath)
+    Endpoint(PUT / SpreadPaths.spreadPublishPath)
+      .in[SpreadPublishRequest](MediaType.application.json)
       .out[Unit]
       .outErrors(
         HttpCodec.error[TarotErrorResponse](Status.BadRequest),
@@ -70,14 +71,15 @@ object SpreadEndpoint {
         HttpCodec.error[TarotErrorResponse](Status.Conflict),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(spreadTag)
+      .tag(SpreadPaths.spreadTag)
 
-  private val publishSpreadRoute = publishSpreadEndpoint.implement { spreadId =>
+  private val publishSpreadRoute = publishSpreadEndpoint.implement { case (spreadId, request) =>
     (for {
       _ <- ZIO.logInfo(s"Received request to publish spread: $spreadId")
+      externalCard <- SpreadPublishRequest.validate(request)
 
       spreadPublishCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
-      spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId))
+      spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
       _ <- spreadPublishCommandHandler.handle(spreadPublishCommand)
     } yield ())
       .mapError(error => TarotErrorMapper.toResponse(error))

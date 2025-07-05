@@ -1,4 +1,4 @@
-package tarot.api.dto
+package tarot.api.dto.tarot
 
 import tarot.domain.models.TarotError
 import zio.*

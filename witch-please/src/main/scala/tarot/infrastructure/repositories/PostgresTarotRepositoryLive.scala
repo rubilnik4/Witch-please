@@ -5,10 +5,9 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.entities.{CardEntity, CardMapper, PhotoSourceMapper, SpreadEntity, SpreadMapper}
 import tarot.domain.models.TarotError
-import tarot.domain.models.cards.Card
-import tarot.domain.models.contracts.{CardId, SpreadId}
+import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
-import tarot.domain.models.spreads.{Spread, SpreadStatus}
+import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus, SpreadStatusUpdate}
 import zio.*
 
 import java.sql.SQLException
@@ -36,15 +35,15 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
       _ => ZIO.logDebug(s"Successfully create spread $spread to database")
     )
 
-  def updateSpreadStatus(spreadId: SpreadId, spreadStatus: SpreadStatus): ZIO[Any, TarotError, Unit] =
+  def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
     spreadDao
-      .updateSpreadStatus(spreadId.id, spreadStatus)
+      .updateSpreadStatus(spreadStatusUpdate)
       .mapBoth(
         e => DatabaseError("Failed to update spread status", e),
         _ => ())
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to update spread $spreadId status $spreadStatus to database", Cause.fail(e)),
-        _ => ZIO.logDebug(s"Successfully update spread $spreadId status $spreadStatus to database")
+        e => ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate to database", Cause.fail(e)),
+        _ => ZIO.logDebug(s"Successfully update spread status $spreadStatusUpdate to database")
       )
 
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
