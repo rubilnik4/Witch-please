@@ -22,9 +22,9 @@ object ZIOHttpClient {
     } yield decoded
   }
 
-  def sendPut(url: URL): ZIO[Client & Scope, TarotError, Unit] = {
+  def sendPut[Request: JsonEncoder](url: URL, body: Request): ZIO[Client & Scope, TarotError, Unit] = {
     val request = Request
-      .put(url, Body.empty)
+      .put(url, Body.fromString(body.toJson))
       .setHeaders(Headers(Header.ContentType(MediaType.application.json)))
 
     executeResponse(request).unit

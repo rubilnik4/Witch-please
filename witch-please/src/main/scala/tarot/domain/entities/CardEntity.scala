@@ -10,11 +10,11 @@ import java.time.Instant
 import java.util.UUID
 
 final case class CardEntity(
-    id: UUID,
-    spreadId: UUID,
-    description: String,
-    coverPhotoId: UUID,
-    createAt: Instant
+                             id: UUID,
+                             spreadId: UUID,
+                             description: String,
+                             coverPhotoId: UUID,
+                             createdAt: Instant
 )
 
 final case class CardPhotoEntity(
@@ -31,7 +31,7 @@ object CardMapper {
         spreadId = SpreadId(cardPhoto.card.spreadId),
         description = cardPhoto.card.description,
         coverPhoto = coverPhoto,
-        createdAt = cardPhoto.card.createAt)
+        createdAt = cardPhoto.card.createdAt)
     } yield card
       
   def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
@@ -40,6 +40,6 @@ object CardMapper {
       spreadId = card.spreadId.id,
       description = card.description,
       coverPhotoId = coverPhotoId,
-      createAt = card.createdAt
+      createdAt = card.createdAt
     )
 }
