@@ -6,7 +6,7 @@ import zio.http.{Root, int, uuid}
 object SpreadRoutes {
   private final val spread = "spread"
   private final val cards = "cards"
-  private final val spreadTag = "spread"
+  final val spreadTag = "spread"
 
   final val spreadPath = Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread
 

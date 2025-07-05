@@ -19,27 +19,6 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
     querySchema[CardEntity](TarotTableNames.Cards)
   }
 
-//  def getSpread(spreadId: UUID): ZIO[Any, SQLException, Option[SpreadPhotoEntity]] =
-//    run(
-//      quote {
-//        spreadTable
-//          .join(photoTable)
-//          .on((spread, photo) => spread.coverPhotoId == photo.id)
-//          .filter { case (spread, _) => spread.id == lift(spreadId) }
-//          .take(1)
-//          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
-//      })
-//      .map(_.headOption)
-//
-//  def existsSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
-//    run(
-//      quote {
-//        spreadTable
-//          .filter { spread => spread.id == lift(spreadId) }
-//          .take(1)
-//          .nonEmpty
-//      })
-
   def insertCard(card: CardEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {
@@ -47,4 +26,13 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .insertValue(lift(card))
           .returning(_.id)
       })
+  
+  def countCards(spreadId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardTable
+          .filter(_.spreadId == lift(spreadId))
+          .size
+      }
+    )
 }

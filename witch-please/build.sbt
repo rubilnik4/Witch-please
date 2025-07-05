@@ -37,6 +37,5 @@ lazy val root = (project in file("."))
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.34.0",
       "org.slf4j" % "slf4j-nop" % "2.0.17"
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-    scalacOptions += "-Dquill.macro.log=false"
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )

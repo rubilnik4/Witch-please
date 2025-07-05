@@ -3,7 +3,7 @@ package tarot.api.endpoints
 import tarot.api.dto.*
 import tarot.api.endpoints.SpreadRoutes.*
 import tarot.application.commands.*
-import tarot.domain.models.contracts.TarotChannelType
+import tarot.domain.models.contracts.{SpreadId, TarotChannelType}
 import tarot.layers.AppEnv
 import zio.ZIO
 import zio.http.*
@@ -27,9 +27,9 @@ object SpreadEndpoint {
       _ <- ZIO.logInfo(s"Received request to create spread: ${request.title}")    
       externalSpread <- TelegramSpreadRequest.fromTelegram(request)
       
-      spreadCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCommandHandler)
-      spreadCommand = SpreadCreateCommand(externalSpread)
-      spreadId <- spreadCommandHandler.handle(spreadCommand)
+      spreadCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
+      spreadCreateCommand = SpreadCreateCommand(externalSpread)
+      spreadId <- spreadCreateCommandHandler.handle(spreadCreateCommand)
     } yield spreadId)
       .mapBoth(
         error => TarotErrorMapper.toResponse(error),
@@ -52,9 +52,9 @@ object SpreadEndpoint {
       _ <- ZIO.logInfo(s"Received request to create card number $index for spread $spreadId")
       externalCard <- TelegramCardRequest.fromTelegram(request, index, spreadId)
 
-      cardCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCommandHandler)
-      cardCommand = CardCreateCommand(externalCard)
-      cardId <- cardCommandHandler.handle(cardCommand)
+      cardCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
+      cardCreateCommand = CardCreateCommand(externalCard)
+      cardId <- cardCreateCommandHandler.handle(cardCreateCommand)
     } yield cardId)
       .mapBoth(
         error => TarotErrorMapper.toResponse(error),
@@ -62,10 +62,12 @@ object SpreadEndpoint {
   }
 
   private val publishSpreadEndpoint =
-    Endpoint(POST / publishSpreadPath)
+    Endpoint(PUT / publishSpreadPath)
+      .out[Unit]
       .outErrors(
         HttpCodec.error[TarotErrorResponse](Status.BadRequest),
         HttpCodec.error[TarotErrorResponse](Status.NotFound),
+        HttpCodec.error[TarotErrorResponse](Status.Conflict),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
       .tag(spreadTag)
@@ -74,18 +76,16 @@ object SpreadEndpoint {
     (for {
       _ <- ZIO.logInfo(s"Received request to publish spread: $spreadId")
 
-      spreadCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCommandHandler)
-      spreadCommand = SpreadCreateCommand(externalSpread)
-      spreadId <- spreadCommandHandler.handle(spreadCommand)
-    } yield spreadId)
-      .mapBoth(
-        error => TarotErrorMapper.toResponse(error),
-        spreadId => spreadId.id.toString)
+      spreadPublishCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
+      spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId))
+      _ <- spreadPublishCommandHandler.handle(spreadPublishCommand)
+    } yield ())
+      .mapError(error => TarotErrorMapper.toResponse(error))
   }
 
   val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
-    List(postSpreadEndpoint, postCardEndpoint)
+    List(postSpreadEndpoint, postCardEndpoint, publishSpreadEndpoint)
 
   val allRoutes: Routes[AppEnv, Response] =
-    Routes(postSpreadRoute, postCardRoute)
+    Routes(postSpreadRoute, postCardRoute, publishSpreadRoute)
 }

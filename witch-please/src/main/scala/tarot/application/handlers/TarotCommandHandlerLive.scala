@@ -1,6 +1,7 @@
 package tarot.application.handlers
 
 final case class TarotCommandHandlerLive(
-                                          spreadCommandHandler: SpreadCreateCommandHandler,
-                                          cardCommandHandler: CardCreateCommandHandler
+  spreadCreateCommandHandler: SpreadCreateCommandHandler,
+  spreadPublishCommandHandler: SpreadPublishCommandHandler,                                     
+  cardCreateCommandHandler: CardCreateCommandHandler
 ) extends TarotCommandHandler 

@@ -13,15 +13,24 @@ object ZIOHttpClient {
       .post(url, Body.fromString(body.toJson))
       .setHeaders(Headers(Header.ContentType(MediaType.application.json)))
 
-    for {      
-      response <- Client.batched(request)
-        .mapError(e => TarotError.ServiceUnavailable("HTTP request failed", e))
-
-      str <- response.body.asString
+    for {
+      response <- executeResponse(request)
+      strResponse <- response.body.asString
         .mapError(e => TarotError.ParsingError("body", e.getMessage))
-
-      decoded <- ZIO.fromEither(str.fromJson[Response])
+      decoded <- ZIO.fromEither(strResponse.fromJson[Response])
         .mapError(msg => TarotError.ParsingError("response", msg))
     } yield decoded
   }
+
+  def sendPut(url: URL): ZIO[Client & Scope, TarotError, Unit] = {
+    val request = Request
+      .put(url, Body.empty)
+      .setHeaders(Headers(Header.ContentType(MediaType.application.json)))
+
+    executeResponse(request).unit
+  }
+
+  private def executeResponse(request: Request) =
+    Client.batched(request)
+      .mapError(e => TarotError.ServiceUnavailable("HTTP request failed", e))
 }

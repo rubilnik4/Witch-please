@@ -57,6 +57,15 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
+  def updateSpreadStatus(spreadId: UUID, spreadStatus: SpreadStatus): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        spreadTable
+          .filter(_.id == lift(spreadId))
+          .update(_.spreadStatus -> lift(spreadStatus))
+      }
+    )
+    
   private inline def spreadTable = quote {
     querySchema[SpreadEntity](TarotTableNames.Spreads)
   }

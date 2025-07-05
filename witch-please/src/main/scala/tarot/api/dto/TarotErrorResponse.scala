@@ -12,6 +12,8 @@ object TarotErrorResponse {
 
   case class BadRequestError(message: String) extends TarotErrorResponse
 
+  case class ConflictError(message: String) extends TarotErrorResponse
+
   case class InternalServerError(message: String, cause: Option[String] = None)
     extends TarotErrorResponse
 
@@ -43,5 +45,7 @@ object TarotErrorMapper {
       TarotErrorResponse.InternalServerError(s"Serialization failed", Some(msg))
     case TarotError.ParsingError(path, msg) =>
       TarotErrorResponse.InternalServerError(s"Parsing failed at '$path': $msg")
+    case TarotError.Conflict(msg) =>
+      TarotErrorResponse.ConflictError(s"Conflict error: $msg")
   }
 }

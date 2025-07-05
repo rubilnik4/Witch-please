@@ -3,6 +3,8 @@ package tarot.integration
 import tarot.api.dto.{TelegramCardRequest, TelegramSpreadRequest}
 import tarot.api.endpoints.{PathBuilder, SpreadEndpoint}
 import tarot.domain.models.TarotError
+import tarot.domain.models.contracts.SpreadId
+import tarot.domain.models.spreads.SpreadStatus
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
@@ -31,7 +33,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         ref <- ZIO.service[Ref.Synchronized[TestState]]
         _ <- ref.set(TestState(Some(photoId), None))
-      } yield assertTrue(photoId.toString.nonEmpty)
+      } yield assertTrue(photoId.nonEmpty)
     },
 
     test("should send photo, get fileId, and create spread") {
@@ -41,7 +43,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
 
         projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
-        spreadUrl = getSpreadUrl(projectConfig.serverUrl)
+        spreadUrl = createSpreadUrl(projectConfig.serverUrl)
         spreadRequest = createSpreadRequest(photoId)
         response <- ZIOHttpClient.sendPost[TelegramSpreadRequest, String](spreadUrl, spreadRequest)
 
@@ -61,7 +63,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
         responses <- ZIO.foreach(0 until cardCount) { index =>
-          val cardUrl = getCardUrl(projectConfig.serverUrl, spreadId, index)
+          val cardUrl = createCardUrl(projectConfig.serverUrl, spreadId, index)
           val cardRequest = createCardRequest(photoId)
 
           for {
@@ -72,8 +74,24 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
           } yield cardId
         }
       } yield assertTrue(responses.forall(id => id.toString.nonEmpty))
-    }
+    },
 
+    test("should publish spread") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestState]](_.get)
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
+        spreadUrl = publishSpreadUrl(projectConfig.serverUrl, spreadId)
+        _ <- ZIOHttpClient.sendPut(spreadUrl)
+
+        repository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
+        spread <- repository.getSpread(SpreadId(spreadId))
+      } yield assertTrue(
+        spread.isDefined,
+        spread.exists(_.spreadStatus == SpreadStatus.Published)
+      )
+    }
   ).provideShared(
     TestServer.layer,
     Client.default,
@@ -98,13 +116,16 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       coverPhotoId = photoId
     )
 
-  private def getSpreadUrl(serverUrl: String) =
-    PathBuilder.getRoutePath(serverUrl, SpreadEndpoint.spreadRoute)
+  private def createSpreadUrl(serverUrl: String) =
+    val path = s"/api/telegram/spread"
+    PathBuilder.getRoutePath(serverUrl, path)
 
-  private def getCardUrl(serverUrl: String, spreadId: UUID, index: Int): URL = {
+  private def publishSpreadUrl(serverUrl: String, spreadId: UUID) =
+    val path = s"/api/telegram/spread/$spreadId/publish"
+    PathBuilder.getRoutePath(serverUrl, path)
+
+  private def createCardUrl(serverUrl: String, spreadId: UUID, index: Int): URL = {
     val path = s"/api/telegram/spread/$spreadId/cards/$index"
-    URL.decode(s"$serverUrl$path").toOption.getOrElse(
-      throw new IllegalArgumentException(s"Invalid URL: $serverUrl$path")
-    )
+    PathBuilder.getRoutePath(serverUrl, path)
   }
 }
