@@ -18,7 +18,10 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
       tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
 
       exists <- tarotRepository.existsSpread(command.externalCard.spreadId)
-      _ <- ZIO.fail(TarotError.NotFound(s"Spread ${command.externalCard.spreadId} not found")).unless(exists)
+      _ <- ZIO.unless(exists) {
+        ZIO.logError(s"Spread ${command.externalCard.spreadId} not found for card create") *>
+          ZIO.fail(TarotError.NotFound(s"Spread ${command.externalCard.spreadId} not found"))
+      }
 
       card <- fetchAndStorePhoto(command.externalCard)
       cardId <- tarotRepository.createCard(card)
@@ -34,7 +37,7 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
       storedPhoto <- externalCard.coverPhotoId match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
-      card = CardMapper.fromExternal(externalCard, storedPhoto)
+      card <- CardMapper.fromExternal(externalCard, storedPhoto)
     } yield card
   }
 }

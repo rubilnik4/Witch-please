@@ -2,7 +2,7 @@ CREATE TABLE spreads (
     id UUID PRIMARY KEY,
     title TEXT NOT NULL,
     card_count INT NOT NULL,
-    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Published', 'Archived')),
+    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Ready', 'Published', 'Archived')),
     cover_photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,

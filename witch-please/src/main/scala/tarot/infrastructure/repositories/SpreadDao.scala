@@ -58,7 +58,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       })
 
   def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, SQLException, Long] =
-    update match {
+    spreadStatusUpdate match {
       case SpreadStatusUpdate.Ready(spreadId, spreadStatus, scheduledAt) =>
         run(
           quote {

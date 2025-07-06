@@ -3,6 +3,7 @@ package tarot.domain.models.cards
 import tarot.domain.models.photo.*
 import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.services.common.DateTimeService
+import zio.UIO
 
 import java.time.Instant
 import java.util.UUID
@@ -19,13 +20,15 @@ final case class Card(
 }
 
 object CardMapper {
-  def fromExternal(externalCard: ExternalCard, storedPhoto: PhotoSource): Card =
+  def fromExternal(externalCard: ExternalCard, storedPhoto: PhotoSource): UIO[Card] =
     val id = UUID.randomUUID()
-    Card(
-      id = CardId(id),
-      spreadId = externalCard.spreadId,
-      description = externalCard.description,
-      coverPhoto = Photo.toPhotoSource(storedPhoto, PhotoOwnerType.Card, id),
-      createdAt = DateTimeService.getDateTimeNow
-    )
+    for {
+      createdAt <- DateTimeService.getDateTimeNow
+      card = Card(
+        id = CardId(id),
+        spreadId = externalCard.spreadId,
+        description = externalCard.description,
+        coverPhoto = Photo.toPhotoSource(storedPhoto, PhotoOwnerType.Card, id),
+        createdAt = createdAt)
+    } yield card
 }

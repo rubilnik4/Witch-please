@@ -1,7 +1,10 @@
 package tarot.infrastructure.services.common
 
+import zio.{Clock, UIO}
+
 import java.time.Instant
 
 object DateTimeService {
-  def getDateTimeNow: Instant = Instant.now()
+  def getDateTimeNow: UIO[Instant] = 
+    Clock.instant
 }

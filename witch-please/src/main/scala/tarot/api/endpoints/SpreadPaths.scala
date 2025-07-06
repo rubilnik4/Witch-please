@@ -13,7 +13,7 @@ object SpreadPaths {
     Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread
 
   final val spreadPublishPath =
-    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread / uuid("spreadId") / "publish"
+    Root / PathBuilder.apiPath / spread / uuid("spreadId") / "publish"
 
   final val cardCreatePath =
     Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread / uuid("spreadId") / cards / int("index")

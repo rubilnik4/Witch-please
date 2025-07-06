@@ -1,20 +1,19 @@
 package tarot.domain.entities
 
-import io.getquill.MappedEncoding
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.{Card, CardId}
-import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus}
+import tarot.domain.models.spreads.SpreadId
 import zio.ZIO
 
 import java.time.Instant
 import java.util.UUID
 
 final case class CardEntity(
-                             id: UUID,
-                             spreadId: UUID,
-                             description: String,
-                             coverPhotoId: UUID,
-                             createdAt: Instant
+  id: UUID,
+  spreadId: UUID,
+  description: String,
+  coverPhotoId: UUID,
+  createdAt: Instant
 )
 
 final case class CardPhotoEntity(
@@ -33,7 +32,7 @@ object CardMapper {
         coverPhoto = coverPhoto,
         createdAt = cardPhoto.card.createdAt)
     } yield card
-      
+
   def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
     CardEntity(
       id = card.id.id,

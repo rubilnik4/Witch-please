@@ -1,12 +1,12 @@
 package tarot.application.handlers
 
-import tarot.application.commands.{SpreadCreateCommand, SpreadPublishCommand}
+import tarot.application.commands.SpreadPublishCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.spreads.*
+import tarot.infrastructure.services.common.DateTimeService
 import tarot.layers.AppEnv
-import zio.{Clock, ZIO}
+import zio.ZIO
 
 import java.time.Instant
 
@@ -30,10 +30,12 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
       cardCount <- tarotRepository.countCards(spread.id)
 
       _ <- ZIO.when(spread.spreadStatus != SpreadStatus.Draft) {
-        ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft status"))
+        ZIO.logError(s"Spread $spread.id is not in Draft status")  *>
+          ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft status"))
       }
       _ <- ZIO.when(cardCount < spread.cardCount) {
-        ZIO.fail(TarotError.Conflict(s"Spread $spread.id has only $cardCount out of ${spread.cardCount} cards"))
+        ZIO.logError(s"Spread $spread.id has only $cardCount out of ${spread.cardCount} cards") *>
+          ZIO.fail(TarotError.Conflict(s"Spread $spread.id has only $cardCount out of ${spread.cardCount} cards"))
       }
     } yield ()
 
@@ -42,11 +44,17 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
       tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
       projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
 
-      now <- Clock.instant
+      now <- DateTimeService.getDateTimeNow
       minTime = now.plus(projectConfig.minFutureTime)
       maxTime = now.plus(projectConfig.maxFutureTime)
-      _ <- ZIO.fail(ValidationError(s"scheduledAt must be after $minTime and before $maxTime"))
-        .when(scheduledAt.isBefore(minTime) || scheduledAt.isAfter(maxTime))
+      _ <- ZIO.when(scheduledAt.isBefore(minTime) || scheduledAt.isAfter(maxTime)) {
+         ZIO.logError(s"scheduledAt must be after $minTime and before $maxTime")
+          *> ZIO.fail(ValidationError(s"scheduledAt must be after $minTime and before $maxTime"))
+      }
+      _ <- ZIO.when(scheduledAt.isBefore(spread.createdAt)) {
+        ZIO.logError(s"scheduledAt must be after creation time ${spread.createdAt}")
+          *> ZIO.fail(ValidationError(s"scheduledAt must be after creation time ${spread.createdAt}"))
+      }
 
       _ <- ZIO.logInfo(s"Publishing spread for ${spread.id}")
       spreadStatusUpdate = SpreadStatusUpdate.Ready(spread.id, SpreadStatus.Ready, scheduledAt)

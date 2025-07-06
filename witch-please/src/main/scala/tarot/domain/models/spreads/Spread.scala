@@ -1,7 +1,8 @@
 package tarot.domain.models.spreads
 
-import tarot.domain.models.photo.{PhotoFile, PhotoOwnerType, Photo, PhotoSource}
+import tarot.domain.models.photo.{Photo, PhotoFile, PhotoOwnerType, PhotoSource}
 import tarot.infrastructure.services.common.DateTimeService
+import zio.UIO
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.schema.{DeriveSchema, Schema}
 
@@ -23,17 +24,18 @@ final case class Spread(
 }
 
 object SpreadMapper {
-  def fromExternal(externalSpread: ExternalSpread, storedPhoto: PhotoSource): Spread = {
+  def fromExternal(externalSpread: ExternalSpread, storedPhoto: PhotoSource): UIO[Spread] =
     val id = UUID.randomUUID()
-    Spread(
-      id = SpreadId(id),
-      title = externalSpread.title,
-      cardCount = externalSpread.cardCount,
-      spreadStatus = SpreadStatus.Draft,
-      coverPhoto = Photo.toPhotoSource(storedPhoto, PhotoOwnerType.Spread, id),
-      createdAt = DateTimeService.getDateTimeNow,
-      scheduledAt = None,
-      publishedAt = None
-    )
-  }
+    for {
+      createdAt <- DateTimeService.getDateTimeNow
+      spread = Spread(
+        id = SpreadId(id),
+        title = externalSpread.title,
+        cardCount = externalSpread.cardCount,
+        spreadStatus = SpreadStatus.Draft,
+        coverPhoto = Photo.toPhotoSource(storedPhoto, PhotoOwnerType.Spread, id),
+        createdAt = createdAt,
+        scheduledAt = None,
+        publishedAt = None)
+    } yield spread
 }

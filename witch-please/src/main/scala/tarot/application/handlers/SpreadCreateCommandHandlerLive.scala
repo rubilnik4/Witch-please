@@ -30,7 +30,7 @@ final class SpreadCreateCommandHandlerLive extends SpreadCreateCommandHandler {
       storedPhoto <- externalSpread.coverPhotoId match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
-      spread = SpreadMapper.fromExternal(externalSpread, storedPhoto)
+      spread <- SpreadMapper.fromExternal(externalSpread, storedPhoto)
     } yield spread
   }
 }

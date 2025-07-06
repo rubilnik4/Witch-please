@@ -31,7 +31,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
     }
     .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
     .tapBoth(
-      e => ZIO.logErrorCause(s"Failed to create spread $spread to database", Cause.fail(e)),
+      e => ZIO.logErrorCause(s"Failed to create spread $spread to database", Cause.fail(e.ex)),
       _ => ZIO.logDebug(s"Successfully create spread $spread to database")
     )
 
@@ -42,7 +42,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
         e => DatabaseError("Failed to update spread status", e),
         _ => ())
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate to database", Cause.fail(e)),
+        e => ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate to database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully update spread status $spreadStatusUpdate to database")
       )
 
@@ -50,23 +50,22 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
     spreadDao
       .getSpread(spreadId.id)
       .mapError(e => DatabaseError("Failed to get spread", e))
-      .flatMap {
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to get spread $spreadId from database", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get spread $spreadId from database")
+      ).flatMap {
         case Some(spreadEntity) =>
           SpreadMapper.toDomain(spreadEntity).map(Some(_))
         case None =>
           ZIO.none
       }
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get spread $spreadId from database", Cause.fail(e)),
-        _ => ZIO.logDebug(s"Successfully get spread $spreadId from database")
-      )
 
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
     spreadDao
       .existsSpread(spreadId.id)
       .mapError(e => DatabaseError("Failed to check spread", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to check spread $spreadId from database", Cause.fail(e)),
+        e => ZIO.logErrorCause(s"Failed to check spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully check spread $spreadId from database")
       )
 
@@ -75,7 +74,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
       .validateSpread(spreadId.id)
       .mapError(e => DatabaseError("Failed to validate spread", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to validate spread $spreadId from database", Cause.fail(e)),
+        e => ZIO.logErrorCause(s"Failed to validate spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully validate spread $spreadId from database")
       )
 
@@ -90,7 +89,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
     }
     .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
     .tapBoth(
-      e => ZIO.logErrorCause(s"Failed to create card $card to database", Cause.fail(e)),
+      e => ZIO.logErrorCause(s"Failed to create card $card to database", Cause.fail(e.ex)),
       _ => ZIO.logDebug(s"Successfully create card $card to database")
     )
 
@@ -99,7 +98,7 @@ final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extend
       .countCards(spreadId.id)
       .mapError(e => DatabaseError("Failed to count cards", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to count cards for spread $spreadId from database", Cause.fail(e)),
+        e => ZIO.logErrorCause(s"Failed to count cards for spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully count cards for spread $spreadId from database")
       )
 

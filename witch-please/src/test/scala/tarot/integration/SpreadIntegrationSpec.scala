@@ -16,7 +16,6 @@ import zio.json.*
 import zio.test.*
 import zio.test.TestAspect.sequential
 
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 object SpreadIntegrationSpec extends ZIOSpecDefault {
@@ -79,6 +78,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
     test("should publish spread") {
       for {
+        _ <- TestClock.adjust(10.minute)
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
@@ -91,7 +91,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spread <- repository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Ready)
+        spread.exists(_.spreadStatus == SpreadStatus.Ready),
+        spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
       )
     }
   ).provideShared(
@@ -118,11 +119,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       coverPhotoId = photoId
     )
 
-  private def spreadPublishRequest() =
-    Clock.instant.map(now =>
-      SpreadPublishRequest(
-        scheduledAt = now.plus(20, ChronoUnit.MINUTES)
-      )
+  private def spreadPublishRequest(): ZIO[AppEnv, Nothing, SpreadPublishRequest] =
+    for {
+      now <- Clock.instant
+      minFutureTime <- ZIO.serviceWith[AppEnv](_.appConfig.project.minFutureTime)
+      publishTime = minFutureTime.plus(10.minute)
+    } yield SpreadPublishRequest(
+      scheduledAt = now.plus(publishTime)
     )
 
   private def createSpreadUrl(serverUrl: String) =
