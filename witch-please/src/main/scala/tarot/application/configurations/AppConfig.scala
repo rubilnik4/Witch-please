@@ -6,6 +6,7 @@ import zio.config.magnolia.deriveConfig
 
 final case class AppConfig(
     project: ProjectConfig,
+    jwt: JwtConfig,
     cache: CacheConfig,
     telegram: TelegramConfig,
     localStorage: Option[LocalStorageConfig],                      

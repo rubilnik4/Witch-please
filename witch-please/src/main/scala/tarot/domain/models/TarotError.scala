@@ -15,5 +15,6 @@ object TarotError {
   final case class SerializationError(message: String) extends TarotError
   final case class ParsingError(raw: String, message: String) extends TarotError
   final case class Conflict(message: String) extends TarotError
+  final case class Unauthorized(message: String) extends TarotError
   case object Unknown extends TarotError
 }
