@@ -5,20 +5,24 @@ import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import tarot.application.configurations.AppConfig
 import tarot.infrastructure.database.Migration
+import tarot.infrastructure.repositories.auth.AuthRepositoryLayer
+import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
+import tarot.infrastructure.services.TarotServiceLive
+import tarot.infrastructure.services.photo.*
 import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource
 
-object PostgresTarotRepositoryLayer {
+object TarotRepositoryLayer {
   private val dataSourceLayer: ZLayer[AppConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
       for {
         config <- ZIO.service[AppConfig]
-        
+
         postgresConfig <- ZIO.fromOption(config.postgres)
           .tapError(_ => ZIO.logError("Missing postgres config"))
           .orElseFail(new RuntimeException("Postgres config is missing"))
-        
+
         hikariConfig = {
           val cfg = new HikariConfig()
           cfg.setJdbcUrl(postgresConfig.connectionString)
@@ -41,17 +45,18 @@ object PostgresTarotRepositoryLayer {
       )
     }
 
-  val postgresTarotRepositoryLayer : ZLayer[Quill.Postgres[SnakeCase], Nothing, TarotRepository] =
-    ZLayer.fromFunction(quill => new PostgresTarotRepositoryLive(quill))
-
-  val postgresMarketRepositoryLive : ZLayer[AppConfig, Throwable, TarotRepository] =
+  val tarotRepositoryLayer: ZLayer[DataSource & AppConfig, Nothing, TarotRepository] =
+    quillLayer >>>
+      (SpreadRepositoryLayer.spreadRepositoryLayer ++
+       AuthRepositoryLayer.authRepositoryLayer) >>>
+      ZLayer.fromFunction(TarotRepositoryLive.apply)
+      
+  val tarotRepositoryLive: ZLayer[AppConfig, Throwable, TarotRepository] =
     dataSourceLayer >>> ZLayer.scoped {
       for {
         dataSource <- ZIO.service[DataSource]
-        _ <- Migration.applyMigrations(dataSource)
-        layer =
-          PostgresTarotRepositoryLayer.quillLayer >>> PostgresTarotRepositoryLayer.postgresTarotRepositoryLayer
-        repository <- layer.build.map(_.get[TarotRepository])
+        _ <- Migration.applyMigrations(dataSource)        
+        repository <- tarotRepositoryLayer.build.map(_.get[TarotRepository])
       } yield repository
-  }
+    }
 }

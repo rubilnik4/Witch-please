@@ -1,10 +1,9 @@
-package tarot.infrastructure.repositories
+package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
-import tarot.domain.models.spreads.SpreadStatus
+import tarot.domain.entities.CardEntity
+import tarot.infrastructure.repositories.{QuillMappings, TarotTableNames}
 import zio.ZIO
 
 import java.sql.SQLException
@@ -12,11 +11,11 @@ import java.time.Instant
 import java.util.UUID
 
 final class CardDao(quill: Quill.Postgres[SnakeCase]) {
-  import QuillMappings.*
+  import SpreadQuillMappings.*
   import quill.*
 
   private inline def cardTable = quote {
-    querySchema[CardEntity](TarotTableNames.Cards)
+    querySchema[CardEntity](SpreadTableNames.cards)
   }
 
   def insertCard(card: CardEntity): ZIO[Any, SQLException, UUID] =

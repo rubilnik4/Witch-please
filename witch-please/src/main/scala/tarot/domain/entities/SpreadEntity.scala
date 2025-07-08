@@ -1,6 +1,5 @@
 package tarot.domain.entities
 
-import io.getquill.MappedEncoding
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus}
 import zio.ZIO

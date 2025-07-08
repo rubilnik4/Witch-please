@@ -4,7 +4,7 @@ import io.opentelemetry.api.trace.SpanKind
 import tarot.layers.AppEnv
 import zio.ZIO
 import zio.http.{Handler, Middleware, Request, Routes}
-import zio.telemetry.opentelemetry.context.IncomingContextCarrier
+
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 object TracingMiddleware {

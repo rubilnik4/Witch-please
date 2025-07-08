@@ -1,6 +1,6 @@
 package tarot.api.endpoints
 
-import tarot.api.endpoints.PathBuilder
+
 import tarot.domain.models.contracts.TarotChannelType
 import zio.http.{Root, int, uuid}
 

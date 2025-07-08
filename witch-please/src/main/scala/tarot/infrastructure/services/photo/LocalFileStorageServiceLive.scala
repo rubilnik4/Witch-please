@@ -1,7 +1,7 @@
 package tarot.infrastructure.services.photo
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.photo.{PhotoFile, Photo, PhotoSource}
+import tarot.domain.models.photo.{PhotoFile, PhotoSource}
 import zio.{Cause, Chunk, ZIO}
 import zio.nio.file.Files
 import zio.nio.file.Path

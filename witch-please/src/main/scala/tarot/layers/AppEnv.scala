@@ -1,12 +1,13 @@
 package tarot.layers
 
 import tarot.application.configurations.AppConfig
-import tarot.application.handlers.{SpreadCreateCommandHandler, TarotCommandHandler}
+import tarot.application.handlers.TarotCommandHandler
 import tarot.application.telemetry.metrics.TarotMeter
 import tarot.application.telemetry.tracing.TarotTracing
 import tarot.infrastructure.repositories.TarotRepository
+import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.services.TarotService
-import tarot.infrastructure.services.photo.PhotoService
+
 
 trait AppEnv {
   def appConfig: AppConfig

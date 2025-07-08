@@ -3,7 +3,7 @@ package tarot.infrastructure.services.photo
 import tarot.application.configurations.AppConfig
 import zio.{ZIO, ZLayer}
 import zio.nio.file.Path
-import zio.nio.file.Files
+
 
 object FileStorageServiceLayer {
   val localFileStorageServiceLive: ZLayer[AppConfig, Throwable, FileStorageService] =

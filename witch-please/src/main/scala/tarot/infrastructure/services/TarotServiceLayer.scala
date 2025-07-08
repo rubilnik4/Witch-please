@@ -13,7 +13,7 @@ object TarotServiceLayer {
     TarotService
   ] =
     ZLayer.fromFunction(TarotServiceLive.apply)
-    
+
   val tarotServiceLive: ZLayer[AppConfig, Throwable, TarotService] =
     (PhotoServiceLayer.photoServiceLive ++
       FileStorageServiceLayer.localFileStorageServiceLive ++

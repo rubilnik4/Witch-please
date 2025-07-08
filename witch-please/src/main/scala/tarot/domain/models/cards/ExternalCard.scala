@@ -1,11 +1,11 @@
 package tarot.domain.models.cards
 
-import tarot.domain.models.photo.{ExternalPhoto, Photo}
+import tarot.domain.models.photo.ExternalPhoto
 import tarot.domain.models.spreads.SpreadId
-import zio.json.{DeriveJsonCodec, JsonCodec}
-import zio.schema.{DeriveSchema, Schema}
 
-import java.util.UUID
+
+
+
 
 final case class ExternalCard(                             
     index: Int,

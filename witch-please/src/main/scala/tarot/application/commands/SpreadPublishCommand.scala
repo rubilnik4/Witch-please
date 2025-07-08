@@ -1,6 +1,6 @@
 package tarot.application.commands
 
-import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadId}
+import tarot.domain.models.spreads.SpreadId
 
 import java.time.Instant
 

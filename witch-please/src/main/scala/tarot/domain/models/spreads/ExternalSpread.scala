@@ -1,10 +1,10 @@
 package tarot.domain.models.spreads
 
-import tarot.domain.models.photo.{ExternalPhoto, Photo}
-import zio.json.{DeriveJsonCodec, JsonCodec}
-import zio.schema.{DeriveSchema, Schema}
+import tarot.domain.models.photo.ExternalPhoto
 
-import java.util.UUID
+
+
+
 
 final case class ExternalSpread(
     title: String,

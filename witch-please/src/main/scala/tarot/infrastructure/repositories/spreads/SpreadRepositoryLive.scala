@@ -1,19 +1,20 @@
-package tarot.infrastructure.repositories
+package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
-import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.entities.{CardEntity, CardMapper, PhotoSourceMapper, SpreadEntity, SpreadMapper}
+import tarot.domain.entities.*
 import tarot.domain.models.TarotError
+import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
-import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatus, SpreadStatusUpdate}
+import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
+import tarot.infrastructure.repositories.TarotRepository
 import zio.*
 
 import java.sql.SQLException
 import java.util.UUID
 
-final class PostgresTarotRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends TarotRepository {
+final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends SpreadRepository {
   import quill.*
 
   private val spreadDao = SpreadDao(quill)

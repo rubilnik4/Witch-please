@@ -7,7 +7,7 @@ import io.opentelemetry.sdk.logs.*
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import tarot.application.configurations.AppConfig
-import tarot.infrastructure.telemetry.TelemetryResources
+
 import zio.*
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage

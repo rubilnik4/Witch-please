@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.testcontainers.utility.DockerImageName
 import tarot.infrastructure.database.Migration
-import tarot.infrastructure.repositories.{PostgresTarotRepositoryLayer, TarotRepository}
+import tarot.infrastructure.repositories.spreads.{SpreadRepositoryLayer, SpreadRepository}
 import zio.{ZEnvironment, ZIO, ZLayer}
 
 import javax.sql.DataSource
@@ -38,15 +38,15 @@ object TestTarotRepositoryLayer {
       } yield new HikariDataSource(config)
     }
 
-  val postgresTarotRepositoryLive: ZLayer[Any, Throwable, TarotRepository] =
+  val postgresTarotRepositoryLive: ZLayer[Any, Throwable, SpreadRepository] =
     postgresLayer >>> dataSourceLayer >>> ZLayer.scoped {
       for {
         dataSource <- ZIO.service[DataSource]
         _ <- Migration.applyMigrations(dataSource)
         layer =
-          PostgresTarotRepositoryLayer.quillLayer >>>
-          PostgresTarotRepositoryLayer.postgresTarotRepositoryLayer
-        repository <- layer.build.map(_.get[TarotRepository])
+          SpreadRepositoryLayer.quillLayer >>>
+          SpreadRepositoryLayer.spreadRepositoryLayer
+        repository <- layer.build.map(_.get[SpreadRepository])
       } yield repository
     }
 }

@@ -1,6 +1,5 @@
 package tarot.domain.models
 
-import java.sql.SQLException
 
 sealed trait TarotError
 

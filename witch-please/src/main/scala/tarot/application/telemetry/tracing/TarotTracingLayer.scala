@@ -1,6 +1,6 @@
 package tarot.application.telemetry.tracing
 
-import io.opentelemetry.context.propagation.TextMapPropagator
+
 import zio.ZLayer
 import zio.telemetry.opentelemetry.tracing.Tracing
 

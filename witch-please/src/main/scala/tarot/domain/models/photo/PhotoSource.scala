@@ -1,6 +1,6 @@
 package tarot.domain.models.photo
 
-import java.util.UUID
+
 
 sealed trait PhotoSource
 

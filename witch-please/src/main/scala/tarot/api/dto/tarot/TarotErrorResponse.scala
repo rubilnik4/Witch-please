@@ -14,6 +14,8 @@ object TarotErrorResponse {
 
   case class ConflictError(message: String) extends TarotErrorResponse
 
+  case class Unauthorized(message: String) extends TarotErrorResponse
+
   case class InternalServerError(message: String, cause: Option[String] = None)
     extends TarotErrorResponse
 
@@ -33,8 +35,7 @@ object TarotErrorMapper {
       TarotErrorResponse.InternalServerError(s"External API error from $provider with code $code: $msg",
         Some("External API call failed"))
     case TarotError.ServiceUnavailable(service, ex) =>
-      TarotErrorResponse.InternalServerError(s"Service '$service' is currently unavailable",
-        Some(ex.getMessage))
+      TarotErrorResponse.InternalServerError(s"Service '$service' is currently unavailable", Some(ex.getMessage))
     case TarotError.Unknown =>
       TarotErrorResponse.InternalServerError("Unknown error occurred", Some("No additional info"))
     case TarotError.StorageError(msg, ex) =>
@@ -47,5 +48,7 @@ object TarotErrorMapper {
       TarotErrorResponse.InternalServerError(s"Parsing failed at '$path': $msg")
     case TarotError.Conflict(msg) =>
       TarotErrorResponse.ConflictError(s"Conflict error: $msg")
+    case TarotError.Unauthorized(msg) =>
+      TarotErrorResponse.Unauthorized(s"Unauthorize: $msg")
   }
 }

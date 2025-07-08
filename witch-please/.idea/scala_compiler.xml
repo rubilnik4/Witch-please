@@ -2,6 +2,24 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="witch-please,witch-please.main,witch-please.test" />
+    <profile name="sbt 1" modules="witch-please" />
+    <profile name="sbt 2" modules="witch-please.test">
+      <parameters>
+        <parameter value="-Yretain-trees" />
+        <parameter value="-Xfatal-warnings" />
+        <parameter value="-Xsemanticdb" />
+        <parameter value="-semanticdb-target" />
+        <parameter value="C:\Projects\witch-please\witch-please\target\scala-3.4.2\test-meta" />
+      </parameters>
+    </profile>
+    <profile name="sbt 3" modules="witch-please.main">
+      <parameters>
+        <parameter value="-Yretain-trees" />
+        <parameter value="-Xfatal-warnings" />
+        <parameter value="-Xsemanticdb" />
+        <parameter value="-semanticdb-target" />
+        <parameter value="C:\Projects\witch-please\witch-please\target\scala-3.4.2\meta" />
+      </parameters>
+    </profile>
   </component>
 </project>

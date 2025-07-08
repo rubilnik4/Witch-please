@@ -1,10 +1,10 @@
 package tarot.domain.models.spreads
 
-import tarot.domain.models.photo.{Photo, PhotoFile, PhotoOwnerType, PhotoSource}
+import tarot.domain.models.photo.{Photo, PhotoOwnerType, PhotoSource}
 import tarot.infrastructure.services.common.DateTimeService
 import zio.UIO
-import zio.json.{DeriveJsonCodec, JsonCodec}
-import zio.schema.{DeriveSchema, Schema}
+
+
 
 import java.time.Instant
 import java.util.UUID

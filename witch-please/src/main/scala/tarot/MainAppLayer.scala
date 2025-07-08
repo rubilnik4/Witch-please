@@ -5,9 +5,9 @@ import tarot.application.configurations.AppConfig
 import tarot.application.handlers.TarotCommandHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
 import tarot.application.telemetry.tracing.TarotTracingLayer
-import tarot.infrastructure.repositories.PostgresTarotRepositoryLayer
+import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
-import tarot.infrastructure.services.photo.PhotoServiceLayer
+
 import tarot.infrastructure.telemetry.TelemetryLayer
 import tarot.layers.{AppConfigLayer, AppEnv, AppEnvLayer}
 import zio.{ZIO, ZLayer}
@@ -17,7 +17,7 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 
 object MainAppLayer {
   private val appLive: ZLayer[AppConfig & Meter & Tracing, Throwable, AppEnv] = {
-    val repositoryLayer = PostgresTarotRepositoryLayer.postgresMarketRepositoryLive
+    val repositoryLayer = SpreadRepositoryLayer.postgresMarketRepositoryLive
     val combinedLayers =
       TarotMeterLayer.tarotMeterLive ++
         TarotTracingLayer.tarotTracingLive ++

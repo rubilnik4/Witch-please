@@ -1,6 +1,13 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
-
-ThisBuild / scalaVersion := "3.4.2"
+inThisBuild(Seq(
+  scalaVersion := "3.4.2",
+  logLevel := Level.Warn,
+  scalacOptions ++= Seq(
+    "-Yretain-trees",
+    "-Xfatal-warnings"
+  ),
+  semanticdbEnabled := true,
+  semanticdbVersion := scalafixSemanticdb.revision
+))
 
 lazy val root = (project in file("."))
   .settings(
@@ -13,6 +20,7 @@ lazy val root = (project in file("."))
       "dev.zio" %% "zio-logging" % "2.5.0",
       "dev.zio" %% "zio-json" % "0.7.43",
       "com.github.jwt-scala" % "jwt-zio-json_3" % "11.0.2",
+      "com.github.roundrop" %% "scala3-bcrypt" % "0.1.0",
       "dev.zio" %% "zio-cache" % "0.2.4",
       "dev.zio" %% "zio-nio" % "2.0.2",
       "dev.zio" %% "zio-test" % "2.1.19" % Test,

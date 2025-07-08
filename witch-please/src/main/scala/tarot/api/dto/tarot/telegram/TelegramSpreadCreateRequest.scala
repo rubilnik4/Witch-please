@@ -2,13 +2,13 @@ package tarot.api.dto.tarot.telegram
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.photo.{ExternalPhoto, Photo}
-import tarot.domain.models.spreads.{ExternalSpread, Spread, SpreadStatus}
+import tarot.domain.models.photo.ExternalPhoto
+import tarot.domain.models.spreads.ExternalSpread
 import zio.json.*
 import zio.schema.*
 import zio.{IO, ZIO}
 
-import java.util.UUID
+
 
 final case class TelegramSpreadCreateRequest(
   title: String,

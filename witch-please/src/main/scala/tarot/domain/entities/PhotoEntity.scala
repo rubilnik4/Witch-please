@@ -3,7 +3,7 @@ package tarot.domain.entities
 import tarot.domain.models.TarotError
 import tarot.domain.models.photo.{PhotoOwnerType, Photo, PhotoStorageType}
 import zio.ZIO
-import zio.json.*
+
 
 import java.util.UUID
 
