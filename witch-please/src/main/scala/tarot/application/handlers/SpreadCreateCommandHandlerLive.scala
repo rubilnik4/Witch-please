@@ -15,8 +15,8 @@ final class SpreadCreateCommandHandlerLive extends SpreadCreateCommandHandler {
 
       spread <- fetchAndStorePhoto(command.externalSpread)
 
-      tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
-      spreadId <- tarotRepository.createSpread(spread)
+      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      spreadId <- spreadRepository.createSpread(spread)
 
       _ <- ZIO.logInfo(s"Successfully spread created: $spread")
     } yield spreadId

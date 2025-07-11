@@ -16,23 +16,7 @@ final case class CardEntity(
   createdAt: Instant
 )
 
-final case class CardPhotoEntity(
-   card: CardEntity,
-   coverPhoto: PhotoEntity
-)
-
-object CardMapper {
-  def toDomain(cardPhoto: CardPhotoEntity): ZIO[Any, TarotError, Card] =
-    for {
-      coverPhoto <- PhotoSourceMapper.toDomain(cardPhoto.coverPhoto)
-      card = Card(
-        id = CardId(cardPhoto.card.id),
-        spreadId = SpreadId(cardPhoto.card.spreadId),
-        description = cardPhoto.card.description,
-        coverPhoto = coverPhoto,
-        createdAt = cardPhoto.card.createdAt)
-    } yield card
-
+object CardEntity {
   def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
     CardEntity(
       id = card.id.id,

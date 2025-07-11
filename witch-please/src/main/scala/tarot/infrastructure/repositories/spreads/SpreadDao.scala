@@ -4,7 +4,6 @@ import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
 import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
-import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
 import java.sql.SQLException

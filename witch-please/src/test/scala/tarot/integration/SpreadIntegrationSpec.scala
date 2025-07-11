@@ -87,8 +87,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         publishRequest <- spreadPublishRequest()
         _ <- ZIOHttpClient.sendPut[SpreadPublishRequest](spreadUrl, publishRequest)
 
-        repository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
-        spread <- repository.getSpread(SpreadId(spreadId))
+        spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+        spread <- spreadRepository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.isDefined,
         spread.exists(_.spreadStatus == SpreadStatus.Ready),

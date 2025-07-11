@@ -1,20 +1,21 @@
 package tarot.infrastructure.services.auth
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, User, UserRole}
+import tarot.domain.models.auth.{ClientType, Role, User, UserId, UserProject, UserRole}
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
 import tarot.api.dto.tarot.auth.TokenPayload
+import tarot.domain.models.projects.ProjectId
 
-final case class TokenIssuerServiceLive() extends TokenIssuerService {
-  def issueToken(clientType: ClientType, userId: String, projectId: String, clientSecret: String)
+final case class AuthServiceLive() extends AuthService {
+  def issueToken(clientType: ClientType, userId: UserId, projectId: ProjectId, clientSecret: String)
       : ZIO[AppEnv, TarotError, String] = {
     for {
       _ <- ZIO.logDebug(s"Attempting to get auth token for user $userId")
 
-      user <- getUser(userId, projectId)
-      isValid <- ZIO.fromTry(clientSecret.isBcrypted(user.secretHash))
+      userRole <- getUserRole(userId, projectId)
+      isValid <- ZIO.fromTry(clientSecret.isBcrypted(userRole.user.secretHash))
         .tapError(err => ZIO.logErrorCause(s"Decryption error for user $userId", Cause.fail(err)))
         .mapError(err => TarotError.Unauthorized(s"Decryption error for user $userId"))
 
@@ -26,9 +27,9 @@ final case class TokenIssuerServiceLive() extends TokenIssuerService {
       config <- ZIO.serviceWith[AppEnv](_.appConfig.jwt)
       token <- JwtService.generateToken(
         clientType = clientType,
-        userId = userId,
-        projectId = projectId,
-        role = user.role,
+        userId = userId.id.toString,
+        projectId = projectId.id.toString,
+        role = userRole.role,
         serverSecret = config.secret,
         expirationMinutes = config.expirationMinutes
       )
@@ -44,14 +45,14 @@ final case class TokenIssuerServiceLive() extends TokenIssuerService {
     } yield tokenPayload
   }
 
-  private def getUser(userId: String, projectId: String): ZIO[AppEnv, TarotError, User] =
+  private def getUserRole(userId: UserId, projectId: ProjectId): ZIO[AppEnv, TarotError, UserRole] =
     for {
       authRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.authRepository)
-      user <- authRepository.getByUserId(userId, projectId).flatMap {
-        case Some(user) => ZIO.succeed(user)
+      userProject <- authRepository.getUserRole(userId, projectId).flatMap {
+        case Some(userProject) => ZIO.succeed(userProject)
         case None =>
           ZIO.logWarning(s"Authorization failed: user not found for userId=$userId, project=$projectId") *>
             ZIO.fail(TarotError.Unauthorized(s"User $userId not found"))
       }
-    } yield user
+    } yield userProject
 }

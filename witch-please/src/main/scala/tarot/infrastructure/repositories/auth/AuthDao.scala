@@ -4,7 +4,7 @@ import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.*
 import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
-import tarot.infrastructure.repositories.TarotTableNames
+import tarot.infrastructure.repositories.projects.ProjectTableNames
 import zio.ZIO
 
 import java.sql.SQLException
@@ -13,21 +13,29 @@ import java.util.UUID
 
 final class AuthDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
+  import AuthQuillMappings.given
 
-  def getByUserProjectId(userId: UUID, projectId: UUID): ZIO[Any, SQLException, Option[UserProjectEntity]] =
+  def getUserProject(userId: UUID, projectId: UUID): ZIO[Any, SQLException, Option[UserProjectEntity]] =
+    run(
+      quote {
+        userProjectTable
+          .filter(up => up.userId == lift(userId) && up.projectId == lift(projectId))
+          .take(1)
+      }
+    ).map(_.headOption)
+
+  def getUserRole(userId: UUID, projectId: UUID): ZIO[Any, SQLException, Option[UserRoleEntity]] =
     run(
       quote {
         userProjectTable
           .join(userTable)
-          .on((userProject, user) => userProject.userId == user.id)
-          .join(projectTable)
-          .on { case ((userProject, user), project) => userProject.projectId == project.id }
-          .filter { case ((userProject, _), project) =>
+          .on((userProject, user) => userProject.userId == user.id)          
+          .filter { case (userProject, _) =>
             userProject.userId == lift(userId) && userProject.projectId == lift(projectId)
           }
           .take(1)
-          .map { case ((userProject, user), project) =>
-            UserProjectEntity(user, project, userProject.role)
+          .map { case (userProject, user) =>
+            UserRoleEntity(user, userProject.projectId, userProject.role)
           }
       }
     ).map(_.headOption)
@@ -41,6 +49,6 @@ final class AuthDao(quill: Quill.Postgres[SnakeCase]) {
   }
 
   private inline def userProjectTable = quote {
-    querySchema[UserProjectEntity](ProjectTableNames.userProjects)
+    querySchema[UserProjectEntity](AuthTableNames.userProjects)
   }
 }

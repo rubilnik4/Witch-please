@@ -7,8 +7,6 @@ import tarot.application.configurations.AppConfig
 import tarot.infrastructure.database.Migration
 import tarot.infrastructure.repositories.auth.AuthRepositoryLayer
 import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
-import tarot.infrastructure.services.TarotServiceLive
-import tarot.infrastructure.services.photo.*
 import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource
@@ -45,7 +43,7 @@ object TarotRepositoryLayer {
       )
     }
 
-  val tarotRepositoryLayer: ZLayer[DataSource & AppConfig, Nothing, TarotRepository] =
+  val tarotRepositoryLayer: ZLayer[DataSource, Nothing, TarotRepository] =
     quillLayer >>>
       (SpreadRepositoryLayer.spreadRepositoryLayer ++
        AuthRepositoryLayer.authRepositoryLayer) >>>

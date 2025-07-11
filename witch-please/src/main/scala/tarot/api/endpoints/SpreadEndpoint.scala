@@ -2,7 +2,9 @@ package tarot.api.endpoints
 
 import tarot.api.dto.tarot.*
 import tarot.api.dto.tarot.telegram.*
+import tarot.api.middlewares.AuthMiddleware
 import tarot.application.commands.*
+import tarot.domain.models.auth.Role
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -32,7 +34,7 @@ object SpreadEndpoint {
       spreadId <- spreadCreateCommandHandler.handle(spreadCreateCommand)
     } yield spreadId)
       .mapBoth(
-        error => TarotErrorMapper.toResponse(error),
+        error => TarotErrorResponse.toResponse(error),
         spreadId => spreadId.id.toString)
   }
 
@@ -57,7 +59,7 @@ object SpreadEndpoint {
       cardId <- cardCreateCommandHandler.handle(cardCreateCommand)
     } yield cardId)
       .mapBoth(
-        error => TarotErrorMapper.toResponse(error),
+        error => TarotErrorResponse.toResponse(error),
         cardId => cardId.id.toString)
   }
 
@@ -82,7 +84,7 @@ object SpreadEndpoint {
       spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
       _ <- spreadPublishCommandHandler.handle(spreadPublishCommand)
     } yield ())
-      .mapError(error => TarotErrorMapper.toResponse(error))
+      .mapError(error => TarotErrorResponse.toResponse(error))
   }
 
   val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
@@ -90,4 +92,5 @@ object SpreadEndpoint {
 
   val allRoutes: Routes[AppEnv, Response] =
     Routes(postSpreadRoute, postCardRoute, publishSpreadRoute)
+      @@ AuthMiddleware.requireRole(Role.Admin)
 }

@@ -1,7 +1,9 @@
 package tarot.domain.models.auth
 
+import tarot.domain.models.projects.{Project, ProjectId}
+
 final case class UserProject(
-  user: UserEntity,
-  project: ProjectEntity,
-  role: UserRole
+  userId: UserId,
+  projectId: ProjectId,
+  role: Role
 )

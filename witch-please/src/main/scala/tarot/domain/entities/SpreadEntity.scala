@@ -18,27 +18,7 @@ final case class SpreadEntity(
     publishedAt: Option[Instant]
 )
 
-final case class SpreadPhotoEntity(
-   spread: SpreadEntity,
-   coverPhoto: PhotoEntity
-)
-
-object SpreadMapper {
-  def toDomain(spreadPhoto: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] = {
-    for {
-      coverPhoto <- PhotoSourceMapper.toDomain(spreadPhoto.coverPhoto)
-      spread = Spread(
-        id = SpreadId(spreadPhoto.spread.id),
-        title = spreadPhoto.spread.title,
-        cardCount = spreadPhoto.spread.cardCount,
-        spreadStatus = spreadPhoto.spread.spreadStatus,
-        coverPhoto = coverPhoto,
-        createdAt = spreadPhoto.spread.createdAt,
-        scheduledAt = spreadPhoto.spread.scheduledAt,
-        publishedAt = spreadPhoto.spread.publishedAt)
-    } yield spread
-  }
-
+object SpreadEntity {
   def toEntity(spread: Spread, coverPhotoId: UUID): SpreadEntity =
     SpreadEntity(
       id = spread.id.id,

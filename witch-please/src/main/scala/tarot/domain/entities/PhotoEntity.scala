@@ -16,7 +16,7 @@ final case class PhotoEntity(
     bucket: Option[String],
     key: Option[String])
 
-object PhotoSourceMapper {
+object PhotoEntity {
   def toDomain(photoSource: PhotoEntity): ZIO[Any, TarotError, Photo] =
     photoSource.storageType match {
       case PhotoStorageType.Local =>

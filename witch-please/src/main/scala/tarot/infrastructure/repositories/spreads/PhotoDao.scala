@@ -4,7 +4,6 @@ import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.PhotoEntity
 import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
-import tarot.infrastructure.repositories.{QuillMappings, TarotTableNames}
 import zio.ZIO
 
 import java.sql.SQLException

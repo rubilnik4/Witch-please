@@ -14,7 +14,7 @@ object RoutesLayer {
     version = "1.0.0",
     endpoints = SpreadEndpoint.allEndpoints
   )
-  
+
   private val swaggerRoute =
     SwaggerUI.routes("docs" / "openapi", openApiSpec)
   

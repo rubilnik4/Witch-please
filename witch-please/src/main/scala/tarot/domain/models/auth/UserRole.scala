@@ -1,4 +1,9 @@
 package tarot.domain.models.auth
 
-enum UserRole:
-  case Admin, User
+import tarot.domain.models.projects.ProjectId
+
+final case class UserRole(
+  user: User,
+  projectId: ProjectId,
+  role: Role
+)

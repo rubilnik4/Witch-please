@@ -3,7 +3,6 @@ package tarot.infrastructure.repositories.spreads
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.CardEntity
-import tarot.infrastructure.repositories.{QuillMappings, TarotTableNames}
 import zio.ZIO
 
 import java.sql.SQLException

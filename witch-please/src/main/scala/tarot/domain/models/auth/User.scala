@@ -1,9 +1,12 @@
 package tarot.domain.models.auth
 
+import java.time.Instant
+import java.util.UUID
+
 final case class User(
-  userId: UserId,
+  id: UserId,
   clientType: ClientType,
-  project: String,
   secretHash: String,
-  role: UserRole
+  active: Boolean,
+  createdAt: Instant
 )

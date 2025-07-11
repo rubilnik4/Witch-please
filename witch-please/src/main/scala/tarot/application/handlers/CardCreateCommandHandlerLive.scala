@@ -13,16 +13,16 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
     for {
       _ <- ZIO.logInfo(s"Executing create card command for ${command.externalCard}")
 
-      tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
+      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
 
-      exists <- tarotRepository.existsSpread(command.externalCard.spreadId)
+      exists <- spreadRepository.existsSpread(command.externalCard.spreadId)
       _ <- ZIO.unless(exists) {
         ZIO.logError(s"Spread ${command.externalCard.spreadId} not found for card create") *>
           ZIO.fail(TarotError.NotFound(s"Spread ${command.externalCard.spreadId} not found"))
       }
 
       card <- fetchAndStorePhoto(command.externalCard)
-      cardId <- tarotRepository.createCard(card)
+      cardId <- spreadRepository.createCard(card)
 
       _ <- ZIO.logInfo(s"Successfully card created: $card")
     } yield cardId

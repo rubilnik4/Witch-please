@@ -26,7 +26,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       for {
         photoId <- createPhoto(spread.coverPhoto)
 
-        spreadEntity = SpreadMapper.toEntity(spread, photoId)
+        spreadEntity = SpreadEntity.toEntity(spread, photoId)
         spreadId <- spreadDao.insertSpread(spreadEntity)
       } yield SpreadId(spreadId)
     }
@@ -56,7 +56,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully get spread $spreadId from database")
       ).flatMap {
         case Some(spreadEntity) =>
-          SpreadMapper.toDomain(spreadEntity).map(Some(_))
+          SpreadPhotoEntity.toDomain(spreadEntity).map(Some(_))
         case None =>
           ZIO.none
       }
@@ -84,7 +84,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       for {
         photoId <- createPhoto(card.coverPhoto)
 
-        cardEntity = CardMapper.toEntity(card, photoId)
+        cardEntity = CardEntity.toEntity(card, photoId)
         cardId <- cardDao.insertCard(cardEntity)
       } yield CardId(cardId)
     }
@@ -104,7 +104,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       )
 
   private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] = {
-    val photoEntity = PhotoSourceMapper.toEntity(photo)
+    val photoEntity = PhotoEntity.toEntity(photo)
     for {
       photoId <- photoDao.insertPhoto(photoEntity)
     } yield photoId

@@ -1,8 +1,10 @@
 package tarot.domain.models.projects
 
+import java.time.Instant
 import java.util.UUID
 
 case class Project(
-  id: UUID,
-  name: String
+  id: ProjectId,
+  name: String,
+  createdAt: Instant,
 )

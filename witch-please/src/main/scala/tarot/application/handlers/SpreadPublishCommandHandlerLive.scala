@@ -13,8 +13,8 @@ import java.time.Instant
 final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler {
   def handle(command: SpreadPublishCommand): ZIO[AppEnv, TarotError, Unit] = {
     for {
-      tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
-      spread <- tarotRepository.getSpread(command.spreadId)
+      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      spread <- spreadRepository.getSpread(command.spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread ${command.spreadId} not found")))
 
       _ <- checkingSpread(spread)
@@ -26,8 +26,8 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
-      tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
-      cardCount <- tarotRepository.countCards(spread.id)
+      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      cardCount <- spreadRepository.countCards(spread.id)
 
       _ <- ZIO.when(spread.spreadStatus != SpreadStatus.Draft) {
         ZIO.logError(s"Spread $spread.id is not in Draft status")  *>
@@ -41,7 +41,7 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
 
   private def publishSpread(spread: Spread, scheduledAt: Instant) =
     for {
-      tarotRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository)
+      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
       projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
 
       now <- DateTimeService.getDateTimeNow
@@ -58,7 +58,7 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
 
       _ <- ZIO.logInfo(s"Publishing spread for ${spread.id}")
       spreadStatusUpdate = SpreadStatusUpdate.Ready(spread.id, SpreadStatus.Ready, scheduledAt)
-      _ <- tarotRepository.updateSpreadStatus(spreadStatusUpdate)
+      _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
       _ <- ZIO.logInfo(s"Successfully spread published: ${spread.id}")
     } yield ()
 }
