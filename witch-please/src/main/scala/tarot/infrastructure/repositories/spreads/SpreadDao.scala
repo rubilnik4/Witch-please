@@ -4,6 +4,7 @@ import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
 import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
+import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
 import java.sql.SQLException
@@ -84,15 +85,12 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
         )
     }
     
-  private inline def spreadTable = quote {
-    querySchema[SpreadEntity](SpreadTableNames.spreads)
-  }
+  private inline def spreadTable =
+    quote(querySchema[SpreadEntity](TarotTableNames.spreads))
 
-  private inline def cardTable = quote {
-    querySchema[CardEntity](SpreadTableNames.cards)
-  }
+  private inline def cardTable =
+    quote(querySchema[CardEntity](TarotTableNames.cards))
 
-  private inline def photoTable = quote {
-    querySchema[PhotoEntity](SpreadTableNames.photos)
-  }
+  private inline def photoTable =
+    quote(querySchema[PhotoEntity](TarotTableNames.photos))
 }

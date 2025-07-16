@@ -6,7 +6,6 @@ import zio.schema.*
 
 final case class AuthRequest(
   clientType: ClientType,
-  userId: String, 
   project: String,
   clientSecret: String
 ) derives JsonCodec, Schema

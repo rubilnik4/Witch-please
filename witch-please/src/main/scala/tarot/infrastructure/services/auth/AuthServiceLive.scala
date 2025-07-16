@@ -1,14 +1,14 @@
 package tarot.infrastructure.services.auth
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, Role, User, UserId, UserProject, UserRole}
+import tarot.domain.models.auth.{ClientType, ExternalUser, Role, User, UserId, UserProject, UserRole}
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
 import tarot.api.dto.tarot.auth.TokenPayload
 import tarot.domain.models.projects.ProjectId
 
-final case class AuthServiceLive() extends AuthService {
+final case class AuthServiceLive() extends AuthService { 
   def issueToken(clientType: ClientType, userId: UserId, projectId: ProjectId, clientSecret: String)
       : ZIO[AppEnv, TarotError, String] = {
     for {
@@ -47,8 +47,8 @@ final case class AuthServiceLive() extends AuthService {
 
   private def getUserRole(userId: UserId, projectId: ProjectId): ZIO[AppEnv, TarotError, UserRole] =
     for {
-      authRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.authRepository)
-      userProject <- authRepository.getUserRole(userId, projectId).flatMap {
+      userAccessRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.userAccessRepository)
+      userProject <- userAccessRepository.getUserRole(userId, projectId).flatMap {
         case Some(userProject) => ZIO.succeed(userProject)
         case None =>
           ZIO.logWarning(s"Authorization failed: user not found for userId=$userId, project=$projectId") *>

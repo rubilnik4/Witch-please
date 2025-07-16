@@ -1,7 +1,6 @@
 package tarot.integration
 
-import tarot.api.dto.tarot.SpreadPublishRequest
-import tarot.api.dto.tarot.telegram.{TelegramCardCreateRequest, TelegramSpreadCreateRequest}
+import tarot.api.dto.tarot.spreads.{SpreadPublishRequest, TelegramCardCreateRequest, TelegramSpreadCreateRequest}
 import tarot.api.endpoints.PathBuilder
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.{SpreadId, SpreadStatus}

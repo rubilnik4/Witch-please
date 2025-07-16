@@ -8,7 +8,6 @@ import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
-import tarot.infrastructure.repositories.TarotRepository
 import zio.*
 
 import java.sql.SQLException
@@ -25,7 +24,6 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
     quill.transaction {
       for {
         photoId <- createPhoto(spread.coverPhoto)
-
         spreadEntity = SpreadEntity.toEntity(spread, photoId)
         spreadId <- spreadDao.insertSpread(spreadEntity)
       } yield SpreadId(spreadId)
@@ -103,10 +101,6 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully count cards for spread $spreadId from database")
       )
 
-  private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] = {
-    val photoEntity = PhotoEntity.toEntity(photo)
-    for {
-      photoId <- photoDao.insertPhoto(photoEntity)
-    } yield photoId
-  }
+  private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] =
+    photoDao.insertPhoto(PhotoEntity.toEntity(photo))
 }

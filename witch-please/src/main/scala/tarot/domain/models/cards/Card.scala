@@ -19,7 +19,7 @@ final case class Card(
   override def toString: String = s"card id: $id; spreadId:$spreadId"
 }
 
-object CardMapper {
+object Card {
   def fromExternal(externalCard: ExternalCard, storedPhoto: PhotoSource): UIO[Card] =
     val id = UUID.randomUUID()
     for {

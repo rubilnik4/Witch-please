@@ -3,6 +3,7 @@ package tarot.infrastructure.repositories.spreads
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.CardEntity
+import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
 import java.sql.SQLException
@@ -12,10 +13,6 @@ import java.util.UUID
 final class CardDao(quill: Quill.Postgres[SnakeCase]) {
   import SpreadQuillMappings.*
   import quill.*
-
-  private inline def cardTable = quote {
-    querySchema[CardEntity](SpreadTableNames.cards)
-  }
 
   def insertCard(card: CardEntity): ZIO[Any, SQLException, UUID] =
     run(
@@ -33,4 +30,7 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .size
       }
     )
+
+  private inline def cardTable =
+    quote(querySchema[CardEntity](TarotTableNames.cards))
 }

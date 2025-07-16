@@ -23,7 +23,7 @@ final case class Spread(
   override def toString: String = s"spread id: $id; title:$title"
 }
 
-object SpreadMapper {
+object Spread {
   def fromExternal(externalSpread: ExternalSpread, storedPhoto: PhotoSource): UIO[Spread] =
     val id = UUID.randomUUID()
     for {

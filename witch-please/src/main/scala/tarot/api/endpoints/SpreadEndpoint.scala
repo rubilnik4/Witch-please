@@ -1,10 +1,12 @@
 package tarot.api.endpoints
 
 import tarot.api.dto.tarot.*
-import tarot.api.dto.tarot.telegram.*
+import tarot.api.dto.tarot.spreads.*
 import tarot.api.middlewares.AuthMiddleware
 import tarot.application.commands.*
+import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
 import tarot.domain.models.auth.Role
+import tarot.domain.models.contracts.TarotChannelType
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -14,15 +16,28 @@ import zio.http.codec.HttpCodec
 import zio.http.endpoint.Endpoint
 
 object SpreadEndpoint {
+  private final val spread = "spread"
+  private final val cards = "cards"
+  private final val spreadTag = "spreads"
+
+  private final val spreadCreatePath =
+    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread
+
+  private final val spreadPublishPath =
+    Root / PathBuilder.apiPath / spread / uuid("spreadId") / "publish"
+
+  private final val cardCreatePath =
+    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread / uuid("spreadId") / cards / int("index")
+
   private val postSpreadEndpoint =
-    Endpoint(POST / SpreadPaths.spreadCreatePath)
+    Endpoint(POST / spreadCreatePath)
       .in[TelegramSpreadCreateRequest](MediaType.application.json)
       .out[String]
       .outErrors(
         HttpCodec.error[TarotErrorResponse](Status.BadRequest),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(SpreadPaths.spreadTag)
+      .tag(spreadTag)
 
   private val postSpreadRoute = postSpreadEndpoint.implement { request =>
     (for {
@@ -39,7 +54,7 @@ object SpreadEndpoint {
   }
 
   private val postCardEndpoint =
-    Endpoint(POST / SpreadPaths.cardCreatePath)
+    Endpoint(POST / cardCreatePath)
       .in[TelegramCardCreateRequest](MediaType.application.json)
       .out[String]
       .outErrors(
@@ -47,7 +62,7 @@ object SpreadEndpoint {
         HttpCodec.error[TarotErrorResponse](Status.NotFound),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(SpreadPaths.spreadTag)
+      .tag(spreadTag)
 
   private val postCardRoute = postCardEndpoint.implement { case (spreadId, index, request) =>
     (for {
@@ -64,7 +79,7 @@ object SpreadEndpoint {
   }
 
   private val publishSpreadEndpoint =
-    Endpoint(PUT / SpreadPaths.spreadPublishPath)
+    Endpoint(PUT / spreadPublishPath)
       .in[SpreadPublishRequest](MediaType.application.json)
       .out[Unit]
       .outErrors(
@@ -73,12 +88,12 @@ object SpreadEndpoint {
         HttpCodec.error[TarotErrorResponse](Status.Conflict),
         HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
       )
-      .tag(SpreadPaths.spreadTag)
+      .tag(spreadTag)
 
   private val publishSpreadRoute = publishSpreadEndpoint.implement { case (spreadId, request) =>
     (for {
       _ <- ZIO.logInfo(s"Received request to publish spread: $spreadId")
-      externalCard <- SpreadPublishRequest.validate(request)
+      _ <- SpreadPublishRequest.validate(request)
 
       spreadPublishCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
       spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
