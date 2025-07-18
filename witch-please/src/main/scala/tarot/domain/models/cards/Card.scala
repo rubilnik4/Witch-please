@@ -16,11 +16,11 @@ final case class Card(
   createdAt: Instant
 )
 {
-  override def toString: String = s"card id: $id; spreadId:$spreadId"
+  override def toString: String = id.toString
 }
 
 object Card {
-  def fromExternal(externalCard: ExternalCard, storedPhoto: PhotoSource): UIO[Card] =
+  def toDomain(externalCard: ExternalCard, storedPhoto: PhotoSource): UIO[Card] =
     val id = UUID.randomUUID()
     for {
       createdAt <- DateTimeService.getDateTimeNow

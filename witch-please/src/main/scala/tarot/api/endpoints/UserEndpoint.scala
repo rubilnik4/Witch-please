@@ -53,5 +53,4 @@ object UserEndpoint {
 
   val allRoutes: Routes[AppEnv, Response] =
     Routes(postUserRoute)
-      //@@ AuthMiddleware.requireRole(Role.Admin)
 }

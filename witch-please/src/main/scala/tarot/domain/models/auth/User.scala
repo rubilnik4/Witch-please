@@ -18,11 +18,11 @@ final case class User(
   createdAt: Instant
 )
 {
-  override def toString: String = s"user id: $id"
+  override def toString: String = id.toString
 }
 
 object User {
-  def fromExternal(externalUser: ExternalUser, secretHash: String): UIO[User] =
+  def toDomain(externalUser: ExternalUser, secretHash: String): UIO[User] =
     for {
       createdAt <- DateTimeService.getDateTimeNow
       user = User(

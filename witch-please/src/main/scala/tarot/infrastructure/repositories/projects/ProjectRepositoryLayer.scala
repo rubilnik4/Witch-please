@@ -1,4 +1,4 @@
-package tarot.infrastructure.repositories.users
+package tarot.infrastructure.repositories.projects
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.getquill.SnakeCase
@@ -10,7 +10,7 @@ import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource
 
-object UserAccessRepositoryLayer {
-  val userAccessRepositoryLayer: ZLayer[Quill.Postgres[SnakeCase], Nothing, UserAccessRepository] =
-    ZLayer.fromFunction(quill => new UserAccessRepositoryLive(quill))
+object ProjectRepositoryLayer {
+  val projectRepositoryLayer: ZLayer[Quill.Postgres[SnakeCase], Nothing, ProjectRepository] =
+    ZLayer.fromFunction(quill => new ProjectRepositoryLive(quill))
 }

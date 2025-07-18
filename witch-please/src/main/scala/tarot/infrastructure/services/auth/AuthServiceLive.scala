@@ -47,7 +47,7 @@ final case class AuthServiceLive() extends AuthService {
 
   private def getUserRole(userId: UserId, projectId: ProjectId): ZIO[AppEnv, TarotError, UserRole] =
     for {
-      userAccessRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.userAccessRepository)
+      userAccessRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.userProjectRepository)
       userProject <- userAccessRepository.getUserRole(userId, projectId).flatMap {
         case Some(userProject) => ZIO.succeed(userProject)
         case None =>

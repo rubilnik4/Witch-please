@@ -16,13 +16,13 @@ object AuthMiddleware {
             header <- ZIO.fromOption(request.header(Header.Authorization))
               .orElseFail(TarotError.Unauthorized("Missing authorization header"))
 
-            token  <- header match {
+            token <- header match {
               case Header.Authorization.Bearer(v) => ZIO.succeed(v.toString)
               case _ => ZIO.fail(TarotError.Unauthorized("Invalid authorization header format"))
             }
 
             authService <- ZIO.serviceWith[AppEnv](_.tarotService.authService)
-            payload     <- authService.validateToken(token)
+            payload <- authService.validateToken(token)
 
             _ <- ZIO.when(payload.role != requiredRole) {
               ZIO.fail(TarotError.Unauthorized(s"Required $requiredRole, got ${payload.role}"))

@@ -35,7 +35,7 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
       storedPhoto <- externalCard.coverPhotoId match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
-      card <- Card.fromExternal(externalCard, storedPhoto)
+      card <- Card.toDomain(externalCard, storedPhoto)
     } yield card
   }
 }

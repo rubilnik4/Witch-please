@@ -7,3 +7,6 @@ final case class UserProject(
   projectId: ProjectId,
   role: Role
 )
+{
+  override def toString: String = s"user $userId project $projectId"
+}

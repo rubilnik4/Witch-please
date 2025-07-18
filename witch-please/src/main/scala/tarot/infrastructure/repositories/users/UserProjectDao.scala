@@ -11,15 +11,24 @@ import java.sql.SQLException
 import java.time.Instant
 import java.util.UUID
 
-final class UserAccessDao(quill: Quill.Postgres[SnakeCase]) {
-  import UserAccessQuillMappings.given
+final class UserProjectDao(quill: Quill.Postgres[SnakeCase]) {
+  import UserProjectQuillMappings.given
+  import UserQuillMappings.given
   import quill.*
 
+  def insertUserProject(userProject: UserProjectEntity): ZIO[Any, SQLException, UserProjectEntity] =
+    run(
+      quote {
+        userProjectTable
+          .insertValue(lift(userProject))
+          .returning((e: UserProjectEntity) => e)
+      })
+      
   def getUserProject(userId: UUID, projectId: UUID): ZIO[Any, SQLException, Option[UserProjectEntity]] =
     run(
       quote {
         userProjectTable
-          .filter(up => up.userId == lift(userId) && up.projectId == lift(projectId))
+          .filter(userProject => userProject.userId == lift(userId) && userProject.projectId == lift(projectId))
           .take(1)
       }
     ).map(_.headOption)

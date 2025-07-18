@@ -6,7 +6,6 @@ import tarot.infrastructure.services.users.UserService
 
 trait TarotService {
   def authService: AuthService
-  def userService: UserService
   def photoService: PhotoService
   def fileStorageService: FileStorageService
   def telegramFileService: TelegramFileService

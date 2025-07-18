@@ -4,8 +4,6 @@ import tarot.domain.models.photo.{Photo, PhotoOwnerType, PhotoSource}
 import tarot.infrastructure.services.common.DateTimeService
 import zio.UIO
 
-
-
 import java.time.Instant
 import java.util.UUID
 
@@ -20,11 +18,11 @@ final case class Spread(
   publishedAt: Option[Instant]
 )
 {
-  override def toString: String = s"spread id: $id; title:$title"
+  override def toString: String = id.toString
 }
 
 object Spread {
-  def fromExternal(externalSpread: ExternalSpread, storedPhoto: PhotoSource): UIO[Spread] =
+  def toDomain(externalSpread: ExternalSpread, storedPhoto: PhotoSource): UIO[Spread] =
     val id = UUID.randomUUID()
     for {
       createdAt <- DateTimeService.getDateTimeNow

@@ -14,8 +14,6 @@ import java.sql.SQLException
 import java.util.UUID
 
 final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends SpreadRepository {
-  import quill.*
-
   private val spreadDao = SpreadDao(quill)
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
@@ -62,7 +60,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
     spreadDao
       .existsSpread(spreadId.id)
-      .mapError(e => DatabaseError("Failed to check spread", e))
+      .mapError(e => DatabaseError(s"Failed to check spread $spreadId", e))
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to check spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully check spread $spreadId from database")
@@ -71,7 +69,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
   def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
     spreadDao
       .validateSpread(spreadId.id)
-      .mapError(e => DatabaseError("Failed to validate spread", e))
+      .mapError(e => DatabaseError(s"Failed to validate spread $spreadId", e))
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to validate spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully validate spread $spreadId from database")

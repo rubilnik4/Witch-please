@@ -3,13 +3,13 @@ package tarot.infrastructure.services
 import tarot.application.configurations.AppConfig
 import tarot.infrastructure.services.auth.{AuthService, AuthServiceLayer}
 import tarot.infrastructure.services.photo.*
-import tarot.infrastructure.services.users.{UserService, UserServiceLayer}
+import tarot.infrastructure.services.users.UserService
 import zio.ZLayer
 
 object TarotServiceLayer {
   private val tarotServiceLayer: ZLayer[
     PhotoService
-      & AuthService & UserService
+      & AuthService
       & FileStorageService
       & TelegramFileService,
     Nothing,
@@ -19,7 +19,7 @@ object TarotServiceLayer {
 
   val tarotServiceLive: ZLayer[AppConfig, Throwable, TarotService] =
     (PhotoServiceLayer.photoServiceLive ++
-      AuthServiceLayer.authServiceLive ++ UserServiceLayer.userServiceLive ++
+      AuthServiceLayer.authServiceLive ++
       FileStorageServiceLayer.localFileStorageServiceLive ++
       TelegramFileServiceLayer.telegramFileServiceLive) >>>
       tarotServiceLayer
