@@ -8,7 +8,8 @@ import zio.ZIO
 
 trait UserRepository {
   def createUser(user: User): ZIO[Any, TarotError, UserId]
-  def getByClientId(clientId: String): ZIO[Any, TarotError, Option[User]]
-  def exists(userId: UserId): ZIO[Any, TarotError, Boolean]
-  def existsByClientId(clientId: String): ZIO[Any, TarotError, Boolean]
+  def getUser(userId: UserId): ZIO[Any, TarotError, Option[User]]
+  def getUserByClientId(clientId: String): ZIO[Any, TarotError, Option[User]]
+  def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean]
+  def existsUserByClientId(clientId: String): ZIO[Any, TarotError, Boolean]
 }

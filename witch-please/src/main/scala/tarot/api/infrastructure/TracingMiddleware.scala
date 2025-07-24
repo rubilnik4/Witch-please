@@ -1,4 +1,4 @@
-package tarot.api.middlewares
+package tarot.api.infrastructure
 
 import io.opentelemetry.api.trace.SpanKind
 import tarot.layers.AppEnv

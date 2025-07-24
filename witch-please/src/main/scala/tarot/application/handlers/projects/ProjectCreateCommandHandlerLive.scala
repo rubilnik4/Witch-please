@@ -14,7 +14,7 @@ final class ProjectCreateCommandHandlerLive extends ProjectCreateCommandHandler 
       _ <- ZIO.logInfo(s"Executing create project command for $externalProject")
 
       userRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.userRepository)
-      exists <- userRepository.exists(command.userId)
+      exists <- userRepository.existsUser(command.userId)
       _ <- ZIO.unless(exists) {
         ZIO.logError(s"User ${command.userId} not found for project create") *>
           ZIO.fail(TarotError.NotFound(s"User ${command.userId} not found"))

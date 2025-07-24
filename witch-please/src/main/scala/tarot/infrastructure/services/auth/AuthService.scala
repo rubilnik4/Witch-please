@@ -1,14 +1,13 @@
 package tarot.infrastructure.services.auth
 
-import tarot.api.dto.tarot.auth.TokenPayload
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, ExternalUser, UserId}
+import tarot.domain.models.auth.{ClientType, ExternalUser, TokenPayload, UserId}
 import tarot.domain.models.projects.ProjectId
 import tarot.layers.AppEnv
 import zio.ZIO
 
 trait AuthService {
-  def issueToken(clientType: ClientType, userId: UserId, projectId: ProjectId, clientSecret: String)
+  def issueToken(clientType: ClientType, userId: UserId, clientSecret: String, projectId: Option[ProjectId])
       : ZIO[AppEnv, TarotError, String]
   def validateToken(token: String): ZIO[AppEnv, TarotError, TokenPayload]
 }

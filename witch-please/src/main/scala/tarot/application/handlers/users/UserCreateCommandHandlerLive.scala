@@ -15,7 +15,7 @@ final class UserCreateCommandHandlerLive extends UserCreateCommandHandler {
 
       userRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.userRepository)
 
-      exists <- userRepository.existsByClientId(externalUser.clientId)
+      exists <- userRepository.existsUserByClientId(externalUser.clientId)
       _ <- ZIO.when(exists)(
         ZIO.logError(s"User ${externalUser.clientId} already exists") *>
           ZIO.fail(TarotError.Conflict("User ${externalUser.clientId} already exists"))

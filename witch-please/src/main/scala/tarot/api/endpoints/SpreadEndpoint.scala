@@ -2,7 +2,7 @@ package tarot.api.endpoints
 
 import tarot.api.dto.tarot.*
 import tarot.api.dto.tarot.spreads.*
-import tarot.api.middlewares.AuthMiddleware
+import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
 import tarot.domain.models.auth.Role
@@ -107,5 +107,5 @@ object SpreadEndpoint {
 
   val allRoutes: Routes[AppEnv, Response] =
     Routes(postSpreadRoute, postCardRoute, publishSpreadRoute)
-      @@ AuthMiddleware.requireRole(Role.Admin)
+      @@ AuthValidator.requireRole(Role.Admin)
 }

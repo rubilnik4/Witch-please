@@ -1,7 +1,6 @@
 package tarot.infrastructure.services.users
 
 import com.github.roundrop.bcrypt.*
-import tarot.api.dto.tarot.auth.TokenPayload
 import tarot.domain.models.TarotError
 import tarot.domain.models.auth.*
 import tarot.domain.models.projects.ProjectId

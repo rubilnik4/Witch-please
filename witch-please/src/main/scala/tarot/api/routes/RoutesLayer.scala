@@ -1,25 +1,26 @@
 package tarot.api.routes
 
-import tarot.api.endpoints.SpreadEndpoint
+import sttp.apispec.openapi.{Info, OpenAPI}
+import sttp.tapir.ztapir.*
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import tarot.api.endpoints.{SpreadEndpoint, UserEndpoint}
 import tarot.layers.AppEnv
-import zio.ZLayer
+import zio.{ZIO, ZLayer}
 import zio.http.*
-import zio.http.codec.*
-import zio.http.codec.PathCodec.path
-import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 
 object RoutesLayer {
-  private val openApiSpec = OpenAPIGen.fromEndpoints(
-    title = "Arbitration Market API",
-    version = "1.0.0",
-    endpoints = SpreadEndpoint.allEndpoints
-  )
+  private val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
+    UserEndpoint.endpoints
 
-  private val swaggerRoute =
-    SwaggerUI.routes("docs" / "openapi", openApiSpec)
-  
+  private val openApiDocs =
+    SwaggerInterpreter().fromEndpoints[[T] =>> ZIO[AppEnv, Throwable, T]](
+      endpoints.map(_.endpoint),
+      Info("Tarot API", "1.0")
+    )
+
   val apiRoutesLive: ZLayer[AppEnv, Throwable, Routes[AppEnv, Response]] =
     ZLayer.fromFunction { (env: AppEnv) =>
-      SpreadEndpoint.allRoutes ++ swaggerRoute
+      ZioHttpInterpreter().toHttp(endpoints ++ openApiDocs )
     }
 }

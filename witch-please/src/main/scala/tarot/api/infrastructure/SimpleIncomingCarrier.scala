@@ -1,4 +1,4 @@
-package tarot.api.middlewares
+package tarot.api.infrastructure
 
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
 

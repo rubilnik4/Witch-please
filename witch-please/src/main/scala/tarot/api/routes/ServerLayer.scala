@@ -1,6 +1,6 @@
 package tarot.api.routes
 
-import tarot.api.middlewares.{LoggingMiddleware, TracingMiddleware}
+import tarot.api.infrastructure.{LoggingMiddleware, TracingMiddleware}
 import tarot.layers.AppEnv
 import zio.{ZIO, ZLayer}
 import zio.http.{Response, Routes, Server}
