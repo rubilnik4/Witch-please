@@ -1,6 +1,6 @@
 package tarot.api.endpoints
 
-import tarot.api.dto.tarot.*
+import sttp.model.StatusCode
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
@@ -10,102 +10,105 @@ import tarot.domain.models.contracts.TarotChannelType
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
-import zio.http.*
-import zio.http.Method.*
-import zio.http.codec.HttpCodec
-import zio.http.endpoint.Endpoint
+import sttp.tapir.json.zio.jsonBody
+import sttp.tapir.ztapir.*
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.generic.auto.*
+import tarot.api.dto.tarot.TarotErrorResponse
+
+import java.util.UUID
 
 object SpreadEndpoint {
-  private final val spread = "spread"
-  private final val cards = "cards"
   private final val spreadTag = "spreads"
 
-  private final val spreadCreatePath =
-    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread
-
-  private final val spreadPublishPath =
-    Root / PathBuilder.apiPath / spread / uuid("spreadId") / "publish"
-
-  private final val cardCreatePath =
-    Root / PathBuilder.apiPath / TarotChannelType.Telegram / spread / uuid("spreadId") / cards / int("index")
-
-  private val postSpreadEndpoint =
-    Endpoint(POST / spreadCreatePath)
-      .in[TelegramSpreadCreateRequest](MediaType.application.json)
-      .out[String]
-      .outErrors(
-        HttpCodec.error[TarotErrorResponse](Status.BadRequest),
-        HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
+  private val postSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
+    endpoint.post
+      .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread")
+      .in(jsonBody[TelegramSpreadCreateRequest])
+      .out(jsonBody[UUID])
+      .errorOut(
+        oneOf[TarotErrorResponse](
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+        )
       )
       .tag(spreadTag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .serverLogic { tokenPayload =>
+        request =>
+          (for {
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create spread: ${request.title}")
+            externalSpread <- TelegramSpreadCreateRequest.fromTelegram(request)
+            handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
+            cmd = SpreadCreateCommand(externalSpread)
+            spreadId <- handler.handle(cmd)
+          } yield spreadId.id)
+            .mapError(err => TarotErrorResponse.toResponse(err))
+      }
 
-  private val postSpreadRoute = postSpreadEndpoint.implement { request =>
-    (for {
-      _ <- ZIO.logInfo(s"Received request to create spread: ${request.title}")
-      externalSpread <- TelegramSpreadCreateRequest.fromTelegram(request)
-
-      spreadCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
-      spreadCreateCommand = SpreadCreateCommand(externalSpread)
-      spreadId <- spreadCreateCommandHandler.handle(spreadCreateCommand)
-    } yield spreadId)
-      .mapBoth(
-        error => TarotErrorResponse.toResponse(error),
-        spreadId => spreadId.id.toString)
-  }
-
-  private val postCardEndpoint =
-    Endpoint(POST / cardCreatePath)
-      .in[TelegramCardCreateRequest](MediaType.application.json)
-      .out[String]
-      .outErrors(
-        HttpCodec.error[TarotErrorResponse](Status.BadRequest),
-        HttpCodec.error[TarotErrorResponse](Status.NotFound),
-        HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
+  private val postCardEndpoint: ZServerEndpoint[AppEnv, Any] =
+    endpoint.post
+      .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
+      .in(jsonBody[TelegramCardCreateRequest])
+      .out(jsonBody[UUID])
+      .errorOut(
+        oneOf[TarotErrorResponse](
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+        )
       )
       .tag(spreadTag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .serverLogic { tokenPayload => {
+        case (spreadId, index, request) =>
+          (for {
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $index for spread $spreadId")
+            externalCard <- TelegramCardCreateRequest.fromTelegram(request, index, spreadId)
 
-  private val postCardRoute = postCardEndpoint.implement { case (spreadId, index, request) =>
-    (for {
-      _ <- ZIO.logInfo(s"Received request to create card number $index for spread $spreadId")
-      externalCard <- TelegramCardCreateRequest.fromTelegram(request, index, spreadId)
+            handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
+            cmd = CardCreateCommand(externalCard)
+            cardId <- handler.handle(cmd)
+          } yield cardId.id)
+            .mapError(err => TarotErrorResponse.toResponse(err))
+        }
+      }
 
-      cardCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
-      cardCreateCommand = CardCreateCommand(externalCard)
-      cardId <- cardCreateCommandHandler.handle(cardCreateCommand)
-    } yield cardId)
-      .mapBoth(
-        error => TarotErrorResponse.toResponse(error),
-        cardId => cardId.id.toString)
-  }
-
-  private val publishSpreadEndpoint =
-    Endpoint(PUT / spreadPublishPath)
-      .in[SpreadPublishRequest](MediaType.application.json)
-      .out[Unit]
-      .outErrors(
-        HttpCodec.error[TarotErrorResponse](Status.BadRequest),
-        HttpCodec.error[TarotErrorResponse](Status.NotFound),
-        HttpCodec.error[TarotErrorResponse](Status.Conflict),
-        HttpCodec.error[TarotErrorResponse](Status.InternalServerError)
+  private val publishSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
+    endpoint.put
+      .in(ApiPath.apiPath / "spread" / path[UUID]("spreadId") / "publish")
+      .in(jsonBody[SpreadPublishRequest])
+      .out(emptyOutput)
+      .errorOut(
+        oneOf[TarotErrorResponse](
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+        )
       )
       .tag(spreadTag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .serverLogic { tokenPayload => {
+        case (spreadId, request) =>
+          (for {
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")
+            _ <- SpreadPublishRequest.validate(request)
+            handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
+            cmd = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
+            _ <- handler.handle(cmd)
+          } yield ())
+            .mapError(err => TarotErrorResponse.toResponse(err))
+        }
+      }
 
-  private val publishSpreadRoute = publishSpreadEndpoint.implement { case (spreadId, request) =>
-    (for {
-      _ <- ZIO.logInfo(s"Received request to publish spread: $spreadId")
-      _ <- SpreadPublishRequest.validate(request)
-
-      spreadPublishCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
-      spreadPublishCommand = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
-      _ <- spreadPublishCommandHandler.handle(spreadPublishCommand)
-    } yield ())
-      .mapError(error => TarotErrorResponse.toResponse(error))
-  }
-
-  val allEndpoints: List[Endpoint[?, ?, ?, ?, ?]] =
+  val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
     List(postSpreadEndpoint, postCardEndpoint, publishSpreadEndpoint)
-
-  val allRoutes: Routes[AppEnv, Response] =
-    Routes(postSpreadRoute, postCardRoute, publishSpreadRoute)
-      @@ AuthValidator.requireRole(Role.Admin)
 }

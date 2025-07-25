@@ -1,20 +1,23 @@
 package tarot.infrastructure.services.auth
 
 import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtZIOJson}
+import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, Role, TokenPayload}
+import tarot.domain.models.auth.{ClientType, Role}
 import tarot.infrastructure.services.common.DateTimeService
 import zio.json.*
 import zio.{Cause, UIO, ZIO}
 
+import java.util.UUID
+
 object JwtService {
-  def generateToken(clientType: ClientType, userId: String, projectId: Option[String], role: Role,
+  def generateToken(clientType: ClientType, userId: UUID, projectId: Option[UUID], role: Role,
                     serverSecret: String, expirationMinutes: Int): UIO[String] =
     for {
       now <- DateTimeService.getDateTimeNow
-      payload = TokenPayload(clientType, projectId, role).toJson
+      payload = TokenPayload(clientType, userId, projectId, role).toJson
       claim = JwtClaim(
-        subject = Some(userId),
+        subject = Some(userId.toString),
         content = payload,
         issuedAt = Some(now.getEpochSecond),
         expiration = Some(now.plusSeconds(expirationMinutes.toLong * 60).getEpochSecond)

@@ -22,7 +22,16 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def getByClientId(clientId: String): ZIO[Any, SQLException, Option[UserEntity]] =
+  def getUser(userId: UUID): ZIO[Any, SQLException, Option[UserEntity]] =
+    run(
+      quote {
+        userTable
+          .filter(user => user.id == lift(userId))
+          .take(1)
+      }
+    ).map(_.headOption)
+
+  def getUserByClientId(clientId: String): ZIO[Any, SQLException, Option[UserEntity]] =
     run(
       quote {
         userTable
@@ -31,7 +40,16 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
       }
     ).map(_.headOption)
 
-  def existsByClientId(clientId: String): ZIO[Any, SQLException, Boolean] =
+  def existsUser(userId: UUID): ZIO[Any, SQLException, Boolean] =
+    run(
+      quote {
+        userTable
+          .filter { user => user.id == lift(userId) }
+          .take(1)
+          .nonEmpty
+      })
+
+  def existsUserByClientId(clientId: String): ZIO[Any, SQLException, Boolean] =
     run(
       quote {
         userTable
@@ -42,5 +60,4 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
 
   private inline def userTable =
     quote(querySchema[UserEntity](TarotTableNames.users))
-
 }

@@ -1,10 +1,11 @@
 package tarot.infrastructure.services.auth
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, ExternalUser, Role, TokenPayload, User, UserId, UserProject, UserRole}
+import tarot.domain.models.auth.{ClientType, ExternalUser, Role, User, UserId, UserProject, UserRole}
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
+import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.projects.ProjectId
 
 final case class AuthServiceLive() extends AuthService { 
@@ -27,8 +28,8 @@ final case class AuthServiceLive() extends AuthService {
       config <- ZIO.serviceWith[AppEnv](_.appConfig.jwt)
       token <- JwtService.generateToken(
         clientType = clientType,
-        userId = userId.id.toString,
-        projectId = projectId.map(_.id.toString),
+        userId = userId.id,
+        projectId = projectId.map(_.id),
         role = role,
         serverSecret = config.secret,
         expirationMinutes = config.expirationMinutes

@@ -20,24 +20,26 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.generic.auto.*
 
 object UserEndpoint {
+  private final val userTag = "users"
+
   private val postUserEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
-      .in("api" / "telegram" / "user")
+      .in(ApiPath.apiPath / TarotChannelType.Telegram  / "user")
       .in(jsonBody[UserCreateRequest])
       .out(stringBody)
       .errorOut(
         oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse].description("Bad Request")),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse].description("Internal Server Error"))
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse]),
         )
       )
-      .tag("users")
+      .tag(userTag)
       .zServerLogic { request =>
         (for {
           _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")
           externalUser <- UserCreateRequest.fromRequest(request, ClientType.Telegram)
-
           userCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.userCreateCommandHandler)
           userCreateCommand = UserCreateCommand(externalUser)
           userId <- userCreateCommandHandler.handle(userCreateCommand)

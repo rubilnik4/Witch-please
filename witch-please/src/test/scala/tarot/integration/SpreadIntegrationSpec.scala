@@ -1,7 +1,7 @@
 package tarot.integration
 
 import tarot.api.dto.tarot.spreads.{SpreadPublishRequest, TelegramCardCreateRequest, TelegramSpreadCreateRequest}
-import tarot.api.endpoints.PathBuilder
+import tarot.api.endpoints.ApiPath
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.{SpreadId, SpreadStatus}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
@@ -129,14 +129,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
   private def createSpreadUrl(serverUrl: String) =
     val path = s"/api/telegram/spread"
-    PathBuilder.getRoutePath(serverUrl, path)
+    ApiPath.getRoutePath(serverUrl, path)
 
   private def publishSpreadUrl(serverUrl: String, spreadId: UUID) =
     val path = s"/api/spread/$spreadId/publish"
-    PathBuilder.getRoutePath(serverUrl, path)
+    ApiPath.getRoutePath(serverUrl, path)
 
   private def createCardUrl(serverUrl: String, spreadId: UUID, index: Int): URL = {
     val path = s"/api/telegram/spread/$spreadId/cards/$index"
-    PathBuilder.getRoutePath(serverUrl, path)
+    ApiPath.getRoutePath(serverUrl, path)
   }
 }

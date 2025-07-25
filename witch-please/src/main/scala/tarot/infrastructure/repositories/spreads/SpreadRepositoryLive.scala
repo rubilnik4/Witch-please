@@ -51,10 +51,8 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         e => ZIO.logErrorCause(s"Failed to get spread $spreadId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully get spread $spreadId from database")
       ).flatMap {
-        case Some(spreadEntity) =>
-          SpreadPhotoEntity.toDomain(spreadEntity).map(Some(_))
-        case None =>
-          ZIO.none
+        case Some(entity) => SpreadPhotoEntity.toDomain(entity).map(Some(_))
+        case None => ZIO.none
       }
 
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =

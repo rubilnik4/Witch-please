@@ -1,4 +1,4 @@
-package tarot.api.dto.tarot.auth
+package tarot.api.dto.tarot.authorize
 
 import zio.json.*
 import zio.schema.*

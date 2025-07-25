@@ -31,26 +31,39 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
         _ => ZIO.logDebug(s"Successfully create user $user to database")
       )
 
+  def getUser(userId: UserId): ZIO[Any, TarotError, Option[User]] =
+    userDao
+      .getUser(userId.id)
+      .mapError(e => DatabaseError(s"Failed to get user $userId", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to get user $userId from database", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get user $userId from database")
+      ).map(_.map(UserEntity.toDomain))
+
   def getUserByClientId(clientId: String): ZIO[Any, TarotError, Option[User]] =
     userDao
-      .getByClientId(clientId)
+      .getUserByClientId(clientId)
       .mapError(e => DatabaseError(s"Failed to get user by clientId $clientId", e))
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to get user by clientId $clientId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully get user by clientId $clientId from database")
-      ).flatMap {
-        case Some(user) =>
-          ZIO.some(UserEntity.toDomain(user))
-        case None =>
-          ZIO.none
-      }
+      ).map(_.map(UserEntity.toDomain))
+
+  def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean] =
+    userDao
+      .existsUser(userId.id)
+      .mapError(e => DatabaseError(s"Failed to check user $userId", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to check user $userId from database", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully check user $userId from database")
+      )
 
   def existsUserByClientId(clientId: String): ZIO[Any, TarotError, Boolean] =
     userDao
-      .existsByClientId(clientId)
+      .existsUserByClientId(clientId)
       .mapError(e => DatabaseError(s"Failed to check user by clientId $clientId", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to check user $clientId from database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully check user $clientId from database")
+        e => ZIO.logErrorCause(s"Failed to check user by clientId $clientId from database", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully check user by clientId $clientId from database")
       )
 }

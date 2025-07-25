@@ -61,10 +61,5 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to get userRole $userId for project $projectId from database", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully get userRole $userId for project $projectId from database")
-      ).flatMap {
-        case Some(userRole) =>
-          ZIO.some(UserRoleEntity.toDomain(userRole))
-        case None =>
-          ZIO.none
-      }
+      ).map(_.map(UserRoleEntity.toDomain))
 }

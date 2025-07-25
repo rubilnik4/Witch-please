@@ -1,6 +1,5 @@
 package tarot.api.dto.tarot.projects
 
-import tarot.api.dto.tarot.auth.UserCreateRequest
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.auth.{ClientType, ExternalUser}
