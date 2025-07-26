@@ -1,6 +1,7 @@
 package tarot.domain.models.spreads
 
 import tarot.domain.models.photo.{Photo, PhotoOwnerType, PhotoSource}
+import tarot.domain.models.projects.ProjectId
 import tarot.infrastructure.services.common.DateTimeService
 import zio.UIO
 
@@ -9,6 +10,7 @@ import java.util.UUID
 
 final case class Spread(
   id: SpreadId,
+  projectId: ProjectId,
   title: String,
   cardCount: Int,
   spreadStatus: SpreadStatus,
@@ -28,6 +30,7 @@ object Spread {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
         id = SpreadId(id),
+        projectId = externalSpread.projectId,
         title = externalSpread.title,
         cardCount = externalSpread.cardCount,
         spreadStatus = SpreadStatus.Draft,

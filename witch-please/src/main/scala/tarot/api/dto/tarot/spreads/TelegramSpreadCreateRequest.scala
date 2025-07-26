@@ -3,12 +3,16 @@ package tarot.api.dto.tarot.spreads
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.photo.ExternalPhoto
+import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.ExternalSpread
 import zio.json.*
 import zio.schema.*
 import zio.{IO, ZIO}
 
+import java.util.UUID
+
 final case class TelegramSpreadCreateRequest(
+  projectId: UUID,
   title: String,
   cardCount: Int,
   coverPhotoId: String
@@ -25,6 +29,7 @@ object TelegramSpreadCreateRequest {
   
   private def toDomain(request: TelegramSpreadCreateRequest): ExternalSpread =
     ExternalSpread(
+      projectId = ProjectId(request.projectId),
       title = request.title,
       cardCount = request.cardCount,
       coverPhotoId = ExternalPhoto.Telegram(request.coverPhotoId))

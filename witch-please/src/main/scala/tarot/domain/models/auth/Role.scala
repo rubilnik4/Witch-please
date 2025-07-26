@@ -1,7 +1,6 @@
 package tarot.domain.models.auth
 
 import zio.json.*
-import zio.schema.*
 
 enum Role:
   case PreProject, Admin, User

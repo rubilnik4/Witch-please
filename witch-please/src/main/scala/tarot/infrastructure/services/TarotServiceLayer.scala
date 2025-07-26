@@ -7,20 +7,11 @@ import tarot.infrastructure.services.users.UserService
 import zio.ZLayer
 
 object TarotServiceLayer {
-  private val tarotServiceLayer: ZLayer[
-    PhotoService
-      & AuthService
-      & FileStorageService
-      & TelegramFileService,
-    Nothing,
-    TarotService
-  ] =
-    ZLayer.fromFunction(TarotServiceLive.apply)
-
   val tarotServiceLive: ZLayer[AppConfig, Throwable, TarotService] =
-    (PhotoServiceLayer.photoServiceLive ++
+    (
+      PhotoServiceLayer.photoServiceLive ++
       AuthServiceLayer.authServiceLive ++
       FileStorageServiceLayer.localFileStorageServiceLive ++
-      TelegramFileServiceLayer.telegramFileServiceLive) >>>
-      tarotServiceLayer
+      TelegramFileServiceLayer.telegramFileServiceLive
+      ) >>> ZLayer.fromFunction(TarotServiceLive.apply)
 }

@@ -107,6 +107,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
   private def spreadCreateRequest(photoId: String) =
     TelegramSpreadCreateRequest(
+      projectId = UUID.randomUUID(),
       title = "Spread integration test",
       cardCount = cardCount,
       coverPhotoId = photoId

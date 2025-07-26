@@ -17,6 +17,7 @@ object SpreadPhotoEntity {
       coverPhoto <- PhotoEntity.toDomain(spreadPhoto.coverPhoto)
       spread = Spread(
         id = SpreadId(spreadPhoto.spread.id),
+        projectId = spreadPhoto.spread.projectId,
         title = spreadPhoto.spread.title,
         cardCount = spreadPhoto.spread.cardCount,
         spreadStatus = spreadPhoto.spread.spreadStatus,
