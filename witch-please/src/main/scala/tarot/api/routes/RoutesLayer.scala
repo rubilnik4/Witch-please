@@ -4,14 +4,15 @@ import sttp.apispec.openapi.{Info, OpenAPI}
 import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import tarot.api.endpoints.{SpreadEndpoint, UserEndpoint}
+import tarot.api.endpoints.*
 import tarot.layers.AppEnv
 import zio.{ZIO, ZLayer}
 import zio.http.*
 
 object RoutesLayer {
   private val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
-    UserEndpoint.endpoints
+    UserEndpoint.endpoints ++ AuthEndpoint.endpoints ++
+      ProjectEndpoint.endpoints ++ SpreadEndpoint.endpoints
 
   private val openApiDocs =
     SwaggerInterpreter().fromEndpoints[[T] =>> ZIO[AppEnv, Throwable, T]](

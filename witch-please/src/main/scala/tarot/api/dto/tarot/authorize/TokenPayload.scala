@@ -1,6 +1,6 @@
 package tarot.api.dto.tarot.authorize
 
-import tarot.domain.models.auth.{ClientType, Role}
+import tarot.domain.models.authorize.{ClientType, Role}
 import zio.json.*
 import zio.schema.*
 

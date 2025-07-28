@@ -1,6 +1,6 @@
 package tarot.domain.entities
 
-import tarot.domain.models.auth.{Role, UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.{Role, UserId, UserProject, UserRole}
 import tarot.domain.models.projects.ProjectId
 
 import java.util.UUID

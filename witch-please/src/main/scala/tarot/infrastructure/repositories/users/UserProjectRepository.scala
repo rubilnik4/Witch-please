@@ -1,7 +1,7 @@
 package tarot.infrastructure.repositories.users
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{Role, User, UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.{Role, User, UserId, UserProject, UserRole}
 import tarot.domain.models.projects.{Project, ProjectId}
 import tarot.layers.AppEnv
 import zio.ZIO

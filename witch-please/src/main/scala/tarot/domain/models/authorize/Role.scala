@@ -1,4 +1,4 @@
-package tarot.domain.models.auth
+package tarot.domain.models.authorize
 
 import zio.json.*
 

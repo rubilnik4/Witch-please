@@ -1,4 +1,4 @@
-package tarot.infrastructure.services.auth
+package tarot.infrastructure.services.authorize
 
 import tarot.application.configurations.AppConfig
 import zio.{Task, ZLayer}

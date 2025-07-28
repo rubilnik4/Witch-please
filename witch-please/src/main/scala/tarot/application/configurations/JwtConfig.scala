@@ -4,8 +4,8 @@ import zio.Config
 import zio.config.magnolia.deriveConfig
 
 final case class JwtConfig(
-                            secret: String,
-                            expirationMinutes: Int
+  secret: String,
+  expirationMinutes: Int
 )
 
 object JwtConfig {

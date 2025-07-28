@@ -1,7 +1,7 @@
-package tarot.infrastructure.services.auth
+package tarot.infrastructure.services.authorize
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, ExternalUser, Role, User, UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.{ClientType, ExternalUser, Role, Token, User, UserId, UserProject, UserRole}
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
@@ -10,7 +10,7 @@ import tarot.domain.models.projects.ProjectId
 
 final case class AuthServiceLive() extends AuthService { 
   def issueToken(clientType: ClientType, userId: UserId, clientSecret: String, projectId: Option[ProjectId])
-      : ZIO[AppEnv, TarotError, String] = {
+      : ZIO[AppEnv, TarotError, Token] = {
     for {
       _ <- ZIO.logDebug(s"Attempting to get auth token for user $userId")
       
@@ -34,7 +34,7 @@ final case class AuthServiceLive() extends AuthService {
         serverSecret = config.secret,
         expirationMinutes = config.expirationMinutes
       )
-    } yield token
+    } yield Token(token, role)
   }
 
   def validateToken(token: String): ZIO[AppEnv, TarotError, TokenPayload] = {

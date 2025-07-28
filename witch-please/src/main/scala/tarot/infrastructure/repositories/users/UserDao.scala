@@ -26,7 +26,7 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
     run(
       quote {
         userTable
-          .filter(user => user.id == lift(userId))
+          .filter(userEntity => userEntity.id == lift(userId))
           .take(1)
       }
     ).map(_.headOption)
@@ -35,7 +35,7 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
     run(
       quote {
         userTable
-          .filter(user => user.clientId == lift(clientId))
+          .filter(userEntity => userEntity.clientId == lift(clientId))
           .take(1)
       }
     ).map(_.headOption)
@@ -44,7 +44,7 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
     run(
       quote {
         userTable
-          .filter { user => user.id == lift(userId) }
+          .filter { userEntity => userEntity.id == lift(userId) }
           .take(1)
           .nonEmpty
       })
@@ -53,7 +53,7 @@ final class UserDao(quill: Quill.Postgres[SnakeCase]) {
     run(
       quote {
         userTable
-          .filter { user => user.clientId == lift(clientId) }
+          .filter { userEntity => userEntity.clientId == lift(clientId) }
           .take(1)
           .nonEmpty
       })

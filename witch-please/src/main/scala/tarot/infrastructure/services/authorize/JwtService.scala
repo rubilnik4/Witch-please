@@ -1,9 +1,9 @@
-package tarot.infrastructure.services.auth
+package tarot.infrastructure.services.authorize
 
 import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtZIOJson}
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{ClientType, Role}
+import tarot.domain.models.authorize.{ClientType, Role}
 import tarot.infrastructure.services.common.DateTimeService
 import zio.json.*
 import zio.{Cause, UIO, ZIO}

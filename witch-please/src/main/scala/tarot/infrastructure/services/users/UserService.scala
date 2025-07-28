@@ -2,7 +2,7 @@ package tarot.infrastructure.services.users
 
 import com.github.roundrop.bcrypt.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.*
+import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.ProjectId
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}

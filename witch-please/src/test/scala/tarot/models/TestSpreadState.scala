@@ -2,7 +2,7 @@ package tarot.models
 
 import java.util.UUID
 
-final case class TestState(
+final case class TestSpreadState(
   photoId: Option[String],
   spreadId: Option[UUID]
 )

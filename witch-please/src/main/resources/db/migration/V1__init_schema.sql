@@ -36,6 +36,9 @@ CREATE TABLE cards (
     created_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE INDEX idx_spreads_cover_photo_id ON spreads(cover_photo_id);
+CREATE INDEX idx_cards_cover_photo_id ON cards(cover_photo_id);
+
 CREATE TABLE users (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,
@@ -55,4 +58,3 @@ CREATE TABLE user_projects (
 
 CREATE INDEX idx_user_projects_user_id ON user_projects(user_id);
 CREATE INDEX idx_user_projects_project_id ON user_projects(project_id);
-CREATE INDEX idx_user_projects_role ON user_projects(role);

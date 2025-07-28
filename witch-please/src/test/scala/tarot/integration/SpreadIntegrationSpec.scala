@@ -8,7 +8,7 @@ import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
 import tarot.layers.{AppEnv, TestServerLayer}
-import tarot.models.TestState
+import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
 import zio.json.*
@@ -30,14 +30,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         photo <- fileStorageService.getResourcePhoto(resourcePath)
         photoId <- telegramService.sendPhoto(telegramConfig.chatId, photo)
 
-        ref <- ZIO.service[Ref.Synchronized[TestState]]
-        _ <- ref.set(TestState(Some(photoId), None))
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        _ <- ref.set(TestSpreadState(Some(photoId), None))
       } yield assertTrue(photoId.nonEmpty)
     },
 
     test("should send photo, get fileId, and create spread") {
       for {
-        ref <- ZIO.service[Ref.Synchronized[TestState]]
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
 
@@ -49,13 +49,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO
           .attempt(UUID.fromString(response))
           .orElseFail(TarotError.ParsingError("UUID", s"Invalid spread UUID returned: $response"))
-        _ <- ref.set(TestState(Some(photoId), Some(spreadId)))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(spreadId)))
       } yield assertTrue(spreadId.toString.nonEmpty)
     },
 
     test("should send card to current spread") {
       for {
-        ref <- ZIO.service[Ref.Synchronized[TestState]]
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
@@ -78,7 +78,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     test("should publish spread") {
       for {
         _ <- TestClock.adjust(10.minute)
-        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestState]](_.get)
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
         projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
@@ -102,9 +102,12 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     Scope.default,
     testAppEnvLive,
     TestServerLayer.testServerLayer,
-    TestServerLayer.testStateLayer
+    testSpreadStateLayer
   ) @@ sequential
 
+  private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None)))
+    
   private def spreadCreateRequest(photoId: String) =
     TelegramSpreadCreateRequest(
       projectId = UUID.randomUUID(),

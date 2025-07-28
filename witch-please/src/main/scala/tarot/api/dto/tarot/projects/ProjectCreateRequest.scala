@@ -2,7 +2,7 @@ package tarot.api.dto.tarot.projects
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.auth.{ClientType, ExternalUser}
+import tarot.domain.models.authorize.{ClientType, ExternalUser}
 import tarot.domain.models.projects.ExternalProject
 import zio.json.*
 import zio.schema.*

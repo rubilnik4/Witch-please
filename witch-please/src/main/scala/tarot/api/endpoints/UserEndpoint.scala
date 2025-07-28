@@ -8,7 +8,7 @@ import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.users.UserCreateCommand
 import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
-import tarot.domain.models.auth.{ClientType, Role}
+import tarot.domain.models.authorize.{ClientType, Role}
 import tarot.domain.models.contracts.TarotChannelType
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
@@ -20,12 +20,12 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.generic.auto.*
 
 object UserEndpoint {
-  private final val userTag = "users"
+  private final val tag = "users"
 
   private val postUserEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
-      .in(ApiPath.apiPath / TarotChannelType.Telegram  / "user")
+      .in(ApiPath.apiPath / TarotChannelType.Telegram / "user")
       .in(jsonBody[UserCreateRequest])
       .out(stringBody)
       .errorOut(
@@ -35,7 +35,7 @@ object UserEndpoint {
           oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse]),
         )
       )
-      .tag(userTag)
+      .tag(tag)
       .zServerLogic { request =>
         (for {
           _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")

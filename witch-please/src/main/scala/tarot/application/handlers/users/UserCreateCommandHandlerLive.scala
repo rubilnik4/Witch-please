@@ -2,7 +2,7 @@ package tarot.application.handlers.users
 
 import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.{User, UserId}
+import tarot.domain.models.authorize.{User, UserId}
 import tarot.infrastructure.services.users.UserService
 import tarot.layers.AppEnv
 import zio.ZIO

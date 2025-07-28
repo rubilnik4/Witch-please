@@ -1,7 +1,7 @@
 package tarot.layers
 
 import tarot.api.routes.RoutesLayer
-import tarot.models.TestState
+import tarot.models.{TestProjectState, TestSpreadState}
 import zio.{Ref, Scope, ULayer, ZLayer}
 import zio.http.{Server, TestServer}
 
@@ -17,7 +17,4 @@ object TestServerLayer {
   val serverConfig: ULayer[Server.Config] = ZLayer.succeed(
     Server.Config.default.port(8080)
   )
-
-  val testStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestState(None, None)))
 }

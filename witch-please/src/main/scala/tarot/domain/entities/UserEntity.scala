@@ -1,6 +1,6 @@
 package tarot.domain.entities
 
-import tarot.domain.models.auth.*
+import tarot.domain.models.authorize.*
 
 import java.time.Instant
 import java.util.UUID

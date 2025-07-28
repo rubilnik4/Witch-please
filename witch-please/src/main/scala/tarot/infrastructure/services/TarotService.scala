@@ -1,6 +1,6 @@
 package tarot.infrastructure.services
 
-import tarot.infrastructure.services.auth.AuthService
+import tarot.infrastructure.services.authorize.AuthService
 import tarot.infrastructure.services.photo.*
 import tarot.infrastructure.services.users.UserService
 

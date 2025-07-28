@@ -2,7 +2,7 @@ package tarot.application.handlers.projects
 
 import tarot.application.commands.projects.ProjectCreateCommand
 import tarot.domain.models.TarotError
-import tarot.domain.models.auth.Role
+import tarot.domain.models.authorize.Role
 import tarot.domain.models.projects.{Project, ProjectId}
 import tarot.layers.AppEnv
 import zio.ZIO

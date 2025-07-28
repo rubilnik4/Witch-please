@@ -5,7 +5,7 @@ import tarot.api.dto.tarot.spreads.*
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
-import tarot.domain.models.auth.Role
+import tarot.domain.models.authorize.Role
 import tarot.domain.models.contracts.TarotChannelType
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
@@ -20,7 +20,7 @@ import tarot.api.dto.tarot.TarotErrorResponse
 import java.util.UUID
 
 object SpreadEndpoint {
-  private final val spreadTag = "spreads"
+  private final val tag = "spreads"
 
   private val postSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
@@ -34,7 +34,7 @@ object SpreadEndpoint {
           oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
         )
       )
-      .tag(spreadTag)
+      .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
       .serverLogic { tokenPayload =>
@@ -62,7 +62,7 @@ object SpreadEndpoint {
           oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
         )
       )
-      .tag(spreadTag)
+      .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
       .serverLogic { tokenPayload => {
@@ -93,7 +93,7 @@ object SpreadEndpoint {
           oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
         )
       )
-      .tag(spreadTag)
+      .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
       .serverLogic { tokenPayload => {
