@@ -18,6 +18,7 @@ import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.generic.auto.*
+import tarot.api.dto.common.IdResponse
 
 object UserEndpoint {
   private final val tag = "users"
@@ -27,7 +28,7 @@ object UserEndpoint {
       .post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "user")
       .in(jsonBody[UserCreateRequest])
-      .out(stringBody)
+      .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
           oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
@@ -43,7 +44,7 @@ object UserEndpoint {
           userCreateCommandHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.userCreateCommandHandler)
           userCreateCommand = UserCreateCommand(externalUser)
           userId <- userCreateCommandHandler.handle(userCreateCommand)
-        } yield userId.id.toString)
+        } yield IdResponse(userId.id))
           .mapError(TarotErrorResponse.toResponse)
       }
 

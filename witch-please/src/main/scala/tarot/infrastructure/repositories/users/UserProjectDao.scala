@@ -38,13 +38,13 @@ final class UserProjectDao(quill: Quill.Postgres[SnakeCase]) {
       quote {
         userProjectTable
           .join(userTable)
-          .on((userProject, user) => userProject.userId == user.id)          
+          .on((userProject, userEntity) => userProject.userId == userEntity.id)
           .filter { case (userProject, _) =>
             userProject.userId == lift(userId) && userProject.projectId == lift(projectId)
           }
           .take(1)
-          .map { case (userProject, user) =>
-            UserRoleEntity(user, userProject.projectId, userProject.role)
+          .map { case (userProject, userEntity) =>
+            UserRoleEntity(userEntity, userProject.projectId, userProject.role)
           }
       }
     ).map(_.headOption)

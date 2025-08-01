@@ -15,6 +15,7 @@ import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.generic.auto.*
+import tarot.api.dto.common.IdResponse
 import tarot.api.dto.tarot.TarotErrorResponse
 
 import java.util.UUID
@@ -26,7 +27,7 @@ object SpreadEndpoint {
     endpoint.post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread")
       .in(jsonBody[TelegramSpreadCreateRequest])
-      .out(jsonBody[UUID])
+      .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
           oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
@@ -45,7 +46,7 @@ object SpreadEndpoint {
             handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
             cmd = SpreadCreateCommand(externalSpread)
             spreadId <- handler.handle(cmd)
-          } yield spreadId.id)
+          } yield IdResponse(spreadId.id))
             .mapError(err => TarotErrorResponse.toResponse(err))
       }
 
@@ -53,7 +54,7 @@ object SpreadEndpoint {
     endpoint.post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
       .in(jsonBody[TelegramCardCreateRequest])
-      .out(jsonBody[UUID])
+      .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
           oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
@@ -74,7 +75,7 @@ object SpreadEndpoint {
             handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
             cmd = CardCreateCommand(externalCard)
             cardId <- handler.handle(cmd)
-          } yield cardId.id)
+          } yield IdResponse(cardId.id))
             .mapError(err => TarotErrorResponse.toResponse(err))
         }
       }

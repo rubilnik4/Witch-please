@@ -16,6 +16,7 @@ import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateComman
 import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.authorize.{ClientType, Role, UserId}
 import tarot.domain.models.contracts.TarotChannelType
+import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -40,7 +41,8 @@ object AuthEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to auth user: ${request.userId}")
           authService <- ZIO.serviceWith[AppEnv](_.tarotService.authService)
-          token <- authService.issueToken(request.clientType, UserId(request.userId), request.clientSecret, None)
+          token <- authService.issueToken(request.clientType, UserId(request.userId), request.clientSecret,
+            request.projectId.map(ProjectId(_)))
         } yield AuthResponse.fromDomain(token))
           .mapError(TarotErrorResponse.toResponse)
       }

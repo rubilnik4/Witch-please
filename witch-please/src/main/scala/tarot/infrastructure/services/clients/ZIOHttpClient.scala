@@ -9,17 +9,33 @@ import zio.http.*
 object ZIOHttpClient {
   def sendPost[Request: JsonEncoder, Response: JsonDecoder](
       url: URL, body: Request): ZIO[Client & Scope, TarotError, Response] = {
+    sendPostInternal(url, body, None)
+  }
+
+  def sendPostAuth[Request: JsonEncoder, Response: JsonDecoder](
+      url: URL, body: Request, token: String): ZIO[Client & Scope, TarotError, Response] = {
+    sendPostInternal(url, body, Some(token))
+  }
+
+  private def sendPostInternal[Request: JsonEncoder, Response: JsonDecoder](
+      url: URL, body: Request, token: Option[String]): ZIO[Client & Scope, TarotError, Response] = {
     for {
-      strResponse <- sendPostAsString[Request](url, body)
+      strResponse <- sendPostInternal[Request](url, body, token)
       decoded <- ZIO.fromEither(strResponse.fromJson[Response])
         .mapError(msg => TarotError.ParsingError("response", msg))
     } yield decoded
   }
 
-  def sendPostAsString[Request: JsonEncoder](url: URL, body: Request): ZIO[Client & Scope, TarotError, String] = {
+  private def sendPostInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String])
+      : ZIO[Client & Scope, TarotError, String] = {
+    val baseHeaders = List(Header.ContentType(MediaType.application.json))
+    val headers = token match {
+      case Some(token) => baseHeaders :+ Header.Authorization.Bearer(token)
+      case None => baseHeaders
+    }
     val request = Request
       .post(url, Body.fromString(body.toJson))
-      .setHeaders(Headers(Header.ContentType(MediaType.application.json)))
+      .setHeaders(Headers(headers))
 
     for {
       response <- executeResponse(request)

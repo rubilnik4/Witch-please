@@ -1,6 +1,6 @@
 package tarot.infrastructure.services.authorize
 
-import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtZIOJson}
+import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtOptions, JwtZIOJson}
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.{ClientType, Role}
@@ -27,7 +27,8 @@ object JwtService {
 
   def validateToken(token: String, serverSecret: String): ZIO[Any, TarotError, TokenPayload] = {
     for {
-      claim <- ZIO.fromTry(JwtZIOJson.decode(token, serverSecret, Seq(JwtAlgorithm.HS256)))
+      claim <- ZIO.fromTry(JwtZIOJson.decode(token, serverSecret, Seq(JwtAlgorithm.HS256),
+          options = JwtOptions.DEFAULT.copy(expiration = false)))
         .tapError(err => ZIO.logErrorCause(s"Can't decode token", Cause.fail(err)))
         .mapError(err => TarotError.Unauthorized(s"Can't decode token: $err"))
 
