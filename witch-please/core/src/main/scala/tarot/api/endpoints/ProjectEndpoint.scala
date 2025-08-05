@@ -19,7 +19,7 @@ import java.util.UUID
 object ProjectEndpoint {
   private final val tag = "projects"
 
-  private val postProjectEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postProjectEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
       .in(ApiPath.apiPath / "project")

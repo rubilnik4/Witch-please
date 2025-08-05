@@ -23,7 +23,7 @@ import java.util.UUID
 object SpreadEndpoint {
   private final val tag = "spreads"
 
-  private val postSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread")
       .in(jsonBody[TelegramSpreadCreateRequest])
@@ -50,7 +50,7 @@ object SpreadEndpoint {
             .mapError(err => TarotErrorResponse.toResponse(err))
       }
 
-  private val postCardEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postCardEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
       .in(jsonBody[TelegramCardCreateRequest])
@@ -80,7 +80,7 @@ object SpreadEndpoint {
         }
       }
 
-  private val publishSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val publishSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.put
       .in(ApiPath.apiPath / "spread" / path[UUID]("spreadId") / "publish")
       .in(jsonBody[SpreadPublishRequest])

@@ -1,56 +1,35 @@
 package tarot.infrastructure.services.clients
 
 import tarot.domain.models.TarotError
-import zio.{Scope, ZIO}
-import zio.json.{JsonDecoder, JsonEncoder}
-import zio.json.*
+import zio.{ZIO, http}
 import zio.http.*
+import zio.json.*
 
 object ZIOHttpClient {
-  def sendPost[Request: JsonEncoder, Response: JsonDecoder](
-      url: URL, body: Request): ZIO[Client & Scope, TarotError, Response] = 
-    sendPostInternal(url, body, None)
+  def getPostRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
+    getPostRequestInternal(url, body, None)
 
-  def sendPostAuth[Request: JsonEncoder, Response: JsonDecoder](
-      url: URL, body: Request, token: String): ZIO[Client & Scope, TarotError, Response] = 
-    sendPostInternal(url, body, Some(token))
+  def getAuthPostRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
+    getPostRequestInternal(url, body, Some(token))
 
-  private def sendPostInternal[Request: JsonEncoder, Response: JsonDecoder](
-      url: URL, body: Request, token: Option[String]): ZIO[Client & Scope, TarotError, Response] = 
-    for {
-      strResponse <- sendPostInternal[Request](url, body, token)
-      decoded <- ZIO.fromEither(strResponse.fromJson[Response])
-        .mapError(msg => TarotError.ParsingError("response", msg))
-    } yield decoded
-
-  private def sendPostInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String])
-      : ZIO[Client & Scope, TarotError, String] = {
+  private def getPostRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]): http.Request = {
     val headers = getAuthHeaders(token)
-    val request = Request
+    Request
       .post(url, Body.fromString(body.toJson))
       .setHeaders(Headers(headers))
-
-    for {
-      response <- executeResponse(request)
-      strResponse <- response.body.asString
-        .mapError(e => TarotError.ParsingError("body", e.getMessage))
-    } yield strResponse
   }
 
-  def sendPut[Request: JsonEncoder](url: URL, body: Request): ZIO[Client & Scope, TarotError, Unit] =
-    sendPutInternal(url, body, None)
+  def getPutRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
+    getPutRequestInternal(url, body, None)
 
-  def sendPutAuth[Request: JsonEncoder](url: URL, body: Request, token: String): ZIO[Client & Scope, TarotError, Unit] =
-    sendPutInternal(url, body, Some(token))
+  def getAuthPutRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
+    getPutRequestInternal(url, body, Some(token))
 
-  private def sendPutInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String])
-      : ZIO[Client & Scope, TarotError, Unit] = {
+  private def getPutRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]) = {
     val headers = getAuthHeaders(token)
-    val request = Request
+    Request
       .put(url, Body.fromString(body.toJson))
       .setHeaders(Headers(headers))
-
-    executeResponse(request).unit
   }
 
   private def getAuthHeaders(token: Option[String]) =
@@ -61,7 +40,13 @@ object ZIOHttpClient {
     }
     headers
 
-  private def executeResponse(request: Request) =
-    Client.batched(request)
-      .mapError(e => TarotError.ServiceUnavailable("HTTP request failed", e))
+  def getResponse[Response: JsonDecoder](response: http.Response): ZIO[Any, TarotError, Response] =
+    for {
+      strResponse <- response.body.asString
+        .mapError(th => TarotError.ParsingError("N/A", s"Failed to read response body: ${th.getMessage}"))
+
+      parsed <- ZIO
+        .fromEither(strResponse.fromJson[Response])
+        .mapError(msg => TarotError.ParsingError(strResponse, s"Invalid JSON: $msg"))
+    } yield parsed
 }

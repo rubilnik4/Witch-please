@@ -23,7 +23,7 @@ import tarot.api.dto.common.IdResponse
 object UserEndpoint {
   private final val tag = "users"
 
-  private val postUserEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postUserEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
       .in(ApiPath.apiPath / TarotChannelType.Telegram / "user")

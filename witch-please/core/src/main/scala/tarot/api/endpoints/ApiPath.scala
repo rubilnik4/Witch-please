@@ -5,8 +5,4 @@ import zio.http.codec.PathCodec
 
 object ApiPath {
   final val apiPath = "api"
-
-  def getRoutePath(baseUrl: String, routePath: PathCodec[Unit]): URL = 
-    val fullUrl = s"$baseUrl${routePath.toString}"
-    URL.decode(fullUrl).toOption.get  
 }

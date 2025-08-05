@@ -1,12 +1,14 @@
 package tarot.integration
 
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.dto.common.IdResponse
 import tarot.api.dto.tarot.spreads.*
-import tarot.api.endpoints.ApiPath
+import tarot.api.endpoints.*
 import tarot.application.commands.projects.ProjectCreateCommand
 import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.{ClientType, ExternalUser, UserId}
+import tarot.domain.models.contracts.TarotChannelType
 import tarot.domain.models.projects.{ExternalProject, ProjectId}
 import tarot.domain.models.spreads.{SpreadId, SpreadStatus}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
@@ -49,11 +51,11 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
-        projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
-        spreadUrl = createSpreadUrl(projectConfig.serverUrl)
+        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postSpreadEndpoint))
         spreadRequest = spreadCreateRequest(projectId, photoId)
-        response <- ZIOHttpClient.sendPostAuth[TelegramSpreadCreateRequest, IdResponse](spreadUrl, spreadRequest, token)
-        spreadId = response.id
+        request = ZIOHttpClient.getAuthPostRequest(URL(spreadCreatePath), spreadRequest, token)
+        response <- app.runZIO(request)
+        spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
         _ <- ref.set(TestSpreadState(Some(photoId), Some(projectId), Some(token), Some(spreadId)))
       } yield assertTrue(spreadId.toString.nonEmpty)
@@ -67,14 +69,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
+        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postCardEndpoint))
         responses <- ZIO.foreach(0 until cardCount) { index =>
-          val cardUrl = createCardUrl(projectConfig.serverUrl, spreadId, index)
           val cardRequest = cardCreateRequest(photoId)
-
+          val request = ZIOHttpClient.getAuthPostRequest(URL(cardCreatePath(spreadId, index)), cardRequest, token)
           for {
-            response <- ZIOHttpClient.sendPostAuth[TelegramCardCreateRequest, IdResponse](cardUrl, cardRequest, token)
-            cardId = response.id
+            response <- app.runZIO(request)
+            cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
           } yield cardId
         }
       } yield assertTrue(responses.forall(id => id.toString.nonEmpty))
@@ -87,10 +88,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
-        spreadUrl = publishSpreadUrl(projectConfig.serverUrl, spreadId)
+        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.publishSpreadEndpoint))
         publishRequest <- spreadPublishRequest
-        _ <- ZIOHttpClient.sendPutAuth[SpreadPublishRequest](spreadUrl, publishRequest, token)
+        request = ZIOHttpClient.getAuthPutRequest(URL(spreadPublishPath(spreadId)), publishRequest, token)
+        response <- app.runZIO(request)
 
         spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
         spread <- spreadRepository.getSpread(SpreadId(spreadId))
@@ -102,7 +103,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     }
   ).provideShared(
     TestServer.layer,
-    Client.default,
     TestServerLayer.serverConfig,
     Driver.default,
     Scope.default,
@@ -169,16 +169,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       token <- authService.issueToken(clientType, userId, clientSecret, Some(projectId))
     } yield token.token
 
-  private def createSpreadUrl(serverUrl: String) =
-    val path = s"/api/telegram/spread"
-    ApiPath.getRoutePath(serverUrl, path)
+  private def spreadCreatePath =
+    Path.root / ApiPath.apiPath / TarotChannelType.Telegram / "spread"
 
-  private def publishSpreadUrl(serverUrl: String, spreadId: UUID) =
-    val path = s"/api/spread/$spreadId/publish"
-    ApiPath.getRoutePath(serverUrl, path)
+  private def spreadPublishPath(spreadId: UUID) =
+    Path.root / ApiPath.apiPath / spreadId.toString / "publish"
 
-  private def createCardUrl(serverUrl: String, spreadId: UUID, index: Int): URL = {
-    val path = s"/api/telegram/spread/$spreadId/cards/$index"
-    ApiPath.getRoutePath(serverUrl, path)
+  private def cardCreatePath(spreadId: UUID, index: Int) = {
+    Path.root / ApiPath.apiPath / TarotChannelType.Telegram / spreadId.toString / "cards" / index.toString
   }
 }

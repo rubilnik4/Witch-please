@@ -24,7 +24,7 @@ import zio.ZIO
 object AuthEndpoint {
   private final val tag = "auth"
 
-  private val postAuthEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postAuthEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
       .in(ApiPath.apiPath / "auth")
