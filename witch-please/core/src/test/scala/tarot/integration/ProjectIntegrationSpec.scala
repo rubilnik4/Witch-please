@@ -10,7 +10,7 @@ import tarot.domain.models.authorize.{ClientType, Role}
 import tarot.domain.models.contracts.TarotChannelType
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
-import tarot.layers.{AppEnv, TestServerLayer}
+import tarot.layers.AppEnv
 import tarot.models.TestProjectState
 import zio.*
 import zio.test.*
@@ -98,12 +98,8 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
       )
     }
   ).provideShared(
-    //TestServer.layer,
-    //TestServerLayer.serverConfig,
-    //Driver.default,
     Scope.default,
     testAppEnvLive,
-    //TestServerLayer.testServerLayer,
     testProjectStateLayer
   ) @@ sequential
 

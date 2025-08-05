@@ -14,7 +14,7 @@ import tarot.domain.models.spreads.{SpreadId, SpreadStatus}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
-import tarot.layers.{AppEnv, TestServerLayer}
+import tarot.layers.AppEnv
 import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
@@ -52,7 +52,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postSpreadEndpoint))
-        spreadRequest = spreadCreateRequest(projectId, photoId)
+        spreadRequest = spreadCreateRequest(projectId, cardCount, photoId)
         request = ZIOHttpClient.getAuthPostRequest(URL(spreadCreatePath), spreadRequest, token)
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -70,7 +70,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postCardEndpoint))
-        responses <- ZIO.foreach(0 until cardCount) { index =>
+        cardIds <- ZIO.foreach(0 until cardCount) { index =>
           val cardRequest = cardCreateRequest(photoId)
           val request = ZIOHttpClient.getAuthPostRequest(URL(cardCreatePath(spreadId, index)), cardRequest, token)
           for {
@@ -78,7 +78,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
           } yield cardId
         }
-      } yield assertTrue(responses.forall(id => id.toString.nonEmpty))
+      } yield assertTrue(cardIds.forall(id => id.toString.nonEmpty))
     },
 
     test("should publish spread") {
@@ -91,7 +91,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.publishSpreadEndpoint))
         publishRequest <- spreadPublishRequest
         request = ZIOHttpClient.getAuthPutRequest(URL(spreadPublishPath(spreadId)), publishRequest, token)
-        response <- app.runZIO(request)
+        _ <- app.runZIO(request)
 
         spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
         spread <- spreadRepository.getSpread(SpreadId(spreadId))
@@ -102,19 +102,15 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       )
     }
   ).provideShared(
-    //TestServer.layer,
-    //TestServerLayer.serverConfig,
-    //Driver.default,
     Scope.default,
     testAppEnvLive,
-    //TestServerLayer.testServerLayer,
     testSpreadStateLayer
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
     ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
     
-  private def spreadCreateRequest(projectId: UUID, photoId: String) =
+  private def spreadCreateRequest(projectId: UUID, cardCount: Int, photoId: String) =
     TelegramSpreadCreateRequest(
       projectId = projectId,
       title = "Spread integration test",
@@ -173,9 +169,9 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     Path.root / ApiPath.apiPath / TarotChannelType.Telegram / "spread"
 
   private def spreadPublishPath(spreadId: UUID) =
-    Path.root / ApiPath.apiPath / spreadId.toString / "publish"
+    Path.root / ApiPath.apiPath / "spread" / spreadId.toString / "publish"
 
   private def cardCreatePath(spreadId: UUID, index: Int) = {
-    Path.root / ApiPath.apiPath / TarotChannelType.Telegram / spreadId.toString / "cards" / index.toString
+    Path.root / ApiPath.apiPath / TarotChannelType.Telegram / "spread" / spreadId.toString / "cards" / index.toString
   }
 }
