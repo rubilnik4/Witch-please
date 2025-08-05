@@ -102,12 +102,12 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       )
     }
   ).provideShared(
-    TestServer.layer,
-    TestServerLayer.serverConfig,
-    Driver.default,
+    //TestServer.layer,
+    //TestServerLayer.serverConfig,
+    //Driver.default,
     Scope.default,
     testAppEnvLive,
-    TestServerLayer.testServerLayer,
+    //TestServerLayer.testServerLayer,
     testSpreadStateLayer
   ) @@ sequential
 
