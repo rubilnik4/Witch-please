@@ -1,9 +1,7 @@
-package tarot.api.dto.telegram
+package common.api.dto.telegram
 
-import zio.json.{DeriveJsonCodec, JsonCodec, jsonField}
-import zio.schema.{DeriveSchema, Schema}
-import zio.json._
-import zio.schema._
+import zio.json.*
+import zio.schema.*
 
 final case class TelegramErrorResponse(
   @jsonField("ok") ok: Boolean,

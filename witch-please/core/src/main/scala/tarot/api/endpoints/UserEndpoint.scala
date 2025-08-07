@@ -1,24 +1,18 @@
 package tarot.api.endpoints
 
 import sttp.model.StatusCode
-import tarot.api.dto.tarot.*
-import tarot.api.dto.tarot.spreads.*
-import tarot.api.dto.tarot.users.UserCreateRequest
-import tarot.api.infrastructure.AuthValidator
-import tarot.application.commands.*
-import tarot.application.commands.users.UserCreateCommand
-import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
-import tarot.domain.models.authorize.{ClientType, Role}
-import tarot.domain.models.contracts.TarotChannelType
-import tarot.domain.models.spreads.SpreadId
-import tarot.layers.AppEnv
-import zio.ZIO
+import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.generic.auto.*
 import tarot.api.dto.common.IdResponse
+import tarot.api.dto.tarot.*
+import tarot.api.dto.tarot.users.UserCreateRequest
+import tarot.application.commands.*
+import tarot.application.commands.users.UserCreateCommand
+import tarot.domain.models.authorize.ClientType
+import tarot.domain.models.contracts.TarotChannelType
+import tarot.layers.AppEnv
+import zio.ZIO
 
 object UserEndpoint {
   private final val tag = "users"

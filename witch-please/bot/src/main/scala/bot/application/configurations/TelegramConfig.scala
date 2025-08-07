@@ -1,7 +1,7 @@
-package tarot.application.configurations
+package bot.application.configurations
 
-import zio.config.magnolia.deriveConfig
 import zio.Config
+import zio.config.magnolia.deriveConfig
 
 final case class TelegramConfig(
   chatId: String,                             

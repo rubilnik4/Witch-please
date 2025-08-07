@@ -1,11 +1,11 @@
-package tarot.application.configurations
+package bot.application.configurations
 
 import zio.Config
 import zio.config.magnolia.deriveConfig
 
 final case class TelemetryConfig(
-  otelEndpoint: String,
-  prometheusPort: String,
+  otelEndpoint: String, 
+  prometheusPort: String, 
   logLevel: String
 )
 

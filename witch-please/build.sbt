@@ -10,10 +10,18 @@ inThisBuild(Seq(
 ))
 
 lazy val root = (project in file("."))
-  .aggregate(core)
+  .aggregate(core, bot, common)
   .settings(
-    name := "witch-please-root"
+    name := "witch-root"
   )
 
+lazy val common = project
+  .in(file("common"))
+
 lazy val core = project
+  .dependsOn(common)
   .in(file("core"))
+
+lazy val bot = project
+  .dependsOn(core, common)
+  .in(file("bot"))

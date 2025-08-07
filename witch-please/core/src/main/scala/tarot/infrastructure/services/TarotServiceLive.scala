@@ -1,7 +1,7 @@
 package tarot.infrastructure.services
 
 import tarot.infrastructure.services.authorize.AuthService
-import tarot.infrastructure.services.photo.{FileStorageService, PhotoService, TelegramFileService}
+import tarot.infrastructure.services.photo.{FileStorageService, PhotoService}
 
 final case class TarotServiceLive(
   authService: AuthService,                           

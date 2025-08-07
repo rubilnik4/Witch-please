@@ -1,7 +1,5 @@
 package tarot.domain.models.photo
 
-
-
 sealed trait PhotoSource
 
 object PhotoSource:

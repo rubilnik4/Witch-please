@@ -6,14 +6,13 @@ import tarot.application.handlers.TarotCommandHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
 import tarot.application.telemetry.tracing.TarotTracingLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
-import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
 import tarot.infrastructure.telemetry.TelemetryLayer
 import tarot.layers.{AppConfigLayer, AppEnv, AppEnvLayer}
-import zio.{ZIO, ZLayer}
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.{ZIO, ZLayer}
 
 object MainAppLayer {
   private val appLive: ZLayer[AppConfig & Meter & Tracing, Throwable, AppEnv] = {

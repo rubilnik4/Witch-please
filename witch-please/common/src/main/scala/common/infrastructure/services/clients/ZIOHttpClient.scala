@@ -1,6 +1,5 @@
-package tarot.infrastructure.services.clients
+package common.infrastructure.services.clients
 
-import tarot.domain.models.TarotError
 import zio.{ZIO, http}
 import zio.http.*
 import zio.json.*
@@ -40,13 +39,13 @@ object ZIOHttpClient {
     }
     headers
 
-  def getResponse[Response: JsonDecoder](response: http.Response): ZIO[Any, TarotError, Response] =
+  def getResponse[Response: JsonDecoder](response: http.Response): ZIO[Any, Throwable, Response] =
     for {
       strResponse <- response.body.asString
-        .mapError(th => TarotError.ParsingError("N/A", s"Failed to read response body: ${th.getMessage}"))
+        .mapError(th => new RuntimeException(s"Failed to read response body: ${th.getMessage}"))
 
       parsed <- ZIO
         .fromEither(strResponse.fromJson[Response])
-        .mapError(msg => TarotError.ParsingError(strResponse, s"Invalid JSON: $msg"))
+        .mapError(msg => new RuntimeException(s"Invalid JSON: $msg"))
     } yield parsed
 }

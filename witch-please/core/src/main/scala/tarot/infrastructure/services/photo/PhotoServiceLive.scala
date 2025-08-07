@@ -1,8 +1,8 @@
 package tarot.infrastructure.services.photo
 
+import common.infrastructure.services.TelegramFileService
 import tarot.domain.models.TarotError
 import tarot.domain.models.photo.PhotoSource
-
 import zio.ZIO
 
 final class PhotoServiceLive(telegram: TelegramFileService, storage: FileStorageService)
