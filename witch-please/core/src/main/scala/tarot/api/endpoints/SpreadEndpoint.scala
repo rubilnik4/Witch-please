@@ -1,12 +1,14 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.common.IdResponse
+import shared.api.dto.tarot.errors.TarotErrorResponse
+import shared.api.dto.tarot.spreads.*
+import shared.models.tarot.authorize.Role
+import shared.models.tarot.contracts.TarotChannelType
 import sttp.model.StatusCode
-import tarot.api.dto.tarot.spreads.*
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
-import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
-import tarot.domain.models.authorize.Role
-import tarot.domain.models.contracts.TarotChannelType
+import tarot.application.commands.spreads.*
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
 import zio.ZIO
@@ -15,8 +17,8 @@ import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.generic.auto.*
-import tarot.api.dto.common.IdResponse
-import tarot.api.dto.tarot.TarotErrorResponse
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.dto.tarot.spreads.*
 
 import java.util.UUID
 
@@ -42,12 +44,12 @@ object SpreadEndpoint {
         request =>
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create spread: ${request.title}")
-            externalSpread <- TelegramSpreadCreateRequest.fromTelegram(request)
+            externalSpread <- TelegramSpreadCreateRequestMapper.fromTelegram(request)
             handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
             cmd = SpreadCreateCommand(externalSpread)
             spreadId <- handler.handle(cmd)
           } yield IdResponse(spreadId.id))
-            .mapError(err => TarotErrorResponse.toResponse(err))
+            .mapError(err => TarotErrorResponseMapper.toResponse(err))
       }
 
   val postCardEndpoint: ZServerEndpoint[AppEnv, Any] =
@@ -70,13 +72,13 @@ object SpreadEndpoint {
         case (spreadId, index, request) =>
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $index for spread $spreadId")
-            externalCard <- TelegramCardCreateRequest.fromTelegram(request, index, spreadId)
+            externalCard <- TelegramCardCreateRequestMapper.fromTelegram(request, index, spreadId)
 
             handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.cardCreateCommandHandler)
             cmd = CardCreateCommand(externalCard)
             cardId <- handler.handle(cmd)
           } yield IdResponse(cardId.id))
-            .mapError(err => TarotErrorResponse.toResponse(err))
+            .mapError(err => TarotErrorResponseMapper.toResponse(err))
         }
       }
 
@@ -101,12 +103,12 @@ object SpreadEndpoint {
         case (spreadId, request) =>
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")
-            _ <- SpreadPublishRequest.validate(request)
+            _ <- SpreadPublishRequestMapper.validate(request)
             handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
             cmd = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
             _ <- handler.handle(cmd)
           } yield ())
-            .mapError(err => TarotErrorResponse.toResponse(err))
+            .mapError(err => TarotErrorResponseMapper.toResponse(err))
         }
       }
 

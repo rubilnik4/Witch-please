@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="witch-please,witch-please-root,witch-please-root.witch-bot,witch-please-root.witch-core,witch-root,witch-root.witch-bot,witch-root.witch-common,witch-root.witch-core" />
-    <profile name="sbt 2" modules="witch-please-root.test,witch-please.test,witch-root.test">
+    <profile name="sbt 1" modules="witch-please,witch-please-root,witch-please-root.witch-bot,witch-please-root.witch-core,witch-root,witch-root.main,witch-root.test,witch-root.witch-bot,witch-root.witch-bot.main,witch-root.witch-bot.test,witch-root.witch-common,witch-root.witch-common.main,witch-root.witch-common.test,witch-root.witch-common~1,witch-root.witch-common~1.main,witch-root.witch-common~1.test,witch-root.witch-core,witch-root.witch-core.main,witch-root.witch-core.test,witch-root.witch-shared,witch-root.witch-shared.main,witch-root.witch-shared.test" />
+    <profile name="sbt 2" modules="witch-please-root.test,witch-please.test">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
@@ -12,7 +12,7 @@
         <parameter value="C:\Projects\witch-please\witch-please\target\scala-3.4.2\test-meta" />
       </parameters>
     </profile>
-    <profile name="sbt 3" modules="witch-please-root.main,witch-please.main,witch-root.main">
+    <profile name="sbt 3" modules="witch-please-root.main,witch-please.main">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
@@ -21,7 +21,7 @@
         <parameter value="C:\Projects\witch-please\witch-please\target\scala-3.4.2\meta" />
       </parameters>
     </profile>
-    <profile name="sbt 4" modules="witch-please-root.witch-core.test,witch-root.witch-core.test">
+    <profile name="sbt 4" modules="witch-please-root.witch-core.test">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
@@ -30,7 +30,7 @@
         <parameter value="C:\Projects\witch-please\witch-please\core\target\scala-3.4.2\test-meta" />
       </parameters>
     </profile>
-    <profile name="sbt 5" modules="witch-please-root.witch-core.main,witch-root.witch-core.main">
+    <profile name="sbt 5" modules="witch-please-root.witch-core.main">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
@@ -39,7 +39,7 @@
         <parameter value="C:\Projects\witch-please\witch-please\core\target\scala-3.4.2\meta" />
       </parameters>
     </profile>
-    <profile name="sbt 6" modules="witch-please-root.witch-bot.test,witch-root.witch-bot.test">
+    <profile name="sbt 6" modules="witch-please-root.witch-bot.test">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
@@ -48,31 +48,13 @@
         <parameter value="C:\Projects\witch-please\witch-please\bot\target\scala-3.4.2\test-meta" />
       </parameters>
     </profile>
-    <profile name="sbt 7" modules="witch-please-root.witch-bot.main,witch-root.witch-bot.main">
+    <profile name="sbt 7" modules="witch-please-root.witch-bot.main">
       <parameters>
         <parameter value="-Yretain-trees" />
         <parameter value="-Xfatal-warnings" />
         <parameter value="-Xsemanticdb" />
         <parameter value="-semanticdb-target" />
         <parameter value="C:\Projects\witch-please\witch-please\bot\target\scala-3.4.2\meta" />
-      </parameters>
-    </profile>
-    <profile name="sbt 8" modules="witch-root.witch-common.test">
-      <parameters>
-        <parameter value="-Yretain-trees" />
-        <parameter value="-Xfatal-warnings" />
-        <parameter value="-Xsemanticdb" />
-        <parameter value="-semanticdb-target" />
-        <parameter value="C:\Projects\witch-please\witch-please\common\target\scala-3.4.2\test-meta" />
-      </parameters>
-    </profile>
-    <profile name="sbt 9" modules="witch-root.witch-common.main">
-      <parameters>
-        <parameter value="-Yretain-trees" />
-        <parameter value="-Xfatal-warnings" />
-        <parameter value="-Xsemanticdb" />
-        <parameter value="-semanticdb-target" />
-        <parameter value="C:\Projects\witch-please\witch-please\common\target\scala-3.4.2\meta" />
       </parameters>
     </profile>
   </component>

@@ -1,5 +1,6 @@
 package tarot.domain.models
 
+import shared.models.api.ApiError
 
 sealed trait TarotError
 
@@ -16,4 +17,15 @@ object TarotError {
   final case class Conflict(message: String) extends TarotError
   final case class Unauthorized(message: String) extends TarotError
   case object Unknown extends TarotError
+}
+
+object TarotErrorMapper {
+  def toTarotError(provider: String, error: ApiError): TarotError = error match {
+    case ApiError.HttpCode(code, description) =>
+      TarotError.ApiError(provider, code, description)
+    case ApiError.RequestFailed(message, cause) =>
+      TarotError.ServiceUnavailable(provider, cause)
+    case ApiError.InvalidResponse(_, reason) =>
+      TarotError.ApiError(provider, 500, reason)
+  }
 }

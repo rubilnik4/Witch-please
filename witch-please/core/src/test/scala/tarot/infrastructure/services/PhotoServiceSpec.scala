@@ -1,5 +1,6 @@
 package tarot.infrastructure.services
 
+import shared.models.telegram.*
 import tarot.domain.models.photo.{Photo, PhotoSource}
 import tarot.layers.{AppEnv, TestAppEnvLayer}
 import zio.*
@@ -15,9 +16,10 @@ object PhotoServiceSpec extends ZIOSpecDefault {
         fileStorageService <- ZIO.serviceWith[AppEnv](_.tarotService.fileStorageService)
         photo <- fileStorageService.getResourcePhoto(resourcePath)
 
-        telegramService <- ZIO.serviceWith[AppEnv](_.tarotService.telegramFileService)
+        telegramApiService <- ZIO.serviceWith[AppEnv](_.tarotService.telegramApiService)
         telegramConfig <- ZIO.serviceWith[AppEnv](_.appConfig.telegram)
-        photoId <- telegramService.sendPhoto(telegramConfig.chatId, photo)
+        telegramFile = TelegramFile(photo.fileName, photo.bytes)
+        photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
 
         photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
         photoSource <- photoService.fetchAndStore(photoId)

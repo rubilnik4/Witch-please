@@ -1,17 +1,34 @@
 package bot.application.handlers
 
+import bot.application.commands.BotCommand
+import scala.util.Try
+
 object BotCommandHandler {
-  def handle(raw: String): BotCommand = {
-    raw.trim.split("\\s+").toList match {
-      case "/start" :: Nil => BotCommand.Start
-      case "/help" :: Nil => BotCommand.Help
-      case "/project_create" :: name => BotCommand.CreateProject(name.mkString(" "))
-      case "/spread_confirm" :: idStr =>
+  def handle(command: String): BotCommand = {
+    val parts = command.trim.split("\\s+").toList
+
+    parts match {
+      case List("/start") =>
+        BotCommand.Start
+      case List("/help") =>
+        BotCommand.Help
+      case "/project_create" :: nameParts if nameParts.nonEmpty =>
+        BotCommand.CreateProject(nameParts.mkString(" "))
+      case "/spread_create" :: nameParts if nameParts.nonEmpty =>
+        BotCommand.CreateSpread(nameParts.mkString(" "))
+      case "/card_create" :: indexStr :: nameParts =>
+        Try(indexStr.toInt).toOption match {
+          case Some(index) if nameParts.nonEmpty =>
+            BotCommand.CreateCard(index, nameParts.mkString(" "))
+          case _ => BotCommand.Unknown
+        }
+      case "/spread_confirm" :: idStr :: Nil =>
         Try(UUID.fromString(idStr)).toOption match {
           case Some(id) => BotCommand.ConfirmSpread(id)
           case None => BotCommand.Unknown
         }
-      case _ => BotCommand.Unknown
+      case _ =>
+        BotCommand.Unknown
     }
   }
 }

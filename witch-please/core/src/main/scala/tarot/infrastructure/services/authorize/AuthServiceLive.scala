@@ -1,10 +1,11 @@
 package tarot.infrastructure.services.authorize
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{ClientType, ExternalUser, Role, Token, User, UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.{ExternalUser, Token, User, UserId, UserProject, UserRole}
 import tarot.layers.AppEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
+import shared.models.tarot.authorize.{ClientType, Role}
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.projects.ProjectId
 

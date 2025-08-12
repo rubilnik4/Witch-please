@@ -1,16 +1,19 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.common.IdResponse
+import shared.api.dto.tarot.errors.TarotErrorResponse
+import shared.api.dto.tarot.projects.ProjectCreateRequest
+import shared.models.tarot.authorize.Role
 import sttp.model.StatusCode
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
-import tarot.api.dto.common.IdResponse
-import tarot.api.dto.tarot.TarotErrorResponse
-import tarot.api.dto.tarot.projects.ProjectCreateRequest
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.dto.tarot.projects.ProjectCreateRequestMapper
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.projects.ProjectCreateCommand
-import tarot.domain.models.authorize.{Role, UserId}
+import tarot.domain.models.authorize.UserId
 import tarot.layers.AppEnv
 import zio.ZIO
 
@@ -39,12 +42,12 @@ object ProjectEndpoint {
       .serverLogic { tokenPayload => request =>
         (for {
           _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create project: ${request.name}")
-          externalProject <- ProjectCreateRequest.fromRequest(request)
+          externalProject <- ProjectCreateRequestMapper.fromRequest(request)
           handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.projectCreateCommandHandler)
           command = ProjectCreateCommand(externalProject, UserId(tokenPayload.userId))
           projectId <- handler.handle(command)
         } yield IdResponse(projectId.id))
-          .mapError(err => TarotErrorResponse.toResponse(err))
+          .mapError(err => TarotErrorResponseMapper.toResponse(err))
       }
 
   val endpoints: List[ZServerEndpoint[AppEnv, Any]] =

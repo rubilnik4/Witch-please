@@ -7,8 +7,7 @@ import zio.nio.file.Files
 import zio.nio.file.Path
 import zio.stream.ZStream
 
-final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:
-  
+final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:  
   def storePhoto(photoFile: PhotoFile): ZIO[Any, TarotError, PhotoSource] =
     val fullPath = rootPath / photoFile.fileName
 

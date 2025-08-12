@@ -1,17 +1,20 @@
 package tarot.infrastructure.services
 
+import shared.infrastructure.services.TelegramApiServiceLayer
 import tarot.application.configurations.AppConfig
-import tarot.infrastructure.services.authorize.{AuthService, AuthServiceLayer}
+import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*
-import tarot.infrastructure.services.users.UserService
 import zio.ZLayer
 
 object TarotServiceLayer {
+  val tokenLayer: ZLayer[AppConfig, Nothing, String] =
+    ZLayer.fromFunction((config: AppConfig) => config.telegram.token)
+
   val tarotServiceLive: ZLayer[AppConfig, Throwable, TarotService] =
     (
       PhotoServiceLayer.photoServiceLive ++
       AuthServiceLayer.authServiceLive ++
       FileStorageServiceLayer.localFileStorageServiceLive ++
-      TelegramFileServiceLayer.telegramFileServiceLive
-      ) >>> ZLayer.fromFunction(TarotServiceLive.apply)
+      (tokenLayer >>> TelegramApiServiceLayer.telegramApiServiceLive)
+    ) >>> ZLayer.fromFunction(TarotServiceLive.apply)
 }

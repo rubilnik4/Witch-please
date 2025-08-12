@@ -1,14 +1,17 @@
 package tarot.integration
 
-import tarot.api.dto.common.IdResponse
+import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
+import shared.api.dto.tarot.common.IdResponse
+import shared.api.dto.tarot.projects.ProjectCreateRequest
+import shared.api.dto.tarot.users.*
+import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.models.tarot.authorize.*
+import shared.models.tarot.contracts.*
 import tarot.api.dto.tarot.authorize.*
-import tarot.api.dto.tarot.projects.ProjectCreateRequest
 import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{ClientType, Role}
-import tarot.domain.models.contracts.TarotChannelType
-import tarot.infrastructure.services.clients.ZIOHttpClient
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
 import tarot.layers.AppEnv
 import tarot.models.TestProjectState
@@ -36,7 +39,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(UserEndpoint.postUserEndpoint))
         userRequest = getUserCreateRequest(clientId, clientSecret)
-        request = ZIOHttpClient.getPostRequest(URL(userCreatePath), userRequest)
+        request = ZIOHttpClient.getPostRequest(TarotApiRoutes.userCreatePath(""), userRequest)
         response <- app.runZIO(request)
         userId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
@@ -52,7 +55,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(AuthEndpoint.postAuthEndpoint))
         authRequest = getAuthRequest(userId, clientSecret, None)
-        request = ZIOHttpClient.getPostRequest(URL(authPath), authRequest)
+        request = ZIOHttpClient.getPostRequest(TarotApiRoutes.tokenAuthPath(""), authRequest)
         response <- app.runZIO(request)
         auth <- ZIOHttpClient.getResponse[AuthResponse](response)
 
@@ -71,7 +74,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(ProjectEndpoint.postProjectEndpoint))
         projectRequest = getProjectCreateRequest
-        request = ZIOHttpClient.getAuthPostRequest(URL(projectCreatePath), projectRequest, token)
+        request = ZIOHttpClient.getAuthPostRequest(TarotApiRoutes.projectCreatePath(""), projectRequest, token)
         response <- app.runZIO(request)
         projectId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
@@ -89,7 +92,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(AuthEndpoint.postAuthEndpoint))
         authRequest = getAuthRequest(userId, clientSecret, Some(projectId))
-        request = ZIOHttpClient.getPostRequest(URL(authPath), authRequest)
+        request = ZIOHttpClient.getPostRequest(TarotApiRoutes.tokenAuthPath(""), authRequest)
         response <- app.runZIO(request)
         auth <- ZIOHttpClient.getResponse[AuthResponse](response)
       } yield assertTrue(
@@ -125,13 +128,4 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
     ProjectCreateRequest(
       name = "Test project"
     )
-
-  private def userCreatePath =
-    Path.root / ApiPath.apiPath / TarotChannelType.Telegram / "user"
-
-  private def authPath =
-    Path.root / ApiPath.apiPath / "auth"
-
-  private def projectCreatePath =
-    Path.root / ApiPath.apiPath / "project"
 }

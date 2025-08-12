@@ -1,5 +1,9 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
+import shared.api.dto.tarot.errors.TarotErrorResponse
+import shared.models.tarot.authorize.{ClientType, Role}
+import shared.models.tarot.contracts.TarotChannelType
 import sttp.model.StatusCode
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
@@ -8,14 +12,13 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.*
 import tarot.api.dto.tarot.authorize.*
-import tarot.api.dto.tarot.spreads.*
-import tarot.api.dto.tarot.users.UserCreateRequest
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.dto.tarot.users.UserCreateRequestMapper
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.{CardCreateCommand, SpreadCreateCommand, SpreadPublishCommand}
 import tarot.application.commands.users.UserCreateCommand
-import tarot.domain.models.authorize.{ClientType, Role, UserId}
-import tarot.domain.models.contracts.TarotChannelType
+import tarot.domain.models.authorize.{AuthResponseMapper, UserId}
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.AppEnv
@@ -43,8 +46,8 @@ object AuthEndpoint {
           authService <- ZIO.serviceWith[AppEnv](_.tarotService.authService)
           token <- authService.issueToken(request.clientType, UserId(request.userId), request.clientSecret,
             request.projectId.map(ProjectId(_)))
-        } yield AuthResponse.fromDomain(token))
-          .mapError(TarotErrorResponse.toResponse)
+        } yield AuthResponseMapper.fromDomain(token))
+          .mapError(TarotErrorResponseMapper.toResponse)
       }
 
   val endpoints: List[ZServerEndpoint[AppEnv, Any]] = 

@@ -1,9 +1,10 @@
 package tarot.api.infrastructure
 
-import tarot.api.dto.tarot.TarotErrorResponse
+import shared.api.dto.tarot.errors.TarotErrorResponse
+import shared.models.tarot.authorize.Role
 import tarot.api.dto.tarot.authorize.TokenPayload
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.Role
 import tarot.layers.AppEnv
 import zio.ZIO
 import zio.http.{Handler, HandlerAspect, Header, Request}
@@ -17,5 +18,5 @@ object AuthValidator {
         ZIO.fail(TarotError.Unauthorized(s"Required $requiredRole, got ${payload.role}"))
       }
     } yield payload)
-      .mapError(TarotErrorResponse.toResponse)
+      .mapError(TarotErrorResponseMapper.toResponse)
 }
