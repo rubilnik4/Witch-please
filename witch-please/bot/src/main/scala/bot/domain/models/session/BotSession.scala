@@ -1,5 +1,6 @@
 package bot.domain.models.session
 
+import java.time.Instant
 import java.util.UUID
 
 final case class BotSession(

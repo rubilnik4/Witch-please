@@ -48,7 +48,7 @@ object SttpClient {
         .mapError(e => ApiError.InvalidResponse(s"Failed to download bytes", e))
     } yield bytes
 
-  def toSttpUri(url: URL): ZIO[Any, Throwable, Uri] =
+  def toSttpUri(url: URL): ZIO[Any, ApiError, Uri] =
     ZIO.fromEither(Uri.parse(url.encode))
-      .mapError(error => new RuntimeException(s"Invalid URI: $error"))
+      .mapError(error => ApiError.RequestFailed(s"Invalid URI", RuntimeException(error)))
 }

@@ -1,6 +1,8 @@
 package bot.application.handlers
 
 import bot.application.commands.BotCommand
+
+import java.util.UUID
 import scala.util.Try
 
 object BotCommandHandler {
@@ -14,8 +16,12 @@ object BotCommandHandler {
         BotCommand.Help
       case "/project_create" :: nameParts if nameParts.nonEmpty =>
         BotCommand.CreateProject(nameParts.mkString(" "))
-      case "/spread_create" :: nameParts if nameParts.nonEmpty =>
-        BotCommand.CreateSpread(nameParts.mkString(" "))
+      case "/spread_create" :: cardCountStr :: nameParts if nameParts.nonEmpty =>
+        Try(cardCountStr.toInt).toOption match {
+          case Some(cardCount) if nameParts.nonEmpty =>
+            BotCommand.CreateSpread(nameParts.mkString(" "), cardCount)
+          case _ => BotCommand.Unknown
+        }  
       case "/card_create" :: indexStr :: nameParts =>
         Try(indexStr.toInt).toOption match {
           case Some(index) if nameParts.nonEmpty =>

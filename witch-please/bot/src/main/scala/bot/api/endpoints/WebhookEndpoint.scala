@@ -1,6 +1,9 @@
 package bot.api.endpoints
 
 import bot.api.dto.*
+import bot.application.handlers.TelegramCommandHandlerLive
+import bot.domain.models.telegram.TelegramMessage
+import bot.layers.AppEnv
 import sttp.model.StatusCode
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
@@ -14,16 +17,17 @@ object WebhookEndpoint {
       .in(jsonBody[TelegramWebhookRequest])
       .out(statusCode(StatusCode.Ok))
       .zServerLogic { request =>
+        val chatId = request.message.map(_.chat.id)
+        val userId = request.message.flatMap(_.from.map(_.id))
+        val username = request.message.flatMap(_.from.map(_.username)).getOrElse("unknown")
+        val text = request.message.flatMap(_.text)
         (for {
-          _ <- ZIO.logInfo(s"Received webhook from Telegram for user: ${request.name}")
+          _ <- ZIO.logInfo(s"Telegram webhook: chat_id=$chatId, user_id=$username, user=$username, text=$text")
 
-          handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.userCreateCommandHandler)
-          command = UserCreateCommand(externalUser)
-          _ <- handler.handle(command)
-
+          telegramCommandService <- ZIO.serviceWith[AppEnv](_.telegramCommandService)
+          telegramMessage = TelegramMessage.fromRequest(request)
+          _ <- telegramCommandService.handle(telegramMessage)
         } yield ())
-          .catchAll { err =>
-            ZIO.logError(s"Webhook processing failed: $err").unit
-          }
+          .catchAll(err => ZIO.logError(s"Webhook processing failed: $err").unit)
       }
 }
