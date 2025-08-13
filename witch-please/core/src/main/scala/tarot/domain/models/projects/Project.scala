@@ -1,6 +1,6 @@
 package tarot.domain.models.projects
 
-import tarot.infrastructure.services.common.DateTimeService
+import shared.infrastructure.services.common.DateTimeService
 import zio.UIO
 
 import java.time.Instant

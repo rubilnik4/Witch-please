@@ -2,6 +2,7 @@ package bot.application.handlers
 
 import bot.api.dto.TelegramWebhookRequest
 import bot.application.commands.BotCommand
+import bot.domain.models.session.BotSession
 import bot.domain.models.telegram.*
 import bot.infrastructure.services.authorize.SecretService
 import bot.layers.AppEnv
@@ -47,9 +48,10 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
       _ <- BotCommandHandler.handle(command) match {
         case BotCommand.Start =>
           for {
-            _ <- telegramApiService.sendText(chatId, "Привет! Это таро бот. Узнай как пройдет твой день")
-            clientSecret = SecretService.generateSecret()
-            - <- botSessionRepository.upsert(,)
+            _ <- telegramApiService.sendText(context.chatId, "Привет! Это таро бот. Узнай как пройдет твой день")
+            clientSecret <- SecretService.generateSecret()
+            botSession = BotSession(clientSecret, None)
+            - <- botSessionRepository.upsert(context.clientId, botSession)
           } yield ()
         case BotCommand.CreateUser(name) =>
           for {

@@ -4,9 +4,12 @@ import java.time.Instant
 import java.util.UUID
 
 final case class BotSession(
-  userId: UUID,
+  chatId: Long,                         
+  clientSecret: String,
   projectId: Option[UUID],
-  photoId: Option[String],
+  //photoId: Option[String],
   //wizard: Option[WizardState],
   updatedAt: Instant
-)
+) {
+  def touch(now: Instant): BotSession = copy(updatedAt = now)
+}

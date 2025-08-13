@@ -1,6 +1,6 @@
 package tarot.infrastructure.services.photo
 
-import shared.infrastructure.services.TelegramApiService
+import shared.infrastructure.services.telegram.TelegramApiService
 import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.domain.models.photo.{PhotoFile, PhotoSource}
 import zio.ZIO

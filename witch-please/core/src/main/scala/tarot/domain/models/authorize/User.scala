@@ -1,9 +1,9 @@
 package tarot.domain.models.authorize
 
+import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
 import tarot.domain.models.cards.{Card, CardId, ExternalCard}
 import tarot.domain.models.photo.{Photo, PhotoOwnerType, PhotoSource}
-import tarot.infrastructure.services.common.DateTimeService
 import zio.UIO
 
 import java.time.Instant

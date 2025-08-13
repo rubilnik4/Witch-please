@@ -1,6 +1,6 @@
 package tarot.infrastructure.services.photo
 
-import shared.infrastructure.services.{TelegramApiService, TelegramApiServiceLayer}
+import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer}
 import tarot.application.configurations.AppConfig
 import tarot.infrastructure.services.TarotServiceLayer
 import zio.ZLayer

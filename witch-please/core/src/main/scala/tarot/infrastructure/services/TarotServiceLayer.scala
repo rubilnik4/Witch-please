@@ -1,6 +1,6 @@
 package tarot.infrastructure.services
 
-import shared.infrastructure.services.TelegramApiServiceLayer
+import shared.infrastructure.services.telegram.TelegramApiServiceLayer
 import tarot.application.configurations.AppConfig
 import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*

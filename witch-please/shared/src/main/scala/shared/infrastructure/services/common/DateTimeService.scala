@@ -1,4 +1,4 @@
-package tarot.infrastructure.services.common
+package shared.infrastructure.services.common
 
 import zio.{Clock, UIO}
 

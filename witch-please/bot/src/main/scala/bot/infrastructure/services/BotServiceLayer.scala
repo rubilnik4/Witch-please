@@ -2,6 +2,7 @@ package bot.infrastructure.services
 
 import bot.application.configurations.AppConfig
 import shared.infrastructure.services.*
+import shared.infrastructure.services.telegram.TelegramApiServiceLayer
 import zio.ZLayer
 
 object BotServiceLayer {

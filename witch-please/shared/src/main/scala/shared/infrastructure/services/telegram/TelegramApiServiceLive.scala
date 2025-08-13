@@ -1,4 +1,4 @@
-package shared.infrastructure.services
+package shared.infrastructure.services.telegram
 
 import shared.api.dto.*
 import shared.api.dto.telegram.*

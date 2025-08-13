@@ -1,11 +1,12 @@
 package bot.infrastructure.services
 
-import bot.infrastructure.services.repositories.BotSessionRepository
+import bot.infrastructure.repositories.BotRepository
+import bot.infrastructure.repositories.sessions.BotSessionRepository
 import bot.infrastructure.services.tarot.TarotApiService
-import shared.infrastructure.services.TelegramApiService
+import shared.infrastructure.services.telegram.TelegramApiService
 
 trait BotService {
   def telegramApiService: TelegramApiService
   def tarotApiService: TarotApiService
-  def botSessionRepository: BotSessionRepository
+  def botRepository: BotRepository
 }

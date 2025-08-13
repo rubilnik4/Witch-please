@@ -1,8 +1,8 @@
 package tarot.domain.models.cards
 
+import shared.infrastructure.services.common.DateTimeService
 import tarot.domain.models.photo.*
 import tarot.domain.models.spreads.SpreadId
-import tarot.infrastructure.services.common.DateTimeService
 import zio.UIO
 
 import java.time.Instant

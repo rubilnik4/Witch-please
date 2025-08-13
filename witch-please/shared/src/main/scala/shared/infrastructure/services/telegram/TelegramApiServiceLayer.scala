@@ -1,4 +1,4 @@
-package shared.infrastructure.services
+package shared.infrastructure.services.telegram
 
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
