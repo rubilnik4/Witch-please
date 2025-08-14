@@ -43,15 +43,13 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
       telegramApiService <- ZIO.serviceWith[AppEnv](_.botService.telegramApiService)
       tarotApiService <- ZIO.serviceWith[AppEnv](_.botService.tarotApiService)
-      botSessionRepository <- ZIO.serviceWith[AppEnv](_.botService.botSessionRepository)
+      botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
 
       _ <- BotCommandHandler.handle(command) match {
         case BotCommand.Start =>
           for {
             _ <- telegramApiService.sendText(context.chatId, "Привет! Это таро бот. Узнай как пройдет твой день")
-            clientSecret <- SecretService.generateSecret()
-            botSession = BotSession(clientSecret, None)
-            - <- botSessionRepository.upsert(context.clientId, botSession)
+            - <- botSessionService.start(context.chatId)
           } yield ()
         case BotCommand.CreateUser(name) =>
           for {

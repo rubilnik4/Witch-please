@@ -1,5 +1,7 @@
 package bot.infrastructure.services.sessions
 
+import bot.domain.models.session.BotSession
+import bot.infrastructure.services.authorize.SecretService
 import bot.layers.AppEnv
 import shared.infrastructure.services.common.DateTimeService
 import zio.ZIO
@@ -7,17 +9,32 @@ import zio.ZIO
 import java.util.UUID
 
 final class BotSessionServiceLive extends BotSessionService {
-  def touch(chatId: Long): ZIO[AppEnv, Nothing, Unit] =
+  def start(chatId: Long): ZIO[AppEnv, Throwable, BotSession] =
     for {
-      now <- DateTimeService.getDateTimeNow
+      _ <- ZIO.logDebug(s"Starting session for chat $chatId")
+
       botSessionRepository <- ZIO.serviceWith[AppEnv](_.botRepository.botSessionRepository)
-      _ <- botSessionRepository.update(chatId)(identity, now)
-    } yield ()
+      currentSession <- botSessionRepository.get(chatId)
+      now <- DateTimeService.getDateTimeNow
+      session <- currentSession match {
+        case Some(session) =>
+          val updated = BotSession.touched(session, now)
+          botSessionRepository.put(chatId, updated).as(updated)
+        case _ =>
+          for {
+            clientSecret <- SecretService.generateSecret()
+            newSession = BotSession.newSession(clientSecret, now)
+            _ <- botSessionRepository.put(chatId, newSession)
+          } yield newSession
+      }
+    } yield session
 
   def setProject(chatId: Long, projectId: UUID): ZIO[AppEnv, Nothing, Unit] =
     for {
+      _ <- ZIO.logDebug(s"Set project $projectId for chat $chatId")
+
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[AppEnv](_.botRepository.botSessionRepository)
-      _ <- botSessionRepository.update(chatId)(session => session.copy(projectId = Some(projectId)), now)
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withProject(session, projectId, now))
     } yield ()
 }

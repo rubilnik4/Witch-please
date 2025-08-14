@@ -5,7 +5,6 @@ import tarot.application.handlers.TarotCommandHandler
 import tarot.application.telemetry.metrics.TarotMeter
 import tarot.application.telemetry.tracing.TarotTracing
 import tarot.infrastructure.repositories.TarotRepository
-import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.services.TarotService
 
 

@@ -10,14 +10,14 @@ final class BotSessionRepositoryLive(ref: Ref[Map[Long, BotSession]]) extends Bo
   def get(chatId: Long): UIO[Option[BotSession]] =
     ref.get.map(_.get(chatId))
 
-  def upsert(session: BotSession, now: Instant): UIO[Unit] =
-    ref.update(_.updated(session.chatId, session.copy(updatedAt = now))).unit
+  def put(chatId: Long, session: BotSession): UIO[Unit] =
+    ref.update(_.updated(chatId, session)).unit
 
-  def update(chatId: Long)(updateSession: BotSession => BotSession, now: Instant): UIO[Unit] =
+  def update(chatId: Long)(updateSession: BotSession => BotSession): UIO[Unit] =
     ref.update { sessions =>
       sessions.get(chatId) match {
         case Some(session) =>
-          val newSession = updateSession(session).copy(updatedAt = now)
+          val newSession = updateSession(session)
           sessions.updated(chatId, newSession)
         case None => sessions
       }

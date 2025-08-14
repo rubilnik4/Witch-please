@@ -7,7 +7,7 @@ import java.time.Instant
 
 trait BotSessionRepository {
   def get(chatId: Long): UIO[Option[BotSession]]
-  def upsert(session: BotSession, now: Instant): UIO[Unit]
-  def update(chatId: Long)(updateSession: BotSession => BotSession, now: Instant): UIO[Unit]
+  def put(chatId: Long, session: BotSession): UIO[Unit]
+  def update(chatId: Long)(updateSession: BotSession => BotSession): UIO[Unit]
   def delete(chatId: Long): UIO[Unit]
 }
