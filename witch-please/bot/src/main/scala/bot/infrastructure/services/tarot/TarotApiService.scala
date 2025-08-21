@@ -12,6 +12,6 @@ import zio.ZIO
 trait TarotApiService {
   def createUser(request: UserCreateRequest): ZIO[Any, TarotErrorResponse, IdResponse]
   def tokenAuth(request: AuthRequest): ZIO[Any, TarotErrorResponse, AuthResponse]
-  def createProject(request: ProjectCreateRequest): ZIO[Any, Throwable, IdResponse]
-  def createSpread(request: TelegramSpreadCreateRequest): ZIO[Any, TarotErrorResponse, IdResponse]
+  def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, Throwable, IdResponse]
+  def createSpread(request: TelegramSpreadCreateRequest): ZIO[Any, Throwable, IdResponse]
 }

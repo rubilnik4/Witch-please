@@ -31,11 +31,11 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
     } yield response
   }
   
-  def createProject(request: ProjectCreateRequest): ZIO[Any, ApiError, IdResponse] = {
+  def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] = {
     for {
       _ <- ZIO.logDebug(s"Sending create project request: ${request.name}")
       uri <- SttpClient.toSttpUri(TarotApiRoutes.projectCreatePath(baseUrl))
-      projectRequest = SttpClient.getPostRequest(uri, request)
+      projectRequest = SttpClient.getPostRequestAuth(uri, request, token)
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, projectRequest)
     } yield response

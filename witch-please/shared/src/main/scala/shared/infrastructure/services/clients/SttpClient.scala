@@ -14,6 +14,10 @@ object SttpClient {
       .body(request.toJson)
       .contentType("application/json")
 
+  def getPostRequestAuth[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
+    getPostRequest(uri, request)
+      .auth.bearer(token)
+
   def sendJson[Response, Error](
       client: SttpBackend[Task, Any],
       request: RequestT[Identity, Either[ResponseException[Error, String], Response], Any])

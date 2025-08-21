@@ -1,6 +1,11 @@
 inThisBuild(Seq(
   scalaVersion := "3.4.2",
   logLevel := Level.Warn,
+  scalacOptions ++= Seq(
+    "-deprecation",   // показывать устаревшие API
+    "-feature",       // показывать скрытые language features
+    "-unchecked",     // проверки pattern matching
+    "-Werror"         // все варнинги -> ошибки (важно!)
 ))
 
 lazy val root = (project in file("."))

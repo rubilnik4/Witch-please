@@ -7,7 +7,11 @@ import zio.{UIO, ZIO}
 import java.util.UUID
 
 trait BotSessionService {
+  def get(chatId: Long): ZIO[AppEnv, Nothing, BotSession]
   def start(chatId: Long): ZIO[AppEnv, Nothing, BotSession]
-  def setProject(chatId: Long, projectId: UUID): ZIO[AppEnv, Nothing, Unit]
+  def setUser(chatId: Long, userId: UUID, token: String): ZIO[AppEnv, Nothing, Unit]
+  def setPending(chatId: Long, pending: BotPendingAction): ZIO[AppEnv, Nothing, Unit]
+  def clearPending(chatId: Long): ZIO[AppEnv, Nothing, Unit]
+  def setProject(chatId: Long, projectId: UUID, token: String): ZIO[AppEnv, Nothing, Unit]
   def reset(chatId: Long): ZIO[AppEnv, Nothing, Unit]
 }
