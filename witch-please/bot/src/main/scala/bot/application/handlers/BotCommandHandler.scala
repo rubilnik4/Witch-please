@@ -2,6 +2,7 @@ package bot.application.handlers
 
 import bot.application.commands.BotCommand
 
+import java.time.Instant
 import java.util.UUID
 import scala.util.Try
 
@@ -25,12 +26,12 @@ object BotCommandHandler {
       case "/card_create" :: indexStr :: nameParts =>
         Try(indexStr.toInt).toOption match {
           case Some(index) if nameParts.nonEmpty =>
-            BotCommand.CreateCard(index, nameParts.mkString(" "))
+            BotCommand.CreateCard(nameParts.mkString(" "), index)
           case _ => BotCommand.Unknown
         }
-      case "/spread_confirm" :: idStr :: Nil =>
-        Try(UUID.fromString(idStr)).toOption match {
-          case Some(id) => BotCommand.ConfirmSpread(id)
+      case "/spread_confirm" :: scheduledAtStr :: Nil =>
+        Try(Instant.ofEpochSecond(scheduledAtStr.toLong)).toOption match {
+          case Some(scheduledAt) => BotCommand.PublishSpread(scheduledAt)
           case None => BotCommand.Unknown
         }
       case _ =>

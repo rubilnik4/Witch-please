@@ -13,5 +13,6 @@ trait BotSessionService {
   def setPending(chatId: Long, pending: BotPendingAction): ZIO[AppEnv, Nothing, Unit]
   def clearPending(chatId: Long): ZIO[AppEnv, Nothing, Unit]
   def setProject(chatId: Long, projectId: UUID, token: String): ZIO[AppEnv, Nothing, Unit]
+  def setSpread(chatId: Long, spreadId: UUID): ZIO[AppEnv, Nothing, Unit]
   def reset(chatId: Long): ZIO[AppEnv, Nothing, Unit]
 }

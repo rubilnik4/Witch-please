@@ -13,6 +13,8 @@ import shared.api.dto.tarot.users.*
 import shared.models.tarot.authorize.ClientType
 import zio.ZIO
 
+import java.time.Instant
+
 final class TelegramCommandHandlerLive extends TelegramCommandHandler {
   def handle(message: TelegramMessage): ZIO[AppEnv, Throwable, Unit] =
     message match {
@@ -48,9 +50,25 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
             session <- botSessionService.get(context.chatId)
             projectId <- ZIO.fromOption(session.projectId)
               .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
+            token <- ZIO.fromOption(session.token)
+              .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
             request = TelegramSpreadCreateRequest(projectId, title, cardCount, fileId)
-            projectId <- tarotApiService.createSpread(request)
+            spreadId <- tarotApiService.createSpread(request, token).map(_.id)
+            _ <- botSessionService.clearPending(context.chatId)
+            _ <- botSessionService.setSpread(context.chatId, spreadId)
+          } yield ()
+        case Some(BotPendingAction.CardCover(description, index)) =>
+          for {
+            _ <- telegramApiService.sendText(context.chatId, s"Создаю карту '$description'...")
+            session <- botSessionService.get(context.chatId)
+            spreadId <- ZIO.fromOption(session.projectId)
+              .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
+            token <- ZIO.fromOption(session.token)
+              .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+            request = TelegramCardCreateRequest(description, fileId)
+            projectId <- tarotApiService.createCard(request, spreadId, index, token)
             _ <- botSessionService.clearPending(context.chatId)
           } yield ()
         case None =>
@@ -108,14 +126,29 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
             _ <- botSessionService.setPending(context.chatId, pending)
             _ <- telegramApiService.sendText(context.chatId, s"Прикрепите фото для создания расклада $title")
           } yield ()
-        case BotCommand.CreateCard(index, name) =>
-          telegramApiService.sendText(chatId, s"Создаю карту '$name'...")
-        case BotCommand.ConfirmSpread(spreadId) =>
-          telegramApiService.sendText(chatId, s"Расклад $spreadId подтверждён.")
+        case BotCommand.CreateCard(description, index) =>
+          val pending = BotPendingAction.CardCover(description, index)
+          for {
+            _ <- botSessionService.setPending(context.chatId, pending)
+            _ <- telegramApiService.sendText(context.chatId, s"Прикрепите фото для создания карты $description")
+          } yield ()
+        case BotCommand.PublishSpread(scheduledAt: Instant) =>
+          for {
+            session <- botSessionService.get(context.chatId)
+            spreadId <- ZIO.fromOption(session.spreadId)
+              .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
+            token <- ZIO.fromOption(session.token)
+              .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+            _ <- telegramApiService.sendText(context.chatId, s"Подтверждаю расклад $spreadId")
+
+            request = SpreadPublishRequest(scheduledAt)
+            _ <- tarotApiService.publishSpread(request, spreadId, token)
+          } yield ()
         case BotCommand.Help =>
-          telegramApiService.sendText(chatId, "Команды:\n/start\n/help\n/project_create <имя>\n/spread_confirm <id>")
+          telegramApiService.sendText(context.chatId, "Команды:\n/start\n/help\n/project_create <имя>\n/spread_confirm <id>")
         case BotCommand.Unknown =>
-          telegramApiService.sendText(chatId, "Неизвестная команда. Введите /help.")
+          telegramApiService.sendText(context.chatId, "Неизвестная команда. Введите /help.")
       }
     } yield ()
 }

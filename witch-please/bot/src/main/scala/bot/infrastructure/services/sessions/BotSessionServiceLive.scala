@@ -73,4 +73,13 @@ final class BotSessionServiceLive extends BotSessionService {
       botSessionRepository <- ZIO.serviceWith[AppEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.update(chatId)(session => BotSession.withProject(session, projectId, token, now))
     } yield ()
+
+  def setSpread(chatId: Long, spreadId: UUID): ZIO[AppEnv, Nothing, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      botSessionRepository <- ZIO.serviceWith[AppEnv](_.botRepository.botSessionRepository)
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spreadId, now))
+    } yield ()
 }

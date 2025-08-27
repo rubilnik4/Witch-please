@@ -18,10 +18,10 @@ case object TarotApiRoutes {
   def spreadCreatePath(baseUrl: String): URL =
     URL(Path.root / baseUrl / apiPath / TarotChannelType.Telegram / "spread")
 
-  def spreadPublishPath(baseUrl: String, spreadId: UUID) =
+  def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
     URL(Path.root / baseUrl / apiPath / "spread" / spreadId.toString / "publish")
 
-  def cardCreatePath(baseUrl: String, spreadId: UUID, index: Int) =
+  def cardCreatePath(baseUrl: String, spreadId: UUID, index: Int): URL =
     URL(Path.root / baseUrl / apiPath / TarotChannelType.Telegram / "spread" / spreadId.toString / "cards" / index.toString)
 
   def tokenAuthPath(baseUrl: String): URL =
