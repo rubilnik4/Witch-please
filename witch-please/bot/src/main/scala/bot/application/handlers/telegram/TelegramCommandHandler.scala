@@ -1,4 +1,4 @@
-package bot.application.handlers
+package bot.application.handlers.telegram
 
 import bot.api.dto.TelegramWebhookRequest
 import bot.application.commands.BotCommand

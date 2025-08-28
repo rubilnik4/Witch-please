@@ -8,6 +8,8 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-logging" % "2.5.0",
   "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.11.36",
   "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % "1.11.36",
+  "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.11.36",
+  "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % "1.11.36",
   "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % "1.11.36",
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % "1.11.36",
   "dev.zio" %% "zio-test" % "2.1.19" % Test,

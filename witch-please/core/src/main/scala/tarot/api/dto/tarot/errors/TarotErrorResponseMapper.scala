@@ -5,7 +5,6 @@ import tarot.domain.models.TarotError
 import zio.*
 import zio.http.{Response, Status}
 import zio.json.*
-import zio.schema.{DeriveSchema, Schema}
 
 object TarotErrorResponseMapper {
   def toResponse(error: TarotError): TarotErrorResponse = error match {

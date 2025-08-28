@@ -28,9 +28,9 @@ object UserEndpoint {
       .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse]),
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
+          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse.ConflictError]),
         )
       )
       .tag(tag)

@@ -5,7 +5,7 @@ import tarot.layers.AppEnv
 import zio.{ZIO, ZLayer}
 import zio.http.{Response, Routes, Server}
 
-object ServerLayer {
+object TarotServerLayer {
   val serverLive: ZLayer[AppEnv & Routes[AppEnv, Response], Throwable, Server] =
     ZLayer.scoped {
       for {

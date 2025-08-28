@@ -1,11 +1,7 @@
 package shared.models.tarot.authorize
 
-import zio.json.*
-import zio.schema.*
+import zio.json._
+import sttp.tapir.Schema
 
-enum ClientType:
+enum ClientType derives JsonCodec, Schema:
   case Telegram, Web, MobileApp
-
-object ClientType {
-  given JsonCodec[ClientType] = DeriveJsonCodec.gen[ClientType]
-}

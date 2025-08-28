@@ -1,8 +1,8 @@
-package bot.application.handlers
+package bot.application.handlers.telegram
 
 import bot.api.dto.TelegramWebhookRequest
 import bot.application.commands.BotCommand
-import bot.domain.models.session.{BotPendingAction, BotSession}
+import bot.domain.models.session.*
 import bot.domain.models.telegram.*
 import bot.infrastructure.services.authorize.SecretService
 import bot.layers.AppEnv
@@ -86,7 +86,7 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
       tarotApiService <- ZIO.serviceWith[AppEnv](_.botService.tarotApiService)
       botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
 
-      _ <- BotCommandHandler.handle(command) match {
+      _ <- TelegramCommandParser.handle(command) match {
         case BotCommand.Start =>
           for {
             _ <- telegramApiService.sendText(context.chatId, "Привет! Это таро бот. Узнай как пройдет твой день")

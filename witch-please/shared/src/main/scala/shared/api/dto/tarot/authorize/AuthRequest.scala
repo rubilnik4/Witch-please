@@ -2,7 +2,7 @@ package shared.api.dto.tarot.authorize
 
 import shared.models.tarot.authorize.ClientType
 import zio.json.*
-import zio.schema.*
+import sttp.tapir.Schema
 
 import java.util.UUID
 

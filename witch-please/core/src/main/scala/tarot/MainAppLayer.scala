@@ -1,6 +1,6 @@
 package tarot
 
-import tarot.api.routes.{RoutesLayer, ServerLayer}
+import tarot.api.routes.{TarotRoutesLayer, TarotServerLayer}
 import tarot.application.configurations.AppConfig
 import tarot.application.handlers.TarotCommandHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
@@ -29,7 +29,7 @@ object MainAppLayer {
     AppConfigLayer.appConfigLive >>>
       (TelemetryLayer.telemetryLive >>>
         (appLive >>>
-          (RoutesLayer.apiRoutesLive >>> ServerLayer.serverLive)))
+          (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))
 
   def run: ZIO[Any, Throwable, Nothing] =
     ZIO.logInfo("Starting application...") *>

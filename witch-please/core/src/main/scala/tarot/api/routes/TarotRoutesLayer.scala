@@ -9,7 +9,7 @@ import tarot.layers.AppEnv
 import zio.{ZIO, ZLayer}
 import zio.http.*
 
-object RoutesLayer {
+object TarotRoutesLayer {
   private val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
     UserEndpoint.endpoints ++ AuthEndpoint.endpoints ++
       ProjectEndpoint.endpoints ++ SpreadEndpoint.endpoints

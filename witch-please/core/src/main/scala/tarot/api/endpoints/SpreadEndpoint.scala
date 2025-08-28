@@ -32,9 +32,9 @@ object SpreadEndpoint {
       .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
         )
       )
       .tag(tag)
@@ -59,10 +59,10 @@ object SpreadEndpoint {
       .out(jsonBody[IdResponse])
       .errorOut(
         oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
+          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse.NotFoundError]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
         )
       )
       .tag(tag)
@@ -89,11 +89,11 @@ object SpreadEndpoint {
       .out(emptyOutput)
       .errorOut(
         oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse])
+          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
+          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse.NotFoundError]),
+          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse.ConflictError]),
+          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
+          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
         )
       )
       .tag(tag)

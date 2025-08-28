@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="witch-please,witch-please-root,witch-please-root.witch-bot,witch-please-root.witch-core,witch-root,witch-root.main,witch-root.test,witch-root.witch-bot,witch-root.witch-bot.main,witch-root.witch-bot.test,witch-root.witch-common,witch-root.witch-common.main,witch-root.witch-common.test,witch-root.witch-common~1,witch-root.witch-common~1.main,witch-root.witch-common~1.test,witch-root.witch-core,witch-root.witch-core.main,witch-root.witch-core.test,witch-root.witch-shared,witch-root.witch-shared.main,witch-root.witch-shared.test" />
+    <profile name="sbt 1" modules="witch-please,witch-please-root,witch-please-root.witch-bot,witch-please-root.witch-core,witch-root,witch-root.witch-bot,witch-root.witch-common,witch-root.witch-common.main,witch-root.witch-common.test,witch-root.witch-common~1,witch-root.witch-common~1.main,witch-root.witch-common~1.test,witch-root.witch-core,witch-root.witch-shared" />
     <profile name="sbt 2" modules="witch-please-root.test,witch-please.test">
       <parameters>
         <parameter value="-Yretain-trees" />
@@ -55,6 +55,14 @@
         <parameter value="-Xsemanticdb" />
         <parameter value="-semanticdb-target" />
         <parameter value="C:\Projects\witch-please\witch-please\bot\target\scala-3.4.2\meta" />
+      </parameters>
+    </profile>
+    <profile name="sbt 8" modules="witch-root.main,witch-root.test,witch-root.witch-bot.main,witch-root.witch-bot.test,witch-root.witch-core.main,witch-root.witch-core.test,witch-root.witch-shared.main,witch-root.witch-shared.test">
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Werror" />
       </parameters>
     </profile>
   </component>

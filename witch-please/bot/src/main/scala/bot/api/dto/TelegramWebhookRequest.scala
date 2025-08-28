@@ -1,7 +1,7 @@
 package bot.api.dto
 
 import zio.json._
-import zio.schema._
+import sttp.tapir.Schema
 
 final case class TelegramWebhookRequest(
   @jsonField("update_id") updateId: Long,

@@ -1,10 +1,7 @@
 package shared.models.tarot.authorize
 
 import zio.json.*
+import sttp.tapir.Schema
 
-enum Role:
+enum Role derives JsonCodec, Schema:
   case PreProject, Admin, User
-
-object Role {
-  given JsonCodec[Role] = DeriveJsonCodec.gen[Role]
-}

@@ -38,7 +38,15 @@ final class BotSessionServiceLive extends BotSessionService {
       }
     } yield session
 
-  def setUser(chatId: Long, userId: UUID, token: String): ZIO[AppEnv, Nothing, Unit] =
+  def reset(chatId: Long): ZIO[AppEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Reset session for chat $chatId")
+
+      botSessionRepository <- ZIO.serviceWith[AppEnv](_.botRepository.botSessionRepository)
+      _ <- botSessionRepository.delete(chatId)
+    } yield ()
+
+  def setUser(chatId: Long, userId: UUID, token: String): ZIO[AppEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set user $userId for chat $chatId")
 
@@ -47,7 +55,7 @@ final class BotSessionServiceLive extends BotSessionService {
       _ <- botSessionRepository.update(chatId)(session => BotSession.withUser(session, userId, token, now))
     } yield ()
 
-  def clearPending(chatId: Long): ZIO[AppEnv, Nothing, Unit] =
+  def clearPending(chatId: Long): ZIO[AppEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Clear pending action for chat $chatId")
 
@@ -56,7 +64,7 @@ final class BotSessionServiceLive extends BotSessionService {
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, None, now))
     } yield ()
 
-  def setPending(chatId: Long, pending: BotPendingAction): ZIO[AppEnv, Nothing, Unit] =
+  def setPending(chatId: Long, pending: BotPendingAction): ZIO[AppEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set pending action $pending for chat $chatId")
 
@@ -65,7 +73,7 @@ final class BotSessionServiceLive extends BotSessionService {
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, Some(pending), now))
     } yield ()
 
-  def setProject(chatId: Long, projectId: UUID, token: String): ZIO[AppEnv, Nothing, Unit] =
+  def setProject(chatId: Long, projectId: UUID, token: String): ZIO[AppEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set project $projectId for chat $chatId")
 
@@ -74,7 +82,7 @@ final class BotSessionServiceLive extends BotSessionService {
       _ <- botSessionRepository.update(chatId)(session => BotSession.withProject(session, projectId, token, now))
     } yield ()
 
-  def setSpread(chatId: Long, spreadId: UUID): ZIO[AppEnv, Nothing, Unit] =
+  def setSpread(chatId: Long, spreadId: UUID): ZIO[AppEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")
 

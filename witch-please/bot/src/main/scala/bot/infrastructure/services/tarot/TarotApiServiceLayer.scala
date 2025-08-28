@@ -7,7 +7,7 @@ import zio.{Task, ZLayer}
 object TarotApiServiceLayer {
   val tarotApiServiceLive: ZLayer[String, Throwable, TarotApiService] =
     AsyncHttpClientZioBackend.layer() ++ ZLayer.service[String] >>>
-      ZLayer.fromFunction { (token: String, client: SttpBackend[Task, Any]) =>
-        TarotApiServiceLive(token, client)
+      ZLayer.fromFunction { (baseUrl: String, client: SttpBackend[Task, Any]) =>
+        TarotApiServiceLive(baseUrl, client)
       }
 }
