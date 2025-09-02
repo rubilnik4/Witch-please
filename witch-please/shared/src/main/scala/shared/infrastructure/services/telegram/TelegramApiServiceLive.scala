@@ -22,19 +22,20 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
       request = getSendTextRequest(chatId, text)
       response <- SttpClient.sendJson(client, request)
-    } yield response.messageId
+      textResponse <- getTelegramResponse(response)
+    } yield textResponse.messageId
   }
 
   def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     for {
       _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
       fileRequest = getFileRequest(fileId)
-      telegramFile <- SttpClient.sendJson(client, fileRequest)
-      filePath = telegramFile.result.filePath
-      fileName = filePath.split("/").lastOption.getOrElse(s"${telegramFile.result.fileId}.jpg")
+      fileResponse <- SttpClient.sendJson(client, fileRequest)
+      telegramFile <- getTelegramResponse(fileResponse)
+      fileName = telegramFile.filePath.split("/").lastOption.getOrElse(s"${telegramFile.fileId}.jpg")
 
-      _ <- ZIO.logDebug(s"Downloading telegram image from path: $filePath")
-      imageRequest = getDownloadImageRequest(filePath)
+      _ <- ZIO.logDebug(s"Downloading telegram image from path: $telegramFile.filePath")
+      imageRequest = getDownloadImageRequest(telegramFile.filePath)
       telegramImage <- SttpClient.sendJsonForBytes(client, imageRequest)
     } yield TelegramFile(fileName, telegramImage)
 
@@ -43,7 +44,8 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       _ <- ZIO.logDebug(s"Sending existing photo fileId=$fileId to chat $chatId")
       photoRequest = getSendPhotoRequest(chatId, fileId)
       response <- SttpClient.sendJson(client, photoRequest)
-      fileId <- getPhotoId(response, fileId)
+      telegramMessage <- getTelegramResponse(response)
+      fileId <- getPhotoId(telegramMessage, fileId)
     } yield fileId
   }
 
@@ -52,12 +54,13 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       _ <- ZIO.logDebug(s"Sending telegram file ${photo.fileName} to chat $chatId")
       photoRequest = getSendPhotoRequest(chatId, photo)
       response <- SttpClient.sendJson(client, photoRequest)
-      fileId <- getPhotoId(response, photo.fileName)
+      telegramMessage <- getTelegramResponse(response)
+      fileId <- getPhotoId(telegramMessage, photo.fileName)
     } yield fileId
   }
 
-  private def getPhotoId(response: TelegramPhotoResponse, fileName: String) =
-    ZIO.fromOption(response.result.photo.lastOption.map(_.fileId))
+  private def getPhotoId(response: TelegramMessageResponse, fileName: String) =
+    ZIO.fromOption(response.photo.flatMap(_.lastOption.map(_.fileId)))
       .tapError(_ => ZIO.logError(s"No photo id found for file $fileName"))
       .orElseFail(ApiError.HttpCode(404, s"No photo id found for file $fileName"))
 
@@ -65,7 +68,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
     val uri = uri"$baseUrl/getFile?file_id=$fileId"
     basicRequest
       .get(uri)
-      .response(asJsonEither[TelegramErrorResponse, TelegramFileResultResponse])
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramFileResponse]])
   }
 
   private def getDownloadImageRequest(filePath: String) = {
@@ -78,13 +81,13 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   private def getSendTextRequest(chatId: Long, text: String) = {
     val request = TelegramMessageRequest(chatId, text)
     SttpClient.getPostRequest(sendMessageUrl, request)
-      .response(asJsonEither[TelegramErrorResponse, TelegramMessageResponse])
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 
   private def getSendPhotoRequest(chatId: Long, fileId: String) = {
     val request = TelegramPhotoRequest(chatId, fileId)
     SttpClient.getPostRequest(sendPhotoUrl, request)
-      .response(asJsonEither[TelegramErrorResponse, TelegramPhotoResponse])
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 
   private def getSendPhotoRequest(chatId: Long, photo: TelegramFile) = {
@@ -96,5 +99,13 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
           .fileName(photo.fileName)
           .contentType(MediaType.ImageJpeg)
       )
-      .response(asJsonEither[TelegramErrorResponse, TelegramPhotoResponse])
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
+
+  private def getTelegramResponse[T](response: TelegramResponse[T]): ZIO[Any, ApiError, T] =
+    if (response.ok)
+      ZIO.fromOption(response.result)
+        .orElseFail(ApiError.InvalidResponse(response.toString, "Telegram result missing"))
+    else
+      ZIO.fail(ApiError.HttpCode(response.errorCode.getOrElse(500),
+        response.description.getOrElse("Telegram unexpected error")))

@@ -7,5 +7,5 @@ final case class TelegramMessageResponse(
   @jsonField("message_id") messageId: Long,
   @jsonField("chat") chat: TelegramChatResponse,
   @jsonField("date") date: Long,
-  @jsonField("photo") photo: List[TelegramPhotoSizeResponse]
+  @jsonField("photo") photo: Option[List[TelegramPhotoSizeResponse]]
 ) derives JsonCodec, Schema

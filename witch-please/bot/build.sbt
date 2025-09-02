@@ -14,8 +14,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % "1.11.36",
   "dev.zio" %% "zio-test" % "2.1.19" % Test,
   "dev.zio" %% "zio-test-sbt" % "2.1.19" % Test,
-  "dev.zio" %% "zio-http-testkit" % "3.3.3" % Test,
-  "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.43.0" % Test
+  "dev.zio" %% "zio-http-testkit" % "3.3.3" % Test
 )
 
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")

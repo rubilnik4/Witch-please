@@ -4,9 +4,7 @@ import zio.config.magnolia.deriveConfig
 import zio.{Config, Duration}
 
 final case class ProjectConfig(
-  tarotUrl: String,                            
-  minFutureTime: Duration,
-  maxFutureTime: Duration                            
+  tarotUrl: String
 )
 
 object ProjectConfig {

@@ -33,7 +33,7 @@ final class BotSessionServiceLive extends BotSessionService {
           for {
             clientSecret <- SecretService.generateSecret()
             newSession = BotSession.newSession(clientSecret, now)
-            _ <- botSessionRepository.put(chatId, newSession)
+            _ <- botSessionRepository.create(chatId, newSession)
           } yield newSession
       }
     } yield session

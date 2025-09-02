@@ -1,5 +1,6 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.users.UserCreateRequest
@@ -23,7 +24,7 @@ object UserEndpoint {
   val postUserEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
-      .in(ApiPath.apiPath / TarotChannelType.Telegram / "user")
+      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "user")
       .in(jsonBody[UserCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(

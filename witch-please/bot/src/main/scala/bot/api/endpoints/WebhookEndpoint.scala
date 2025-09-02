@@ -1,5 +1,6 @@
 package bot.api.endpoints
 
+import bot.api.BotApiRoutes
 import bot.api.dto.*
 import bot.application.handlers.telegram.TelegramCommandHandlerLive
 import bot.domain.models.telegram.TelegramMessage
@@ -11,9 +12,9 @@ import sttp.tapir.ztapir.*
 import zio.ZIO
 
 object WebhookEndpoint {
-  private val postWebhookEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postWebhookEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
-      .in("webhook")
+      .in(BotApiRoutes.apiPath / "webhook")
       .in(jsonBody[TelegramWebhookRequest])
       .out(statusCode(StatusCode.Ok))
       .zServerLogic { request =>

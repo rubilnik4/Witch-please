@@ -1,5 +1,6 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.models.tarot.authorize.{ClientType, Role}
@@ -20,7 +21,7 @@ object AuthEndpoint {
   val postAuthEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
-      .in(ApiPath.apiPath / "auth")
+      .in(TarotApiRoutes.apiPath / "auth")
       .in(jsonBody[AuthRequest])
       .out(jsonBody[AuthResponse])
       .errorOut(

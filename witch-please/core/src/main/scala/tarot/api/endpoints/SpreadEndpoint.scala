@@ -1,5 +1,6 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*
@@ -27,7 +28,7 @@ object SpreadEndpoint {
 
   val postSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
-      .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread")
+      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread")
       .in(jsonBody[TelegramSpreadCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(
@@ -54,7 +55,7 @@ object SpreadEndpoint {
 
   val postCardEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.post
-      .in(ApiPath.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
+      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
       .in(jsonBody[TelegramCardCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(
@@ -84,7 +85,7 @@ object SpreadEndpoint {
 
   val publishSpreadEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint.put
-      .in(ApiPath.apiPath / "spread" / path[UUID]("spreadId") / "publish")
+      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "publish")
       .in(jsonBody[SpreadPublishRequest])
       .out(emptyOutput)
       .errorOut(

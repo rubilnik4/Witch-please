@@ -19,12 +19,12 @@ object TelegramMessage {
     val context = getContext(message)
     message.text match {
       case Some(text) if text.startsWith("/") =>
-        Command(context, text.drop(1))
+        TelegramMessage.Command(context, text.drop(1))
       case Some(text) =>
-        Text(context, text)
+        TelegramMessage.Text(context, text)
       case None =>
         message.photo.flatMap(_.lastOption.map(_.fileId)) match {
-          case Some(fileId) => Photo(context, fileId)
+          case Some(fileId) => TelegramMessage.Photo(context, fileId)
           case None => Unknown()
         }
     }

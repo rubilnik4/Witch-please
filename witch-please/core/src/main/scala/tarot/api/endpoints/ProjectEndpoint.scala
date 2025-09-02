@@ -1,5 +1,6 @@
 package tarot.api.endpoints
 
+import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.projects.ProjectCreateRequest
@@ -25,7 +26,7 @@ object ProjectEndpoint {
   val postProjectEndpoint: ZServerEndpoint[AppEnv, Any] =
     endpoint
       .post
-      .in(ApiPath.apiPath / "project")
+      .in(TarotApiRoutes.apiPath / "project")
       .in(jsonBody[ProjectCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(

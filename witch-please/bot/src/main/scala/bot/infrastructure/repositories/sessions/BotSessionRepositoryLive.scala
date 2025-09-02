@@ -10,6 +10,14 @@ final class BotSessionRepositoryLive(ref: Ref[Map[Long, BotSession]]) extends Bo
   def get(chatId: Long): UIO[Option[BotSession]] =
     ref.get.map(_.get(chatId))
 
+  def create(chatId: Long, session: BotSession): ZIO[Any, Throwable, Unit] =
+    ref.get.flatMap { sessions =>
+      if (sessions.contains(chatId))
+        ZIO.fail(new IllegalStateException(s"Session already exists: $chatId"))
+      else
+        ref.update(_.updated(chatId, session))
+    }
+    
   def put(chatId: Long, session: BotSession): ZIO[Any, Throwable, Unit] =
     ref.get.flatMap { sessions =>
       if (sessions.contains(chatId))
