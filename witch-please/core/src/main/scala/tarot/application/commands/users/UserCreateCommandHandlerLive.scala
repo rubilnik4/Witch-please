@@ -1,4 +1,4 @@
-package tarot.application.handlers.users
+package tarot.application.commands.users
 
 import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.TarotError

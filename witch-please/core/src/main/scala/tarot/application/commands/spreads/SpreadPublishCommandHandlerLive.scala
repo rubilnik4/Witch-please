@@ -1,4 +1,4 @@
-package tarot.application.handlers.spreads
+package tarot.application.commands.spreads
 
 import shared.infrastructure.services.common.DateTimeService
 import tarot.application.commands.spreads.SpreadPublishCommand

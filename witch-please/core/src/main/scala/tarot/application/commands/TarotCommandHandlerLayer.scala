@@ -1,8 +1,8 @@
-package tarot.application.handlers
+package tarot.application.commands
 
-import tarot.application.handlers.projects.*
-import tarot.application.handlers.users.*
-import tarot.application.handlers.spreads.*
+import tarot.application.commands.projects.*
+import tarot.application.commands.spreads.*
+import tarot.application.commands.users.*
 import zio.{ULayer, ZLayer}
 
 object TarotCommandHandlerLayer {

@@ -26,6 +26,16 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
     } yield textResponse.messageId
   }
 
+  def sendButton(chatId: Long, text: String, button: TelegramKeyboardButton): ZIO[Any, ApiError, Long] = {
+    for {
+      _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
+      markup = TelegramKeyboardMarkup(List(List(button)))
+      request = getSendButtonRequest(chatId, text, markup)
+      response <- SttpClient.sendJson(client, request)
+      textResponse <- getTelegramResponse(response)
+    } yield textResponse.messageId
+  }
+
   def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     for {
       _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
@@ -80,13 +90,19 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
 
   private def getSendTextRequest(chatId: Long, text: String) = {
     val request = TelegramMessageRequest(chatId, text)
-    SttpClient.getPostRequest(sendMessageUrl, request)
+    SttpClient.postRequest(sendMessageUrl, request)
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
+  }
+
+  private def getSendButtonRequest(chatId: Long, text: String, markup: TelegramKeyboardMarkup) = {
+    val request = TelegramMessageRequest(chatId, text, Some(markup))
+    SttpClient.postRequest(sendMessageUrl, request)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 
   private def getSendPhotoRequest(chatId: Long, fileId: String) = {
     val request = TelegramPhotoRequest(chatId, fileId)
-    SttpClient.getPostRequest(sendPhotoUrl, request)
+    SttpClient.postRequest(sendPhotoUrl, request)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 

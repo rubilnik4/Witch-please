@@ -5,26 +5,39 @@ import zio.http.*
 import zio.json.*
 
 object ZIOHttpClient {
-  def getPostRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
-    getPostRequestInternal(url, body, None)
+  def getRequest(url: URL): http.Request =
+    getRequestInternal(url, None)
 
-  def getAuthPostRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
-    getPostRequestInternal(url, body, Some(token))
+  def getAuthRequest(url: URL, token: String): http.Request =
+    getRequestInternal(url, Some(token))
+    
+  private def getRequestInternal(url: URL, token: Option[String]): http.Request = {
+    val headers = getAuthHeaders(token)
+    Request
+      .get(url)
+      .setHeaders(Headers(headers))
+  }
+  
+  def postRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
+    postRequestInternal(url, body, None)
 
-  private def getPostRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]): http.Request = {
+  def postAuthRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
+    postRequestInternal(url, body, Some(token))
+
+  private def postRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]): http.Request = {
     val headers = getAuthHeaders(token)
     Request
       .post(url, Body.fromString(body.toJson))
       .setHeaders(Headers(headers))
   }
 
-  def getPutRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
-    getPutRequestInternal(url, body, None)
+  def putRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
+    putRequestInternal(url, body, None)
 
-  def getAuthPutRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
-    getPutRequestInternal(url, body, Some(token))
+  def putAuthRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
+    putRequestInternal(url, body, Some(token))
 
-  private def getPutRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]) = {
+  private def putRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]) = {
     val headers = getAuthHeaders(token)
     Request
       .put(url, Body.fromString(body.toJson))

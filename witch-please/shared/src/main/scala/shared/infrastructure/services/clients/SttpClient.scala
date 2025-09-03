@@ -11,24 +11,35 @@ object SttpClient {
   given ShowError[String] with
     def show(e: String): String = e
 
-  def getPostRequest[Request: JsonEncoder](uri: Uri, request: Request): RequestT[Identity, Either[String, String], Any] =
+  private final val jsonContentType = "application/json"
+
+  def getRequest(uri: Uri): RequestT[Identity, Either[String, String], Any] =
+    basicRequest
+      .get(uri)
+      .contentType(jsonContentType)
+
+  def getAuthRequest(uri: Uri, token: String): RequestT[Identity, Either[String, String], Any] =
+    getRequest(uri)
+      .auth.bearer(token)
+
+  def postRequest[Request: JsonEncoder](uri: Uri, request: Request): RequestT[Identity, Either[String, String], Any] =
     basicRequest
       .post(uri)
       .body(request.toJson)
-      .contentType("application/json")
+      .contentType(jsonContentType)
 
-  def getPostRequestAuth[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
-    getPostRequest(uri, request)
+  def postAuthRequest[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
+    postRequest(uri, request)
       .auth.bearer(token)
 
-  def getPutRequest[Request: JsonEncoder](uri: Uri, request: Request): RequestT[Identity, Either[String, String], Any] =
+  def putRequest[Request: JsonEncoder](uri: Uri, request: Request): RequestT[Identity, Either[String, String], Any] =
     basicRequest
       .put(uri)
       .body(request.toJson)
-      .contentType("application/json")
+      .contentType(jsonContentType)
 
-  def getPutRequestAuth[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
-    getPutRequest(uri, request)
+  def putAuthRequest[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
+    putRequest(uri, request)
       .auth.bearer(token)
 
   def sendJson[Response, Error](

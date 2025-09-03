@@ -1,4 +1,4 @@
-package tarot.application.handlers
+package tarot.application.commands
 
 import tarot.domain.models.TarotError
 import tarot.layers.AppEnv

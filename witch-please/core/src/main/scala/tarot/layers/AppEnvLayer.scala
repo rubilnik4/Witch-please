@@ -1,7 +1,8 @@
 package tarot.layers
 
+import tarot.application.commands.TarotCommandHandler
 import tarot.application.configurations.AppConfig
-import tarot.application.handlers.TarotCommandHandler
+import tarot.application.queries.TarotQueryHandler
 import tarot.application.telemetry.metrics.TarotMeter
 import tarot.application.telemetry.tracing.TarotTracing
 import tarot.infrastructure.repositories.TarotRepository
@@ -15,7 +16,7 @@ object AppEnvLayer {
     AppConfig
       & TarotService
       & TarotRepository 
-      & TarotCommandHandler
+      & TarotCommandHandler & TarotQueryHandler
       & TarotMeter & TarotTracing,
     Nothing,
     AppEnv

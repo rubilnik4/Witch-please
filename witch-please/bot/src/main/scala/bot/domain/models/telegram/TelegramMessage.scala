@@ -19,7 +19,7 @@ object TelegramMessage {
     val context = getContext(message)
     message.text match {
       case Some(text) if text.startsWith("/") =>
-        TelegramMessage.Command(context, text.drop(1))
+        TelegramMessage.Command(context, text)
       case Some(text) =>
         TelegramMessage.Text(context, text)
       case None =>

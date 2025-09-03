@@ -1,8 +1,8 @@
 package tarot.layers
 
-import tarot.application.handlers.TarotCommandHandlerLayer
+import tarot.application.commands.TarotCommandHandlerLayer
+import tarot.application.queries.TarotQueryHandlerLayer
 import tarot.infrastructure.services.TarotServiceLayer
-import tarot.infrastructure.services.photo.PhotoServiceLayer
 import zio.ZLayer
 
 object TestAppEnvLayer {
@@ -12,6 +12,7 @@ object TestAppEnvLayer {
       TestTarotRepositoryLayer.postgresTarotRepositoryLive,
       TarotServiceLayer.tarotServiceLive,
       TarotCommandHandlerLayer.tarotCommandHandlerLive,
+      TarotQueryHandlerLayer.tarotQueryHandlerLive,
       TestTarotMeterLayer.testMarketMeterLive,
       TestTarotTracingLayer.tarotTracingLive,
       AppEnvLayer.appEnvLive

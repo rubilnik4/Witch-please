@@ -1,0 +1,22 @@
+package bot.layers
+
+import bot.application.configurations.AppConfig
+import bot.infrastructure.services.*
+import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
+import bot.infrastructure.services.tarot.TarotApiService
+import bot.mocks.*
+import shared.infrastructure.services.*
+import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer}
+import zio.ZLayer
+
+object TestBotServiceLayer {
+  private val tokenLayer: ZLayer[AppConfig, Nothing, String] =
+    ZLayer.fromFunction((config: AppConfig) => config.telegram.token)
+
+  val botServiceLive: ZLayer[AppConfig, Throwable, BotService] =
+    (
+      (tokenLayer >>> TelegramApiServiceLayer.telegramApiServiceLive) ++
+        TarotApiServiceMock.tarotApiServiceLive ++
+        BotSessionServiceLayer.botSessionServiceLive
+      ) >>> ZLayer.fromFunction(BotServiceLive.apply)
+}

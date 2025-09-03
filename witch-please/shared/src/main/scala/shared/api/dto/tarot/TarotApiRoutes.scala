@@ -1,29 +1,40 @@
 package shared.api.dto.tarot
 
-import shared.models.tarot.contracts.*
+import shared.models.tarot.contracts.TarotChannelType
 import zio.*
 import zio.http.*
 
 import java.util.UUID
 
 case object TarotApiRoutes {
-  final val apiPath: String = "api"
+  val apiPath = "api"
+
+  private def make(baseUrl: String, segments: String*): URL = {
+    val base = baseUrl.stripSuffix("/")
+    val path = segments.map(_.stripPrefix("/")).mkString("/")
+    URL.decode(s"$base/$path").getOrElse {
+      throw new IllegalArgumentException(s"Invalid URL: $base/$path")
+    }
+  }
 
   def userCreatePath(baseUrl: String): URL =
-    URL(Path.root / baseUrl / apiPath / TarotChannelType.Telegram / "user")
+    make(baseUrl, apiPath, TarotChannelType.Telegram, "user")
+
+  def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
+    make(baseUrl, apiPath, TarotChannelType.Telegram, "user", "by-client", clientId)
 
   def projectCreatePath(baseUrl: String): URL =
-    URL(Path.root / baseUrl / apiPath / "project")
+    make(baseUrl, apiPath, "project")
 
   def spreadCreatePath(baseUrl: String): URL =
-    URL(Path.root / baseUrl / apiPath / TarotChannelType.Telegram / "spread")
+    make(baseUrl, apiPath, TarotChannelType.Telegram, "spread")
 
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
-    URL(Path.root / baseUrl / apiPath / "spread" / spreadId.toString / "publish")
+    make(baseUrl, apiPath, "spread", spreadId.toString, "publish")
 
   def cardCreatePath(baseUrl: String, spreadId: UUID, index: Int): URL =
-    URL(Path.root / baseUrl / apiPath / TarotChannelType.Telegram / "spread" / spreadId.toString / "cards" / index.toString)
+    make(baseUrl, apiPath, TarotChannelType.Telegram, "spread", spreadId.toString, "cards", index.toString)
 
   def tokenAuthPath(baseUrl: String): URL =
-    URL(Path.root / baseUrl / apiPath / "auth")
+    make(baseUrl, apiPath, "auth")
 }

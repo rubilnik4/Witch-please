@@ -1,8 +1,9 @@
 package tarot
 
 import tarot.api.routes.{TarotRoutesLayer, TarotServerLayer}
+import tarot.application.commands.TarotCommandHandlerLayer
 import tarot.application.configurations.AppConfig
-import tarot.application.handlers.TarotCommandHandlerLayer
+import tarot.application.queries.TarotQueryHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
 import tarot.application.telemetry.tracing.TarotTracingLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
@@ -21,7 +22,7 @@ object MainAppLayer {
       TarotMeterLayer.tarotMeterLive ++
         TarotTracingLayer.tarotTracingLive ++
         repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++
-        TarotCommandHandlerLayer.tarotCommandHandlerLive
+        TarotCommandHandlerLayer.tarotCommandHandlerLive ++ TarotQueryHandlerLayer.tarotQueryHandlerLive
     combinedLayers >>> AppEnvLayer.appEnvLive
   }
 

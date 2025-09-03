@@ -56,7 +56,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postSpreadEndpoint))
         spreadRequest = spreadCreateRequest(projectId, cardCount, photoId)
-        request = ZIOHttpClient.getAuthPostRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
@@ -75,7 +75,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postCardEndpoint))
         cardIds <- ZIO.foreach(0 until cardCount) { index =>
           val cardRequest = cardCreateRequest(photoId)
-          val request = ZIOHttpClient.getAuthPostRequest(TarotApiRoutes.cardCreatePath("", spreadId, index), cardRequest, token)
+          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, index), cardRequest, token)
           for {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -93,7 +93,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.publishSpreadEndpoint))
         publishRequest <- spreadPublishRequest
-        request = ZIOHttpClient.getAuthPutRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
         spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)

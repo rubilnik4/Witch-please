@@ -1,6 +1,6 @@
-package tarot.application.handlers.spreads
+package tarot.application.commands.spreads
 
+import tarot.application.commands.CommandHandler
 import tarot.application.commands.spreads.SpreadPublishCommand
-import tarot.application.handlers.CommandHandler
 
 trait SpreadPublishCommandHandler extends CommandHandler[SpreadPublishCommand, Unit]

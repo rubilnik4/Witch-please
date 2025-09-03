@@ -1,15 +1,15 @@
 package bot.application.handlers.telegram
 
-import bot.api.dto.TelegramWebhookRequest
 import bot.application.commands.BotCommand
+import bot.application.commands.telegram.TelegramCommands
 import bot.domain.models.session.*
 import bot.domain.models.telegram.*
-import bot.infrastructure.services.authorize.SecretService
 import bot.layers.AppEnv
 import shared.api.dto.tarot.authorize.AuthRequest
 import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
+import shared.api.dto.telegram.TelegramKeyboardButton
 import shared.models.tarot.authorize.ClientType
 import zio.ZIO
 
@@ -87,44 +87,43 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
       botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
 
       _ <- TelegramCommandParser.handle(command) match {
-        case BotCommand.Start =>
+        case BotCommand.Start =>          
           for {
-            _ <- telegramApiService.sendText(context.chatId, "Привет! Это таро бот. Узнай как пройдет твой день")
-            - <- botSessionService.start(context.chatId)
-          } yield ()
-        case BotCommand.CreateUser(name) =>
-          for {
-            _ <- telegramApiService.sendText(context.chatId, s"Создаю пользователя '$name'")
-            session <- botSessionService.get(context.chatId)
+            userName <- ZIO.fromOption(context.username)
+              .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.username}"))           
+            session <- botSessionService.start(context.chatId)   
 
-            userRequest = UserCreateRequest(context.clientId.toString, session.clientSecret, name)
-            userId <- tarotApiService.createUser(userRequest).map(_.id)
-
+            userRequest = UserCreateRequest(context.clientId.toString, session.clientSecret, userName)
+            userId <- tarotApiService.getOrCreateUserId(userRequest)
             authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, None)
             token <- tarotApiService.tokenAuth(authRequest).map(_.token)
-            - <- botSessionService.setUser(context.chatId, userId, token)
+            _ <- botSessionService.setUser(context.chatId, userId, token)
+
+            button = TelegramKeyboardButton("Создать сущность!", Some(TelegramCommands.ProjectCreate))
+            _ <- telegramApiService.sendButton(context.chatId, s"Приветствую тебя $userName хозяйка таро. Приказывай!", button)
           } yield ()
         case BotCommand.CreateProject(name) =>
           for {
-            _ <- telegramApiService.sendText(context.chatId, s"Создаю проект '$name'")
-            request = ProjectCreateRequest(name)
             session <- botSessionService.get(context.chatId)
             userId <- ZIO.fromOption(session.userId)
               .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
             token <- ZIO.fromOption(session.token)
               .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
+            request = ProjectCreateRequest(name)
             projectId <- tarotApiService.createProject(request, token).map(_.id)
-
             authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, Some(projectId))
             authResponse <- tarotApiService.tokenAuth(authRequest)
             _ <- botSessionService.setProject(context.chatId, projectId, token)
+
+            button = TelegramKeyboardButton("Создать расклад!", Some(TelegramCommands.SpreadCreate))
+            _ <- telegramApiService.sendButton(context.chatId, s"Нашли сущность $projectId. Что дальше?", button)
           } yield ()
         case BotCommand.CreateSpread(title: String, cardCount: Int) =>
           val pending = BotPendingAction.SpreadCover(title, cardCount)
           for {
             _ <- botSessionService.setPending(context.chatId, pending)
-            _ <- telegramApiService.sendText(context.chatId, s"Прикрепите фото для создания расклада $title")
+            _ <- telegramApiService.sendText(context.chatId, s"Прикрепи фото для создания расклада $title")
           } yield ()
         case BotCommand.CreateCard(description, index) =>
           val pending = BotPendingAction.CardCover(description, index)

@@ -1,4 +1,4 @@
-package tarot.application.handlers.spreads
+package tarot.application.commands.spreads
 
 import tarot.application.commands.spreads.SpreadCreateCommand
 import tarot.domain.models.TarotError

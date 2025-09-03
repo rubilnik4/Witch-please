@@ -1,4 +1,4 @@
-package tarot.application.handlers.projects
+package tarot.application.commands.projects
 
 import shared.models.tarot.authorize.Role
 import tarot.application.commands.projects.ProjectCreateCommand
