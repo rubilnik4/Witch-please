@@ -5,12 +5,12 @@ import bot.infrastructure.repositories.BotRepositoryLayer
 import zio.ZLayer
 
 object TestAppEnvLayer {
-  val testAppEnvLive: ZLayer[Any, Throwable, AppEnv] =
-    ZLayer.make[AppEnv](
+  val testAppEnvLive: ZLayer[Any, Throwable, BotEnv] =
+    ZLayer.make[BotEnv](
       TestAppConfigLayer.testAppConfigLive,
       TestBotServiceLayer.botServiceLive,
       BotRepositoryLayer.botRepositoryLive,
       BotCommandHandlerLayer.botCommandHandlerLive,
-      AppEnvLayer.appEnvLive
+      BotEnvLayer.envLive
     )
 }

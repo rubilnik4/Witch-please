@@ -2,6 +2,7 @@ name := "witch-shared"
 
 libraryDependencies ++= Seq(
   "dev.zio" %% "zio" % "2.1.19",
+  "dev.zio" %% "zio-nio" % "2.0.2",
   "dev.zio" %% "zio-streams" % "2.1.19",
   "dev.zio" %% "zio-json" % "0.7.43",
   "dev.zio" %% "zio-http" % "3.3.3",

@@ -15,7 +15,7 @@ import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.projects.ProjectCreateCommand
 import tarot.domain.models.authorize.UserId
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.ZIO
 
 import java.util.UUID
@@ -23,7 +23,7 @@ import java.util.UUID
 object ProjectEndpoint {
   private final val tag = "projects"
 
-  val postProjectEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postProjectEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
       .in(TarotApiRoutes.apiPath / "project")
@@ -44,13 +44,13 @@ object ProjectEndpoint {
         (for {
           _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create project: ${request.name}")
           externalProject <- ProjectCreateRequestMapper.fromRequest(request)
-          handler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.projectCreateCommandHandler)
+          handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCreateCommandHandler)
           command = ProjectCreateCommand(externalProject, UserId(tokenPayload.userId))
           projectId <- handler.handle(command)
         } yield IdResponse(projectId.id))
           .mapError(err => TarotErrorResponseMapper.toResponse(err))
       }
 
-  val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
+  val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(postProjectEndpoint)
 }

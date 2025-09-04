@@ -3,7 +3,7 @@ package tarot.infrastructure.repositories.projects
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.database.Migration
 import tarot.infrastructure.repositories.TarotRepository
 import zio.{ZIO, ZLayer}

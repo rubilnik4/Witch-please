@@ -1,21 +1,21 @@
 package bot.layers
 
-import bot.application.configurations.AppConfig
+import bot.application.configurations.BotConfig
 import bot.application.handlers.*
 import bot.application.handlers.telegram.TelegramCommandHandler
 import bot.infrastructure.repositories.*
 import bot.infrastructure.services.*
 import zio.ZLayer
 
-object AppEnvLayer {
-  val appEnvLive: ZLayer[
-    AppConfig
+object BotEnvLayer {
+  val envLive: ZLayer[
+    BotConfig
       & BotService
       & BotRepository
       & BotCommandHandler,
 //      & TarotMeter & TarotTracing,
     Nothing,
-    AppEnv
+    BotEnv
   ] =
-    ZLayer.fromFunction(AppEnvLive.apply)
+    ZLayer.fromFunction(BotEnvLive.apply)
 }

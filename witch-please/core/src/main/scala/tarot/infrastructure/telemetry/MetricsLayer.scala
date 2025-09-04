@@ -3,13 +3,13 @@ package tarot.infrastructure.telemetry
 import TelemetryResources.{getTelemetryConfig, telemetryResource}
 import io.opentelemetry.exporter.prometheus.PrometheusHttpServer
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import zio.*
 
 object MetricsLayer {
-  val metricsLive: ZLayer[AppConfig, Throwable, SdkMeterProvider] = ZLayer.scoped {
+  val metricsLive: ZLayer[TarotConfig, Throwable, SdkMeterProvider] = ZLayer.scoped {
     for {
-      appConfig <- ZIO.service[AppConfig]
+      appConfig <- ZIO.service[TarotConfig]
       telemetryConfig <- getTelemetryConfig
       port <- ZIO.attempt(telemetryConfig.prometheusPort.toInt)
         .orElseFail(new RuntimeException(s"Invalid prometheus port: ${telemetryConfig.prometheusPort}"))

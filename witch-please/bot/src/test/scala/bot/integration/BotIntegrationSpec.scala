@@ -3,11 +3,12 @@ package bot.integration
 import bot.api.BotApiRoutes
 import bot.api.endpoints.*
 import bot.domain.models.session.BotPendingAction
-import bot.layers.AppEnv
+import bot.layers.BotEnv
 import bot.layers.TestAppEnvLayer.testAppEnvLive
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.ztapir.*
 import zio.http.*
@@ -17,12 +18,22 @@ import zio.test.TestAspect.sequential
 import zio.{Ref, Scope, ZIO, ZLayer}
 
 object BotIntegrationSpec extends ZIOSpecDefault {
+  final val resourcePath = "photos/test.png"
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Bot API integration")(
+    test("initialize test state") {
+      for {
+        photoId <- getPhoto
+
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        _ <- ref.set(TestBotState(Some(photoId)))
+      } yield assertTrue(photoId.nonEmpty)
+    },
+
     test("send start command") {
       for {
-        botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[AppEnv](_.appConfig.telegram.chatId)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
         
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         startRequest = TestTelegramWebhook.startRequest(chatId)
@@ -39,8 +50,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
     test("send project command") {
       for {
-        botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[AppEnv](_.appConfig.telegram.chatId)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         createProjectRequest = TestTelegramWebhook.createProjectRequest(chatId)
@@ -57,8 +68,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
     test("create spread command") {
       for {
-        botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[AppEnv](_.appConfig.telegram.chatId)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         cardCount = 2
@@ -76,9 +87,20 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     },
   ).provideShared(
     Scope.default,
-    testAppEnvLive
+    testAppEnvLive,
+    testBotStateLayer
   ) @@ sequential
 
   private val testBotStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestBotState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestBotState()))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestBotState(None)))
+
+  private def getPhoto: ZIO[BotEnv, Throwable, String] =
+    for {
+      fileStorageService <- ZIO.serviceWith[BotEnv](_.botService.fileStorageService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      telegramConfig <- ZIO.serviceWith[BotEnv](_.appConfig.telegram)
+      photo <- fileStorageService.getResourcePhoto(resourcePath)
+      telegramFile = TelegramFile(photo.fileName, photo.bytes)
+      photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
+    } yield photoId
 }

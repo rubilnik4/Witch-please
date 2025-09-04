@@ -1,7 +1,7 @@
 package tarot.layers
 
 import tarot.application.commands.TarotCommandHandler
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import tarot.application.queries.TarotQueryHandler
 import tarot.application.telemetry.metrics.TarotMeter
 import tarot.application.telemetry.tracing.TarotTracing
@@ -11,15 +11,15 @@ import tarot.infrastructure.services.TarotService
 import zio.ZLayer
 
 
-object AppEnvLayer {
-  val appEnvLive: ZLayer[
-    AppConfig
+object TarotEnvLayer {
+  val envLive: ZLayer[
+    TarotConfig
       & TarotService
       & TarotRepository 
       & TarotCommandHandler & TarotQueryHandler
       & TarotMeter & TarotTracing,
     Nothing,
-    AppEnv
+    TarotEnv
   ] =
-    ZLayer.fromFunction(AppEnvLive.apply)
+    ZLayer.fromFunction(TarotEnvLive.apply)
 }

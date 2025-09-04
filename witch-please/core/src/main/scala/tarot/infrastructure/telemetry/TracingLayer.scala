@@ -4,13 +4,13 @@ import TelemetryResources.*
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import zio.*
 
 object TracingLayer {
-  val tracingLive: ZLayer[AppConfig, Throwable, SdkTracerProvider] = ZLayer.scoped {
+  val tracingLive: ZLayer[TarotConfig, Throwable, SdkTracerProvider] = ZLayer.scoped {
     for {
-      appConfig <- ZIO.service[AppConfig]
+      appConfig <- ZIO.service[TarotConfig]
       telemetryConfig <- getTelemetryConfig
 
       exporter <- ZIO.fromAutoCloseable(

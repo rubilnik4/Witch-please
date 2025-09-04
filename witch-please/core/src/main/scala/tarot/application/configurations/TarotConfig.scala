@@ -4,7 +4,7 @@ import zio.Config
 import zio.config.derivation.*
 import zio.config.magnolia.deriveConfig
 
-final case class AppConfig(
+final case class TarotConfig(
   project: ProjectConfig,
   jwt: JwtConfig,
   cache: CacheConfig,
@@ -14,6 +14,6 @@ final case class AppConfig(
   telemetry: Option[TelemetryConfig]
 )
 
-object AppConfig {
-  implicit val config: Config[AppConfig] = deriveConfig[AppConfig]
+object TarotConfig {
+  implicit val config: Config[TarotConfig] = deriveConfig[TarotConfig]
 }

@@ -2,32 +2,32 @@ package tarot
 
 import tarot.api.routes.{TarotRoutesLayer, TarotServerLayer}
 import tarot.application.commands.TarotCommandHandlerLayer
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import tarot.application.queries.TarotQueryHandlerLayer
 import tarot.application.telemetry.metrics.TarotMeterLayer
 import tarot.application.telemetry.tracing.TarotTracingLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
 import tarot.infrastructure.telemetry.TelemetryLayer
-import tarot.layers.{AppConfigLayer, AppEnv, AppEnvLayer}
+import tarot.layers.{TarotConfigLayer, TarotEnv, TarotEnvLayer}
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.{ZIO, ZLayer}
 
 object MainAppLayer {
-  private val appLive: ZLayer[AppConfig & Meter & Tracing, Throwable, AppEnv] = {
+  private val appLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
     val repositoryLayer = TarotRepositoryLayer.tarotRepositoryLive
     val combinedLayers =
       TarotMeterLayer.tarotMeterLive ++
         TarotTracingLayer.tarotTracingLive ++
         repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++
         TarotCommandHandlerLayer.tarotCommandHandlerLive ++ TarotQueryHandlerLayer.tarotQueryHandlerLive
-    combinedLayers >>> AppEnvLayer.appEnvLive
+    combinedLayers >>> TarotEnvLayer.envLive
   }
 
   private val runtimeLive: ZLayer[Any, Throwable, Server] =
-    AppConfigLayer.appConfigLive >>>
+    TarotConfigLayer.appConfigLive >>>
       (TelemetryLayer.telemetryLive >>>
         (appLive >>>
           (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))

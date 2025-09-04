@@ -6,8 +6,8 @@ import tarot.infrastructure.services.TarotServiceLayer
 import zio.ZLayer
 
 object TestAppEnvLayer {
-  val testAppEnvLive: ZLayer[Any, Throwable, AppEnv] =
-    ZLayer.make[AppEnv](
+  val testAppEnvLive: ZLayer[Any, Throwable, TarotEnv] =
+    ZLayer.make[TarotEnv](
       TestAppConfigLayer.testAppConfigLive,
       TestTarotRepositoryLayer.postgresTarotRepositoryLive,
       TarotServiceLayer.tarotServiceLive,
@@ -15,6 +15,6 @@ object TestAppEnvLayer {
       TarotQueryHandlerLayer.tarotQueryHandlerLive,
       TestTarotMeterLayer.testMarketMeterLive,
       TestTarotTracingLayer.tarotTracingLive,
-      AppEnvLayer.appEnvLive
+      TarotEnvLayer.envLive
     )
 }

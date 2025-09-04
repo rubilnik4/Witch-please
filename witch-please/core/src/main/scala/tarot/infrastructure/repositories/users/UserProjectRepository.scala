@@ -4,7 +4,7 @@ import shared.models.tarot.authorize.Role
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.{User, UserId, UserProject, UserRole}
 import tarot.domain.models.projects.{Project, ProjectId}
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.ZIO
 
 trait UserProjectRepository {

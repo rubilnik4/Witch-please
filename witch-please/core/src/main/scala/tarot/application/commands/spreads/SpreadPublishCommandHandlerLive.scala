@@ -5,15 +5,15 @@ import tarot.application.commands.spreads.SpreadPublishCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.spreads.*
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.ZIO
 
 import java.time.Instant
 
 final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler {
-  def handle(command: SpreadPublishCommand): ZIO[AppEnv, TarotError, Unit] = {
+  def handle(command: SpreadPublishCommand): ZIO[TarotEnv, TarotError, Unit] = {
     for {
-      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       spread <- spreadRepository.getSpread(command.spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread ${command.spreadId} not found")))
 
@@ -26,7 +26,7 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
-      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       cardCount <- spreadRepository.countCards(spread.id)
 
       _ <- ZIO.when(spread.spreadStatus != SpreadStatus.Draft) {
@@ -41,8 +41,8 @@ final class SpreadPublishCommandHandlerLive extends SpreadPublishCommandHandler 
 
   private def publishSpread(spread: Spread, scheduledAt: Instant) =
     for {
-      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
-      projectConfig <- ZIO.serviceWith[AppEnv](_.appConfig.project)
+      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      projectConfig <- ZIO.serviceWith[TarotEnv](_.config.project)
 
       now <- DateTimeService.getDateTimeNow
       minTime = now.plus(projectConfig.minFutureTime)

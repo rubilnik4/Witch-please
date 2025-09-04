@@ -1,15 +1,17 @@
 package bot.application.configurations
 
+import tarot.application.configurations.LocalStorageConfig
 import zio.Config
 import zio.config.derivation.*
 import zio.config.magnolia.deriveConfig
 
-final case class AppConfig(
+final case class BotConfig(
   project: ProjectConfig,
   telegram: TelegramConfig,
+  localStorage: Option[LocalStorageConfig],
   telemetry: Option[TelemetryConfig]
 )
 
-object AppConfig {
-  implicit val config: Config[AppConfig] = deriveConfig[AppConfig]
+object BotConfig {
+  implicit val config: Config[BotConfig] = deriveConfig[BotConfig]
 }

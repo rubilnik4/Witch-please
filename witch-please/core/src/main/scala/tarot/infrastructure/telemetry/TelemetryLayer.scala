@@ -6,7 +6,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.logs.*
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 
 import zio.*
 import zio.telemetry.opentelemetry.OpenTelemetry
@@ -15,7 +15,7 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object TelemetryLayer {
-  private val otelSdkLive: ZLayer[AppConfig, Throwable, OpenTelemetrySdk] =
+  private val otelSdkLive: ZLayer[TarotConfig, Throwable, OpenTelemetrySdk] =
     (TracingLayer.tracingLive ++ MetricsLayer.metricsLive ++ LoggingLayer.loggingLive) >>>
       ZLayer.scoped {
         ZIO.fromAutoCloseable(
@@ -40,7 +40,7 @@ object TelemetryLayer {
   private val meteringLayer: URLayer[OtelSdk & ContextStorage, Meter] =
     OpenTelemetry.metrics(TelemetryResources.telemetryAppName)
 
-  private def loggingLayer: ZLayer[OtelSdk & ContextStorage & AppConfig, Throwable, Unit] =
+  private def loggingLayer: ZLayer[OtelSdk & ContextStorage & TarotConfig, Throwable, Unit] =
     ZLayer.scoped {
       for {       
         telemetryConfig <- TelemetryResources.getTelemetryConfig
@@ -54,7 +54,7 @@ object TelemetryLayer {
   private val contextLayer: ULayer[ContextStorage] =
     OpenTelemetry.contextZIO
 
-  val telemetryLive: ZLayer[AppConfig, Throwable, Meter & Tracing] =
-    (otelSdkLive ++ contextLayer ++ ZLayer.environment[AppConfig]) >>>
+  val telemetryLive: ZLayer[TarotConfig, Throwable, Meter & Tracing] =
+    (otelSdkLive ++ contextLayer ++ ZLayer.environment[TarotConfig]) >>>
       (meteringLayer ++ loggingLayer ++ tracingLayer)
 }

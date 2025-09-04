@@ -3,7 +3,7 @@ package tarot.infrastructure.repositories
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.database.Migration
 import tarot.infrastructure.repositories.projects.ProjectRepositoryLayer
 import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
@@ -13,10 +13,10 @@ import zio.{ZIO, ZLayer}
 import javax.sql.DataSource
 
 object TarotRepositoryLayer {
-  private val dataSourceLayer: ZLayer[AppConfig, Throwable, DataSource] =
+  private val dataSourceLayer: ZLayer[TarotConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
       for {
-        config <- ZIO.service[AppConfig]
+        config <- ZIO.service[TarotConfig]
 
         postgresConfig <- ZIO.fromOption(config.postgres)
           .tapError(_ => ZIO.logError("Missing postgres config"))
@@ -51,7 +51,7 @@ object TarotRepositoryLayer {
        UserRepositoryLayer.userRepositoryLayer ++ UserProjectRepositoryLayer.userProjectRepositoryLayer) >>>
       ZLayer.fromFunction(TarotRepositoryLive.apply)
       
-  val tarotRepositoryLive: ZLayer[AppConfig, Throwable, TarotRepository] =
+  val tarotRepositoryLive: ZLayer[TarotConfig, Throwable, TarotRepository] =
     dataSourceLayer >>> ZLayer.scoped {
       for {
         dataSource <- ZIO.service[DataSource]

@@ -17,7 +17,7 @@ import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
@@ -96,7 +96,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
         spread <- spreadRepository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.isDefined,
@@ -127,46 +127,47 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       coverPhotoId = photoId
     )
 
-  private def spreadPublishRequest: ZIO[AppEnv, Nothing, SpreadPublishRequest] =
+  private def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
     for {
       now <- Clock.instant
-      minFutureTime <- ZIO.serviceWith[AppEnv](_.appConfig.project.minFutureTime)
+      minFutureTime <- ZIO.serviceWith[TarotEnv](_.config.project.minFutureTime)
       publishTime = minFutureTime.plus(10.minute)
     } yield SpreadPublishRequest(
       scheduledAt = now.plus(publishTime)
     )
 
-  private def getPhoto: ZIO[AppEnv, TarotError, String] =
+  private def getPhoto: ZIO[TarotEnv, TarotError, String] =
     for {
-      fileStorageService <- ZIO.serviceWith[AppEnv](_.tarotService.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[AppEnv](_.tarotService.telegramApiService)
-      telegramConfig <- ZIO.serviceWith[AppEnv](_.appConfig.telegram)
+      fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
+      telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramApiService)
+      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
       photo <- fileStorageService.getResourcePhoto(resourcePath)
+        .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
         .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
     } yield photoId
 
-  private def getUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[AppEnv, TarotError, UserId] =
+  private def getUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
     val user = ExternalUser(clientId, clientType, clientSecret, "test user")
     val userCommand = UserCreateCommand(user)
     for {
-      userHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.userCreateCommandHandler)
+      userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCreateCommandHandler)
       userId <- userHandler.handle(userCommand)
     } yield userId
 
-  private def getProject(userId: UserId): ZIO[AppEnv, TarotError, ProjectId] =
+  private def getProject(userId: UserId): ZIO[TarotEnv, TarotError, ProjectId] =
     val project = ExternalProject("test project")
     val projectCommand = ProjectCreateCommand(project, userId)
     for {
-      projectHandler <- ZIO.serviceWith[AppEnv](_.tarotCommandHandler.projectCreateCommandHandler)
+      projectHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCreateCommandHandler)
       projectId <- projectHandler.handle(projectCommand)
     } yield projectId
 
   private def getToken(clientType: ClientType, clientSecret: String, userId: UserId, projectId: ProjectId)
-      : ZIO[AppEnv, TarotError, String] =
+      : ZIO[TarotEnv, TarotError, String] =
     for {
-      authService <- ZIO.serviceWith[AppEnv](_.tarotService.authService)
+      authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
       token <- authService.issueToken(clientType, userId, clientSecret, Some(projectId))
     } yield token.token
 }

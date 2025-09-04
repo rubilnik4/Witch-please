@@ -4,13 +4,13 @@ import TelemetryResources.*
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter
 import io.opentelemetry.sdk.logs.*
 import io.opentelemetry.sdk.logs.`export`.*
-import tarot.application.configurations.AppConfig
+import tarot.application.configurations.TarotConfig
 import zio.*
 
 object LoggingLayer {
-  val loggingLive: ZLayer[AppConfig, Throwable, SdkLoggerProvider] = ZLayer.scoped {
+  val loggingLive: ZLayer[TarotConfig, Throwable, SdkLoggerProvider] = ZLayer.scoped {
     for {
-      appConfig <- ZIO.service[AppConfig]
+      appConfig <- ZIO.service[TarotConfig]
       telemetryConfig <- getTelemetryConfig
 
       exporter <- ZIO.fromAutoCloseable(

@@ -4,7 +4,7 @@ import bot.api.BotApiRoutes
 import bot.api.dto.*
 import bot.application.handlers.telegram.TelegramCommandHandlerLive
 import bot.domain.models.telegram.TelegramMessage
-import bot.layers.AppEnv
+import bot.layers.BotEnv
 import sttp.model.StatusCode
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
@@ -12,7 +12,7 @@ import sttp.tapir.ztapir.*
 import zio.ZIO
 
 object WebhookEndpoint {
-  val postWebhookEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postWebhookEndpoint: ZServerEndpoint[BotEnv, Any] =
     endpoint.post
       .in(BotApiRoutes.apiPath / "webhook")
       .in(jsonBody[TelegramWebhookRequest])
@@ -25,13 +25,13 @@ object WebhookEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Telegram webhook: chat_id=$chatId, user_id=$username, user=$username, text=$text")
 
-          telegramCommandService <- ZIO.serviceWith[AppEnv](_.botCommandHandler.telegramCommandHandler)
+          telegramCommandService <- ZIO.serviceWith[BotEnv](_.botCommandHandler.telegramCommandHandler)
           telegramMessage = TelegramMessage.fromRequest(request)
           _ <- telegramCommandService.handle(telegramMessage)
         } yield ())
           .catchAll(err => ZIO.logError(s"Webhook processing failed: $err").unit)
       }
 
-  val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
+  val endpoints: List[ZServerEndpoint[BotEnv, Any]] =
     List(postWebhookEndpoint)
 }

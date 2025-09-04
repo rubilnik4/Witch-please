@@ -20,7 +20,7 @@ import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.*
 import tarot.data.UserData
 import tarot.domain.models.TarotError
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
 import tarot.models.TestProjectState
 import zio.*

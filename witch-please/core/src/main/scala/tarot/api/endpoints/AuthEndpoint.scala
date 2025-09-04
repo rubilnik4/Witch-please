@@ -12,13 +12,13 @@ import tarot.api.dto.tarot.*
 import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.domain.models.authorize.{AuthResponseMapper, UserId}
 import tarot.domain.models.projects.ProjectId
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.ZIO
 
 object AuthEndpoint {
   private final val tag = "auth"
 
-  val postAuthEndpoint: ZServerEndpoint[AppEnv, Any] =
+  val postAuthEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
       .in(TarotApiRoutes.apiPath / "auth")
@@ -34,13 +34,13 @@ object AuthEndpoint {
       .zServerLogic { request =>
         (for {
           _ <- ZIO.logInfo(s"Received request to auth user: ${request.userId}")
-          authService <- ZIO.serviceWith[AppEnv](_.tarotService.authService)
+          authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
           token <- authService.issueToken(request.clientType, UserId(request.userId), request.clientSecret,
             request.projectId.map(ProjectId(_)))
         } yield AuthResponseMapper.fromDomain(token))
           .mapError(TarotErrorResponseMapper.toResponse)
       }
 
-  val endpoints: List[ZServerEndpoint[AppEnv, Any]] = 
+  val endpoints: List[ZServerEndpoint[TarotEnv, Any]] = 
     List(postAuthEndpoint)
 }

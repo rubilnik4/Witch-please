@@ -5,23 +5,23 @@ import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import tarot.api.endpoints.*
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.{ZIO, ZLayer}
 import zio.http.*
 
 object TarotRoutesLayer {
-  private val endpoints: List[ZServerEndpoint[AppEnv, Any]] =
+  private val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     UserEndpoint.endpoints ++ AuthEndpoint.endpoints ++
       ProjectEndpoint.endpoints ++ SpreadEndpoint.endpoints
 
   private val openApiDocs =
-    SwaggerInterpreter().fromEndpoints[[T] =>> ZIO[AppEnv, Throwable, T]](
+    SwaggerInterpreter().fromEndpoints[[T] =>> ZIO[TarotEnv, Throwable, T]](
       endpoints.map(_.endpoint),
       Info("Tarot API", "1.0")
     )
 
-  val apiRoutesLive: ZLayer[AppEnv, Throwable, Routes[AppEnv, Response]] =
-    ZLayer.fromFunction { (env: AppEnv) =>
+  val apiRoutesLive: ZLayer[TarotEnv, Throwable, Routes[TarotEnv, Response]] =
+    ZLayer.fromFunction { (env: TarotEnv) =>
       ZioHttpInterpreter().toHttp(endpoints ++ openApiDocs )
     }
 }

@@ -1,6 +1,7 @@
 package tarot.domain.models.cards
 
 import shared.infrastructure.services.common.DateTimeService
+import shared.models.files.FileSource
 import tarot.domain.models.photo.*
 import tarot.domain.models.spreads.SpreadId
 import zio.UIO
@@ -20,7 +21,7 @@ final case class Card(
 }
 
 object Card {
-  def toDomain(externalCard: ExternalCard, storedPhoto: PhotoSource): UIO[Card] =
+  def toDomain(externalCard: ExternalCard, storedPhoto: FileSource): UIO[Card] =
     val id = UUID.randomUUID()
     for {
       createdAt <- DateTimeService.getDateTimeNow

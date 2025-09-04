@@ -6,7 +6,7 @@ import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.projects.{Project, ProjectId}
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.*
 
 final class ProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends ProjectRepository {

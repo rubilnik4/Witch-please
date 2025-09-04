@@ -1,7 +1,8 @@
 package tarot.domain.models.spreads
 
 import shared.infrastructure.services.common.DateTimeService
-import tarot.domain.models.photo.{Photo, PhotoOwnerType, PhotoSource}
+import shared.models.files.FileSource
+import tarot.domain.models.photo.{Photo, PhotoOwnerType}
 import tarot.domain.models.projects.ProjectId
 import zio.UIO
 
@@ -24,7 +25,7 @@ final case class Spread(
 }
 
 object Spread {
-  def toDomain(externalSpread: ExternalSpread, storedPhoto: PhotoSource): UIO[Spread] =
+  def toDomain(externalSpread: ExternalSpread, storedPhoto: FileSource): UIO[Spread] =
     val id = UUID.randomUUID()
     for {
       createdAt <- DateTimeService.getDateTimeNow

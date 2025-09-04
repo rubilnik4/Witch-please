@@ -1,23 +1,39 @@
 package bot.infrastructure.services
 
-import bot.application.configurations.AppConfig
+import bot.application.configurations.BotConfig
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
 import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer}
 import shared.infrastructure.services.*
+import shared.infrastructure.services.files.{FileStorageService, FileStorageServiceLayer}
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer}
-import zio.ZLayer
+import zio.{ZIO, ZLayer}
 
 object BotServiceLayer {
-  private val tokenLayer: ZLayer[AppConfig, Nothing, String] =
-    ZLayer.fromFunction((config: AppConfig) => config.telegram.token)
+  private val tokenLayer: ZLayer[BotConfig, Nothing, String] =
+    ZLayer.fromFunction((config: BotConfig) => config.telegram.token)
 
-  private val tarotUrlLayer: ZLayer[AppConfig, Nothing, String] =
-    ZLayer.fromFunction((config: AppConfig) => config.project.tarotUrl)
+  private val storedLayer: ZLayer[BotConfig, Throwable, String] =
+    ZLayer.fromZIO {
+      for {
+        config <- ZIO.service[BotConfig]
+        localStorage <- ZIO.fromOption(config.localStorage)
+          .orElseFail(new RuntimeException("Local storage config is missing"))
+      } yield localStorage.path
+    }
+    
+  val storageLayer: ZLayer[BotConfig, Throwable, FileStorageService] =
+    storedLayer >>> FileStorageServiceLayer.localFileStorageServiceLive
 
-  val botServiceLive: ZLayer[AppConfig, Throwable, BotService] =
+  val telegramLayer: ZLayer[BotConfig, Throwable, TelegramApiService] =
+    tokenLayer >>> TelegramApiServiceLayer.telegramApiServiceLive 
+
+  private val tarotUrlLayer: ZLayer[BotConfig, Nothing, String] =
+    ZLayer.fromFunction((config: BotConfig) => config.project.tarotUrl)
+
+  val botServiceLive: ZLayer[BotConfig, Throwable, BotService] =
     (
-      (tokenLayer >>> TelegramApiServiceLayer.telegramApiServiceLive) ++
+      telegramLayer ++
         (tarotUrlLayer >>> TarotApiServiceLayer.tarotApiServiceLive) ++
-        BotSessionServiceLayer.botSessionServiceLive
+        storageLayer ++ BotSessionServiceLayer.botSessionServiceLive
       ) >>> ZLayer.fromFunction(BotServiceLive.apply)
 }

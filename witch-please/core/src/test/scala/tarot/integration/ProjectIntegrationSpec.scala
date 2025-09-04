@@ -13,7 +13,7 @@ import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.layers.TestAppEnvLayer.testAppEnvLive
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import tarot.models.TestProjectState
 import zio.*
 import zio.test.*

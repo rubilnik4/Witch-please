@@ -4,7 +4,7 @@ import bot.application.commands.BotCommand
 import bot.application.commands.telegram.TelegramCommands
 import bot.domain.models.session.*
 import bot.domain.models.telegram.*
-import bot.layers.AppEnv
+import bot.layers.BotEnv
 import shared.api.dto.tarot.authorize.AuthRequest
 import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
@@ -16,7 +16,7 @@ import zio.ZIO
 import java.time.Instant
 
 final class TelegramCommandHandlerLive extends TelegramCommandHandler {
-  def handle(message: TelegramMessage): ZIO[AppEnv, Throwable, Unit] =
+  def handle(message: TelegramMessage): ZIO[BotEnv, Throwable, Unit] =
     message match {
       case TelegramMessage.Text(context, text) =>
         handleText(context, text)
@@ -28,18 +28,18 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
         ZIO.logError("Unsupported telegram request type received")
     }
 
-  private def handleText(context: TelegramContext, text: String): ZIO[AppEnv, Throwable, Unit] =
+  private def handleText(context: TelegramContext, text: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
-      telegramApiService <- ZIO.serviceWith[AppEnv](_.botService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
       _ <- telegramApiService.sendText(context.chatId, "Пожалуйста, используйте команды. Введите /help.")
     } yield ()
 
-  private def handlePhoto(context: TelegramContext, fileId: String): ZIO[AppEnv, Throwable, Unit] =
+  private def handlePhoto(context: TelegramContext, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      telegramApiService <- ZIO.serviceWith[AppEnv](_.botService.telegramApiService)
-      tarotApiService <- ZIO.serviceWith[AppEnv](_.botService.tarotApiService)
-      botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
 
       session <- botSessionService.get(context.chatId)
       _ <- ZIO.logInfo(s"Received photo (fileId: $fileId) from chat ${context.chatId} for pending action ${session.pending}")
@@ -79,12 +79,12 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
       }
     } yield ()
 
-  private def handleCommand(context: TelegramContext, command: String): ZIO[AppEnv, Throwable, Unit] =
+  private def handleCommand(context: TelegramContext, command: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
-      telegramApiService <- ZIO.serviceWith[AppEnv](_.botService.telegramApiService)
-      tarotApiService <- ZIO.serviceWith[AppEnv](_.botService.tarotApiService)
-      botSessionService <- ZIO.serviceWith[AppEnv](_.botService.botSessionService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
 
       _ <- TelegramCommandParser.handle(command) match {
         case BotCommand.Start =>          

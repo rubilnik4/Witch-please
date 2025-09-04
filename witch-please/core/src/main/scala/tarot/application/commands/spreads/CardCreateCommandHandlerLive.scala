@@ -4,16 +4,16 @@ import tarot.application.commands.spreads.CardCreateCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.ExternalPhoto
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.ZIO
 
 
 final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
-  def handle(command: CardCreateCommand): ZIO[AppEnv, TarotError, CardId] = {
+  def handle(command: CardCreateCommand): ZIO[TarotEnv, TarotError, CardId] = {
     for {
       _ <- ZIO.logInfo(s"Executing create card command for ${command.externalCard}")
 
-      spreadRepository <- ZIO.serviceWith[AppEnv](_.tarotRepository.spreadRepository)
+      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
 
       exists <- spreadRepository.existsSpread(command.externalCard.spreadId)
       _ <- ZIO.unless(exists) {
@@ -28,9 +28,9 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
     } yield cardId
   }
 
-  private def fetchAndStorePhoto(externalCard: ExternalCard): ZIO[AppEnv, TarotError, Card] = {
+  private def fetchAndStorePhoto(externalCard: ExternalCard): ZIO[TarotEnv, TarotError, Card] = {
     for {
-      photoService <- ZIO.serviceWith[AppEnv](_.tarotService.photoService)
+      photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
 
       storedPhoto <- externalCard.coverPhotoId match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)

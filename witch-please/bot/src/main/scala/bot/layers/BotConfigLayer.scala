@@ -1,15 +1,15 @@
 package bot.layers
 
-import bot.application.configurations.AppConfig
+import bot.application.configurations.BotConfig
 import zio.*
 import zio.config.*
 import zio.config.typesafe.TypesafeConfigProvider
 
-object AppConfigLayer {
-  val appConfigLive: ZLayer[Any, Config.Error, AppConfig] = {
+object BotConfigLayer {
+  val configLive: ZLayer[Any, Config.Error, BotConfig] = {
     val provider = TypesafeConfigProvider.fromResourcePath()
     ZLayer.fromZIO(
-      read(AppConfig.config from provider)
+      read(BotConfig.config from provider)
     )
   }
 }

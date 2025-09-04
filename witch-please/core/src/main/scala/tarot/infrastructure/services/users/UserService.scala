@@ -4,7 +4,7 @@ import com.github.roundrop.bcrypt.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.ProjectId
-import tarot.layers.AppEnv
+import tarot.layers.TarotEnv
 import zio.{Cause, ZIO}
 
 object UserService {
