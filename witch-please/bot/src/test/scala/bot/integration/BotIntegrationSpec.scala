@@ -68,23 +68,30 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
     test("create spread command") {
       for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+
         cardCount = 2
         createSpreadRequest = TestTelegramWebhook.createSpreadRequest(chatId, cardCount)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
+        pendingRequest = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
+        _ <- app.runZIO(pendingRequest)
+
+        photoRequest = TestTelegramWebhook.photoRequest(chatId, photoId)
+        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), photoRequest)
         response <- app.runZIO(request)
 
         session <- botSessionService.get(chatId)
-        pending <- ZIO.fromOption(session.pending).orElseFail(RuntimeException("session pending not found"))
       } yield assertTrue(
         response.status == Status.Ok,
-        session.spreadId.nonEmpty,
-        pending == BotPendingAction.SpreadCover
+        session.spreadId.nonEmpty
       )
-    },
+    }
   ).provideShared(
     Scope.default,
     testAppEnvLive,

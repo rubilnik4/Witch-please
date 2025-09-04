@@ -27,7 +27,7 @@ object BotSession {
     session.copy(projectId = Some(projectId), token = Some(token), updatedAt = now)
 
   def withSpread(session: BotSession, spreadId: UUID, now: Instant): BotSession =
-    session.copy(projectId = Some(spreadId), updatedAt = now)
+    session.copy(spreadId = Some(spreadId), updatedAt = now)
 
   def touched(session: BotSession, now: Instant): BotSession =
     session.copy(updatedAt = now)
