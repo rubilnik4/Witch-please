@@ -28,8 +28,8 @@ object MainAppLayer {
         (BotRoutesLayer.apiRoutesLive >>> BotServerLayer.serverLive))
 
   def run: ZIO[Any, Throwable, Nothing] =
-    ZIO.logInfo("Starting application...") *>
+    ZIO.logInfo("Starting witch bot application...") *>
       runtimeLive.launch
-        .ensuring(ZIO.logInfo("Application stopped"))
-        .tapErrorCause(cause => ZIO.logErrorCause("Application failed", cause))
+        .ensuring(ZIO.logInfo("Witch bot application stopped"))
+        .tapErrorCause(cause => ZIO.logErrorCause("Witch bot application failed", cause))
 }

@@ -33,8 +33,8 @@ object MainAppLayer {
           (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))
 
   def run: ZIO[Any, Throwable, Nothing] =
-    ZIO.logInfo("Starting application...") *>
+    ZIO.logInfo("Starting witch core application...") *>
       runtimeLive.launch
-        .ensuring(ZIO.logInfo("Application stopped"))
-        .tapErrorCause(cause => ZIO.logErrorCause("Application failed", cause))
+        .ensuring(ZIO.logInfo("Witch core application stopped"))
+        .tapErrorCause(cause => ZIO.logErrorCause("Witch core application failed", cause))
 }

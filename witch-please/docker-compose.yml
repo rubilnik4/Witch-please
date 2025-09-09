@@ -13,14 +13,12 @@ services:
       - "8080:8080"
       - "9464:9464"
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       POSTGRES_HOST: witch-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       OTEL_EXPORTER_OTLP_ENDPOINT: http://witch-otel-collector:4317
-      LOG_LEVEL: DEBUG
       PROMETHEUS_PORT: 9464
     volumes:
       - .:/app
@@ -32,6 +30,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
 
   loki:
     container_name: witch-loki
