@@ -30,7 +30,7 @@ object TelegramCommandParser {
             BotCommand.CreateCard(nameParts.mkString(" "), index)
           case _ => BotCommand.Unknown
         }
-      case TelegramCommands.SpreadConfirm :: scheduledAtStr :: Nil =>
+      case TelegramCommands.SpreadPublish :: scheduledAtStr :: Nil =>
         Try(Instant.ofEpochSecond(scheduledAtStr.toLong)).toOption match {
           case Some(scheduledAt) => BotCommand.PublishSpread(scheduledAt)
           case None => BotCommand.Unknown

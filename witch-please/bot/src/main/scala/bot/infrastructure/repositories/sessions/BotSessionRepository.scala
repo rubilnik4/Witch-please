@@ -10,5 +10,6 @@ trait BotSessionRepository {
   def create(chatId: Long, session: BotSession): ZIO[Any, Throwable, Unit]
   def put(chatId: Long, session: BotSession): ZIO[Any, Throwable, Unit]
   def update(chatId: Long)(updateSession: BotSession => BotSession): ZIO[Any, Throwable, Unit]
+  def updateZIO(chatId: Long)(f: BotSession => ZIO[Any, Throwable, BotSession]): ZIO[Any, Throwable, Unit]
   def delete(chatId: Long): ZIO[Any, Throwable, Unit]
 }

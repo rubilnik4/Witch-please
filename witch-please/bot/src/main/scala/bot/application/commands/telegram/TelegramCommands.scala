@@ -6,5 +6,5 @@ object TelegramCommands {
   val ProjectCreate = "/project_create"
   val SpreadCreate = "/spread_create"
   val CardCreate = "/card_create"
-  val SpreadConfirm = "/spread_confirm"
+  val SpreadPublish = "/spread_publish"
 }

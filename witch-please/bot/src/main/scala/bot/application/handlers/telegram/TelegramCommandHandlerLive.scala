@@ -55,21 +55,21 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
 
             request = TelegramSpreadCreateRequest(projectId, title, cardCount, fileId)
             spreadId <- tarotApiService.createSpread(request, token).map(_.id)
-            _ <- botSessionService.clearPending(context.chatId)
-            _ <- botSessionService.setSpread(context.chatId, spreadId)
+            _ <- botSessionService.setSpread(context.chatId, spreadId, cardCount)
           } yield ()
         case Some(BotPendingAction.CardCover(description, index)) =>
           for {
             _ <- telegramApiService.sendText(context.chatId, s"Создаю карту '$description'...")
             session <- botSessionService.get(context.chatId)
-            spreadId <- ZIO.fromOption(session.projectId)
-              .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
+            spreadId <- ZIO.fromOption(session.spreadId)
+              .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
             token <- ZIO.fromOption(session.token)
               .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
             request = TelegramCardCreateRequest(description, fileId)
-            projectId <- tarotApiService.createCard(request, spreadId, index, token)
-            _ <- botSessionService.clearPending(context.chatId)
+            _ <- tarotApiService.createCard(request, spreadId, index, token)
+            _ <- botSessionService.setCard(context.chatId, index)
+
           } yield ()
         case None =>
           for {
@@ -139,10 +139,14 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
             token <- ZIO.fromOption(session.token)
               .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
-            _ <- telegramApiService.sendText(context.chatId, s"Подтверждаю расклад $spreadId")
+            _ <- ZIO.unless(session.spreadProgress.exists(progress => progress.createdCount == progress.total)) {
+              ZIO.fail(new RuntimeException("Cannot publish: not all cards uploaded"))
+            }
 
             request = SpreadPublishRequest(scheduledAt)
             _ <- tarotApiService.publishSpread(request, spreadId, token)
+            _ <- telegramApiService.sendText(context.chatId, s"Расклад $spreadId подтвержден")
+            _ <- botSessionService.clearSpread(context.chatId)
           } yield ()
         case BotCommand.Help =>
           telegramApiService.sendText(context.chatId, "Команды:\n/start\n/help\n/project_create <имя>\n/spread_confirm <id>")

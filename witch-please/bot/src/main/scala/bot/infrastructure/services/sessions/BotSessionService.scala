@@ -2,7 +2,7 @@ package bot.infrastructure.services.sessions
 
 import bot.domain.models.session.*
 import bot.layers.BotEnv
-import zio.{UIO, ZIO}
+import zio.ZIO
 
 import java.util.UUID
 
@@ -13,6 +13,8 @@ trait BotSessionService {
   def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit]
   def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setProject(chatId: Long, projectId: UUID, token: String): ZIO[BotEnv, Throwable, Unit]
-  def setSpread(chatId: Long, spreadId: UUID): ZIO[BotEnv, Throwable, Unit]
+  def setSpread(chatId: Long, spreadId: UUID, cardCount: Int): ZIO[BotEnv, Throwable, Unit]
+  def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit]
+  def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit]
   def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit]
 }

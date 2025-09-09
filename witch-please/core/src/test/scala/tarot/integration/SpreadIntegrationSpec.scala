@@ -5,19 +5,18 @@ import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.ClientType
-import shared.models.tarot.contracts.TarotChannelType
 import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.application.commands.projects.ProjectCreateCommand
 import tarot.application.commands.users.UserCreateCommand
-import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
+import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
-import tarot.layers.TestAppEnvLayer.testAppEnvLive
 import tarot.layers.TarotEnv
+import tarot.layers.TestAppEnvLayer.testAppEnvLive
 import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
