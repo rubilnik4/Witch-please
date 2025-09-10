@@ -8,6 +8,7 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-http" % "3.3.3",
   "dev.zio" %% "zio-logging" % "2.5.0",
   "dev.zio" %% "zio-opentelemetry" % "3.1.5",
+  "dev.zio" %% "zio-config-magnolia" % "4.0.4",
   "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.11.36",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "com.softwaremill.sttp.client3" %% "zio-json" % "3.11.0",

@@ -1,4 +1,4 @@
-package tarot.infrastructure.telemetry
+package shared.infrastructure.telemetry
 
 import zio.LogLevel
 

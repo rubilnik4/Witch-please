@@ -7,7 +7,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import tarot.application.telemetry.tracing.{TarotTracing, TarotTracingLayer}
-import tarot.infrastructure.telemetry.TelemetryResources.{telemetryAppName, telemetryResource}
+import shared.infrastructure.telemetry.TelemetryResources.{telemetryAppName, telemetryResource}
 import zio.*
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage

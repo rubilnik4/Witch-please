@@ -1,17 +1,16 @@
-package tarot.infrastructure.telemetry
+package shared.infrastructure.telemetry
 
-import TelemetryResources.*
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter
 import io.opentelemetry.sdk.logs.*
 import io.opentelemetry.sdk.logs.`export`.*
-import tarot.application.configurations.TarotConfig
+import shared.application.configurations.*
+import shared.infrastructure.telemetry.TelemetryResources
 import zio.*
 
 object LoggingLayer {
-  val loggingLive: ZLayer[TarotConfig, Throwable, SdkLoggerProvider] = ZLayer.scoped {
+  val loggingLive: ZLayer[TelemetryConfig, Throwable, SdkLoggerProvider] = ZLayer.scoped {
     for {
-      appConfig <- ZIO.service[TarotConfig]
-      telemetryConfig <- getTelemetryConfig
+      telemetryConfig <- ZIO.service[TelemetryConfig]
 
       exporter <- ZIO.fromAutoCloseable(
         ZIO.succeed(
@@ -24,11 +23,11 @@ object LoggingLayer {
       processor <- ZIO.fromAutoCloseable(
         ZIO.succeed(SimpleLogRecordProcessor.create(exporter))
       )
-
+      
       provider <- ZIO.fromAutoCloseable(
         ZIO.succeed(
           SdkLoggerProvider.builder()
-            .setResource(telemetryResource)
+            .setResource(TelemetryResources.telemetryResource(telemetryConfig.appName))
             .addLogRecordProcessor(processor)
             .build()
         )

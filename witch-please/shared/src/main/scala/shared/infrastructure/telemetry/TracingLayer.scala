@@ -1,17 +1,16 @@
-package tarot.infrastructure.telemetry
+package shared.infrastructure.telemetry
 
-import TelemetryResources.*
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import tarot.application.configurations.TarotConfig
+import shared.application.configurations.TelemetryConfig
+import shared.infrastructure.telemetry.TelemetryResources.*
 import zio.*
 
 object TracingLayer {
-  val tracingLive: ZLayer[TarotConfig, Throwable, SdkTracerProvider] = ZLayer.scoped {
+  val tracingLive: ZLayer[TelemetryConfig, Throwable, SdkTracerProvider] = ZLayer.scoped {
     for {
-      appConfig <- ZIO.service[TarotConfig]
-      telemetryConfig <- getTelemetryConfig
+      telemetryConfig <- ZIO.service[TelemetryConfig]
 
       exporter <- ZIO.fromAutoCloseable(
         ZIO.succeed(
@@ -28,7 +27,7 @@ object TracingLayer {
       provider <- ZIO.fromAutoCloseable(
         ZIO.succeed(
           SdkTracerProvider.builder()
-            .setResource(telemetryResource)
+            .setResource(TelemetryResources.telemetryResource(telemetryConfig.appName))
             .addSpanProcessor(processor)
             .build()
         )
