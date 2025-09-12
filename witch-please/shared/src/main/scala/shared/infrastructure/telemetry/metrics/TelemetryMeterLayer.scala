@@ -1,10 +1,10 @@
-package tarot.application.telemetry.metrics
+package shared.infrastructure.telemetry.metrics
 
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.{Clock, ZIO, ZLayer}
 
-object TarotMeterLayer {
-  val tarotMeterLive: ZLayer[Meter, Nothing, TarotMeter] =
+object TelemetryMeterLayer {
+  val telemetryMeterLive: ZLayer[Meter, Nothing, TelemetryMeter] =
     ZLayer.fromZIO {
       for {
         meter <- ZIO.service[Meter]
@@ -13,7 +13,7 @@ object TarotMeterLayer {
           description = Some("Duration of spread computation in milliseconds"),
           unit = Some("ms")
         )
-      } yield new TarotMeter {
+      } yield new TelemetryMeter {
         def recordSpreadDuration[R, E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
           for {
             start <- Clock.nanoTime

@@ -6,8 +6,8 @@ import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import tarot.application.telemetry.tracing.{TarotTracing, TarotTracingLayer}
 import shared.infrastructure.telemetry.TelemetryResources.{telemetryAppName, telemetryResource}
+import shared.infrastructure.telemetry.tracing.{TelemetryTracing, TelemetryTracingLayer}
 import zio.*
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -56,9 +56,9 @@ object TestTarotTracingLayer {
   private val contextLayer: ULayer[ContextStorage] =
     OpenTelemetry.contextZIO
 
-  val tarotTracingLive: ZLayer[Any, Throwable, TarotTracing] =
+  val tarotTracingLive: ZLayer[Any, Throwable, TelemetryTracing] =
     (otelSdkLive ++ contextLayer) >>> 
       tracingLayer >>>
-      TarotTracingLayer.tarotTracingLive
+      TelemetryTracingLayer.telemetryTracingLive
 }
 

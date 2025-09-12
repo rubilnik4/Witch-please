@@ -1,7 +1,7 @@
-package tarot.application.telemetry.tracing
+package shared.infrastructure.telemetry.tracing
 
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-trait TarotTracing {
+trait TelemetryTracing {
   def tracing: Tracing
 }

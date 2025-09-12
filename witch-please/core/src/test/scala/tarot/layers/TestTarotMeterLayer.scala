@@ -1,13 +1,13 @@
 package tarot.layers
 
-import tarot.application.telemetry.metrics.TarotMeter
+import shared.infrastructure.telemetry.metrics.TelemetryMeter
 import zio.{UIO, ZIO, ZLayer}
 
 object TestTarotMeterLayer {
-  private val testMarketMeter: TarotMeter = new TarotMeter {
+  private val testMarketMeter: TelemetryMeter = new TelemetryMeter {
     override def recordSpreadDuration[R, E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] = zio
   }
 
-  val testMarketMeterLive: ZLayer[Any, Nothing, TarotMeter] =
+  val testMarketMeterLive: ZLayer[Any, Nothing, TelemetryMeter] =
     ZLayer.succeed(testMarketMeter)
 }
