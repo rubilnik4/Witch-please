@@ -1,6 +1,6 @@
 package bot.layers
 
-import bot.MainAppLayer
+import bot.MainBotLayer
 import bot.application.configurations.BotConfig
 import bot.application.handlers.BotCommandHandlerLayer
 import bot.infrastructure.repositories.BotRepositoryLayer
@@ -22,6 +22,6 @@ object TestBotEnvLayer {
 
   val testEnvLive: ZLayer[Any, Throwable, BotEnv] =
     TestBotConfigLayer.testBotConfigLive >>>
-      ((MainAppLayer.telemetryConfigLayer >>> StubTelemetryLayer.telemetryLive) >>>
+      ((MainBotLayer.telemetryConfigLayer >>> StubTelemetryLayer.telemetryLive) >>>
         envLive)
 }

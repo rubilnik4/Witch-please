@@ -16,7 +16,7 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.*
 
-object MainAppLayer {
+object MainTarotLayer {
   private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
     val repositoryLayer = TarotRepositoryLayer.tarotRepositoryLive
     val combinedLayers =

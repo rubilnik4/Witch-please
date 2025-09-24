@@ -1,27 +1,15 @@
 package tarot.integration
 
 import shared.api.dto.tarot.TarotApiRoutes
-import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
 import shared.api.dto.tarot.common.IdResponse
-import shared.api.dto.tarot.projects.ProjectCreateRequest
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.clients.ZIOHttpClient
-import shared.models.tarot.authorize.*
-import shared.models.tarot.contracts.*
-import sttp.client3.testing.SttpBackendStub
-import sttp.model.Method
-import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.ztapir.*
-import tarot.layers.TestTarotEnvLayer
-import sttp.tapir.json.zio._
-import tarot.api.dto.tarot.authorize.*
-import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.*
 import tarot.data.UserData
 import tarot.domain.models.TarotError
-import tarot.layers.TarotEnv
-import tarot.layers.TestTarotEnvLayer
+import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestProjectState
 import zio.*
 import zio.http.*

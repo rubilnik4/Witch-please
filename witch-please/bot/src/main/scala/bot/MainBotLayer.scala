@@ -10,13 +10,12 @@ import shared.application.configurations.TelemetryConfig
 import shared.infrastructure.telemetry.TelemetryLayer
 import shared.infrastructure.telemetry.metrics.*
 import shared.infrastructure.telemetry.tracing.*
-import tarot.MainAppLayer.telemetryConfigLayer
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.{ZIO, ZLayer}
 
-object MainAppLayer {
+object MainBotLayer {
   private val envLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] = {
     val combinedLayers =
       TelemetryMeterLayer.telemetryMeterLive ++
