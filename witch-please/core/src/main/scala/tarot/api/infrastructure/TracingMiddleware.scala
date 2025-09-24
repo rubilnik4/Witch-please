@@ -15,7 +15,7 @@ object TracingMiddleware {
           Handler.scoped[Env1] {
             Handler.fromFunctionZIO[Request] { req =>
               for {
-                tracing <- ZIO.serviceWith[TarotEnv](_.tarotTracing.tracing)
+                tracing <- ZIO.serviceWith[TarotEnv](_.telemetryTracing.tracing)
 
                 headersMap = req.headers.toList
                   .map(h => h.headerName -> h.renderedValue)

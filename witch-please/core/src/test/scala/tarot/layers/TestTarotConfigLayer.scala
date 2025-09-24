@@ -6,8 +6,8 @@ import zio.*
 import zio.config.*
 import zio.config.typesafe.TypesafeConfigProvider
 
-object TestAppConfigLayer {
-  val testAppConfigLive: ZLayer[Any, Config.Error, TarotConfig] =
+object TestTarotConfigLayer {
+  val testTarotConfigLive: ZLayer[Any, Config.Error, TarotConfig] =
     val typesafeConfig = ConfigFactory
       .parseResources("application-test.conf")
       .resolve()

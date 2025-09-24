@@ -17,7 +17,7 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.*
 
 object MainAppLayer {
-  private val appLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
+  private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
     val repositoryLayer = TarotRepositoryLayer.tarotRepositoryLive
     val combinedLayers =
       TelemetryMeterLayer.telemetryMeterLive ++
@@ -27,7 +27,7 @@ object MainAppLayer {
     combinedLayers >>> TarotEnvLayer.envLive
   }
 
-  private val telemetryConfigLayer: ZLayer[TarotConfig, Throwable, TelemetryConfig] =
+  val telemetryConfigLayer: ZLayer[TarotConfig, Throwable, TelemetryConfig] =
     ZLayer.fromZIO {
       ZIO.serviceWithZIO[TarotConfig] { config =>
         ZIO.fromOption(config.telemetry)
@@ -38,7 +38,7 @@ object MainAppLayer {
   private val runtimeLive: ZLayer[Any, Throwable, Server] =
     TarotConfigLayer.appConfigLive >>>
       ((telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
-        (appLive >>>
+        (envLive >>>
           (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))
 
   def run: ZIO[Any, Throwable, Nothing] =

@@ -14,6 +14,6 @@ trait TarotEnv {
   def tarotRepository: TarotRepository
   def tarotCommandHandler: TarotCommandHandler
   def tarotQueryHandler: TarotQueryHandler
-  def tarotMeter: TelemetryMeter
-  def tarotTracing: TelemetryTracing
+  def telemetryMeter: TelemetryMeter
+  def telemetryTracing: TelemetryTracing
 }

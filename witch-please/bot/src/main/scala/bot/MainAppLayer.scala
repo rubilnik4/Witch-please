@@ -1,12 +1,15 @@
 package bot
 
-import bot.api.routes.{BotRoutesLayer, BotServerLayer}
-import bot.application.configurations.{BotConfig, TelemetryConfig}
+import bot.api.routes.*
+import bot.application.configurations.*
 import bot.application.handlers.BotCommandHandlerLayer
 import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.BotServiceLayer
 import bot.layers.{BotConfigLayer, BotEnv, BotEnvLayer}
+import shared.application.configurations.TelemetryConfig
 import shared.infrastructure.telemetry.TelemetryLayer
+import shared.infrastructure.telemetry.metrics.*
+import shared.infrastructure.telemetry.tracing.*
 import tarot.MainAppLayer.telemetryConfigLayer
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
@@ -14,17 +17,16 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.{ZIO, ZLayer}
 
 object MainAppLayer {
-  private val appLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] = {
+  private val envLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] = {
     val combinedLayers =
-      TarotMeterLayer.tarotMeterLive ++
-        TarotTracingLayer.tarotTracingLive ++
+      TelemetryMeterLayer.telemetryMeterLive ++
+        TelemetryTracingLayer.telemetryTracingLive ++
         BotRepositoryLayer.botRepositoryLive ++ BotServiceLayer.botServiceLive ++
         BotCommandHandlerLayer.botCommandHandlerLive
-    combinedLayers >>>
-      BotEnvLayer.envLive
+    combinedLayers >>> BotEnvLayer.envLive
   }
 
-  private val telemetryConfigLayer: ZLayer[BotConfig, Throwable, TelemetryConfig] =
+  val telemetryConfigLayer: ZLayer[BotConfig, Throwable, TelemetryConfig] =
     ZLayer.fromZIO {
       ZIO.serviceWithZIO[BotConfig] { config =>
         ZIO.fromOption(config.telemetry)
@@ -35,7 +37,7 @@ object MainAppLayer {
   private val runtimeLive: ZLayer[Any, Throwable, Server] =
     BotConfigLayer.configLive >>>
       ((telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
-        (appLive >>>
+        (envLive >>>
           (BotRoutesLayer.apiRoutesLive >>> BotServerLayer.serverLive)))
 
   def run: ZIO[Any, Throwable, Nothing] =

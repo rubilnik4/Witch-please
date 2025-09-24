@@ -33,14 +33,14 @@ object TelemetryLayer {
         )
       }
 
-  private val tracingLayer: URLayer[OtelSdk & ContextStorage & TelemetryConfig, Tracing] =
+  val tracingLayer: URLayer[OtelSdk & ContextStorage & TelemetryConfig, Tracing] =
     ZLayer.scoped(
       ZIO.serviceWithZIO[TelemetryConfig](cfg =>
         OpenTelemetry.tracing(cfg.appName).build.map(_.get[Tracing])
       )
     )
 
-  private val meteringLayer: URLayer[OtelSdk & ContextStorage & TelemetryConfig, Meter] =
+  val meteringLayer: URLayer[OtelSdk & ContextStorage & TelemetryConfig, Meter] =
     ZLayer.scoped(
       ZIO.serviceWithZIO[TelemetryConfig](cfg =>
         OpenTelemetry.metrics(cfg.appName).build.map(_.get[Meter])
@@ -58,7 +58,7 @@ object TelemetryLayer {
       } yield ()
     }
 
-  private val contextLayer: ULayer[ContextStorage] =
+  val contextLayer: ULayer[ContextStorage] =
     OpenTelemetry.contextZIO
 
   val telemetryLive: ZLayer[TelemetryConfig, Throwable, Meter & Tracing] =

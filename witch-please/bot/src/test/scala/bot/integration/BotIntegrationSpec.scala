@@ -4,7 +4,7 @@ import bot.api.BotApiRoutes
 import bot.api.endpoints.*
 import bot.domain.models.session.BotPendingAction
 import bot.layers.BotEnv
-import bot.layers.TestAppEnvLayer.testAppEnvLive
+import bot.layers.TestBotEnvLayer.testEnvLive
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -152,7 +152,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     }
   ).provideShared(
     Scope.default,
-    testAppEnvLive,
+    testEnvLive,
     testBotStateLayer
   ) @@ sequential
 

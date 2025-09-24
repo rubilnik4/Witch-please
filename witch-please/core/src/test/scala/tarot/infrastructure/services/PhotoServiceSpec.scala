@@ -3,7 +3,7 @@ package tarot.infrastructure.services
 import shared.models.files.FileSource
 import shared.models.telegram.*
 import tarot.domain.models.photo.Photo
-import tarot.layers.{TarotEnv, TestAppEnvLayer}
+import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import zio.*
 import zio.nio.file.{Files, Path}
 import zio.test.*
@@ -33,5 +33,5 @@ object PhotoServiceSpec extends ZIOSpecDefault {
         }
       } yield result
     }
-  ).provideShared(TestAppEnvLayer.testAppEnvLive)
+  ).provideShared(TestTarotEnvLayer.testEnvLive)
 }

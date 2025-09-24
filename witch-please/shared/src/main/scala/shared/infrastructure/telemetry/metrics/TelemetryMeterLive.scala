@@ -46,12 +46,12 @@ final class TelemetryMeterLive (meter: Meter, cache: Ref.Synchronized[Map[String
 
   private def toUnit(durationNs: Long, unit: TimeUnit): Double =
     unit match {
-      case TimeUnit.NANOSECONDS => durationNs.toDouble
-      case TimeUnit.MICROSECONDS => durationNs / 1e3
-      case TimeUnit.MILLISECONDS => durationNs / 1e6
-      case TimeUnit.SECONDS => durationNs / 1e9
-      case MINUTES => ???
-      case HOURS => ???
-      case DAYS => ???
+      case TimeUnit.NANOSECONDS   => durationNs.toDouble
+      case TimeUnit.MICROSECONDS  => durationNs / 1e3
+      case TimeUnit.MILLISECONDS  => durationNs / 1e6
+      case TimeUnit.SECONDS       => durationNs / 1e9
+      case TimeUnit.MINUTES       => durationNs / (60 * 1e9)
+      case TimeUnit.HOURS         => durationNs / (3600 * 1e9)
+      case TimeUnit.DAYS          => durationNs / (86400 * 1e9)
     }
 }

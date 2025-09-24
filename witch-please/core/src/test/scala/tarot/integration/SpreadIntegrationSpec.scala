@@ -15,8 +15,8 @@ import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
 import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
-import tarot.layers.TarotEnv
-import tarot.layers.TestAppEnvLayer.testAppEnvLive
+import tarot.layers.{TarotEnv, TestTarotEnvLayer}
+import tarot.layers.TestTarotEnvLayer
 import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
@@ -105,7 +105,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     }
   ).provideShared(
     Scope.default,
-    testAppEnvLive,
+    TestTarotEnvLayer.testEnvLive,
     testSpreadStateLayer
   ) @@ sequential
 

@@ -5,6 +5,8 @@ import bot.application.handlers.*
 import bot.application.handlers.telegram.TelegramCommandHandler
 import bot.infrastructure.repositories.*
 import bot.infrastructure.services.*
+import shared.infrastructure.telemetry.metrics.TelemetryMeter
+import shared.infrastructure.telemetry.tracing.TelemetryTracing
 import zio.ZLayer
 
 object BotEnvLayer {
@@ -12,8 +14,8 @@ object BotEnvLayer {
     BotConfig
       & BotService
       & BotRepository
-      & BotCommandHandler,
-//      & TarotMeter & TarotTracing,
+      & BotCommandHandler
+      & TelemetryMeter & TelemetryTracing,
     Nothing,
     BotEnv
   ] =

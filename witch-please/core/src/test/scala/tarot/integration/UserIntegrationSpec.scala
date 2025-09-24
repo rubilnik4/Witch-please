@@ -13,7 +13,7 @@ import sttp.model.Method
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.ztapir.*
-//import sttp.tapir.server.stub._
+import tarot.layers.TestTarotEnvLayer
 import sttp.tapir.json.zio._
 import tarot.api.dto.tarot.authorize.*
 import tarot.api.dto.tarot.users.*
@@ -21,7 +21,7 @@ import tarot.api.endpoints.*
 import tarot.data.UserData
 import tarot.domain.models.TarotError
 import tarot.layers.TarotEnv
-import tarot.layers.TestAppEnvLayer.testAppEnvLive
+import tarot.layers.TestTarotEnvLayer
 import tarot.models.TestProjectState
 import zio.*
 import zio.http.*
@@ -68,7 +68,7 @@ object UserIntegrationSpec extends ZIOSpecDefault {
 
   ).provideShared(
     Scope.default,
-    testAppEnvLive,
+    TestTarotEnvLayer.testEnvLive,
     testProjectStateLayer
   ) @@ sequential
 

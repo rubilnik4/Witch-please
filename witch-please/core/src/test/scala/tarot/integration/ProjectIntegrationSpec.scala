@@ -12,8 +12,8 @@ import tarot.api.dto.tarot.authorize.*
 import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
-import tarot.layers.TestAppEnvLayer.testAppEnvLive
-import tarot.layers.TarotEnv
+import tarot.layers.TestTarotEnvLayer
+import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestProjectState
 import zio.*
 import zio.test.*
@@ -103,7 +103,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
     }
   ).provideShared(
     Scope.default,
-    testAppEnvLive,
+    TestTarotEnvLayer.testEnvLive,
     testProjectStateLayer
   ) @@ sequential
 
