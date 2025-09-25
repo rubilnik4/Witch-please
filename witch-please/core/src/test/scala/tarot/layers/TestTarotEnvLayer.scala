@@ -1,13 +1,13 @@
 package tarot.layers
 
-import shared.infrastructure.telemetry.{StubTelemetryLayer, TelemetryLayer}
+import shared.infrastructure.telemetry.StubTelemetryLayer
 import shared.infrastructure.telemetry.metrics.TelemetryMeterLayer
 import shared.infrastructure.telemetry.tracing.TelemetryTracingLayer
-import tarot.MainTarotLayer
 import tarot.application.commands.TarotCommandHandlerLayer
 import tarot.application.configurations.TarotConfig
 import tarot.application.queries.TarotQueryHandlerLayer
 import tarot.infrastructure.services.TarotServiceLayer
+import tarot.infrastructure.telemetry.TarotTelemetryLayer
 import zio.ZLayer
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
@@ -24,6 +24,6 @@ object TestTarotEnvLayer {
 
   val testEnvLive: ZLayer[Any, Throwable, TarotEnv] =
     TestTarotConfigLayer.testTarotConfigLive >>>
-      ((MainTarotLayer.telemetryConfigLayer >>> StubTelemetryLayer.telemetryLive) >>>
+      ((TarotTelemetryLayer.telemetryConfigLayer >>> StubTelemetryLayer.telemetryLive) >>>
         envLive)
 }

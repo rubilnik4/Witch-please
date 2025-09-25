@@ -5,6 +5,7 @@ import bot.application.configurations.*
 import bot.application.handlers.BotCommandHandlerLayer
 import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.BotServiceLayer
+import bot.infrastructure.telemetry.BotTelemetryLayer
 import bot.layers.{BotConfigLayer, BotEnv, BotEnvLayer}
 import shared.application.configurations.TelemetryConfig
 import shared.infrastructure.telemetry.TelemetryLayer
@@ -25,17 +26,9 @@ object MainBotLayer {
     combinedLayers >>> BotEnvLayer.envLive
   }
 
-  val telemetryConfigLayer: ZLayer[BotConfig, Throwable, TelemetryConfig] =
-    ZLayer.fromZIO {
-      ZIO.serviceWithZIO[BotConfig] { config =>
-        ZIO.fromOption(config.telemetry)
-          .orElseFail(new NoSuchElementException("TelemetryConfig is missing in BotConfig"))
-      }
-    }
-
   private val runtimeLive: ZLayer[Any, Throwable, Server] =
     BotConfigLayer.configLive >>>
-      ((telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
+      ((BotTelemetryLayer.telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
         (envLive >>>
           (BotRoutesLayer.apiRoutesLive >>> BotServerLayer.serverLive)))
 

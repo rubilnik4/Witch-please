@@ -10,6 +10,7 @@ import tarot.application.configurations.TarotConfig
 import tarot.application.queries.TarotQueryHandlerLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
+import tarot.infrastructure.telemetry.TarotTelemetryLayer
 import tarot.layers.{TarotConfigLayer, TarotEnv, TarotEnvLayer}
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
@@ -27,17 +28,9 @@ object MainTarotLayer {
     combinedLayers >>> TarotEnvLayer.envLive
   }
 
-  val telemetryConfigLayer: ZLayer[TarotConfig, Throwable, TelemetryConfig] =
-    ZLayer.fromZIO {
-      ZIO.serviceWithZIO[TarotConfig] { config =>
-        ZIO.fromOption(config.telemetry)
-          .orElseFail(new NoSuchElementException("TelemetryConfig is missing in TarotConfig"))
-      }
-    }
-
   private val runtimeLive: ZLayer[Any, Throwable, Server] =
     TarotConfigLayer.appConfigLive >>>
-      ((telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
+      ((TarotTelemetryLayer.telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
         (envLive >>>
           (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))
 
