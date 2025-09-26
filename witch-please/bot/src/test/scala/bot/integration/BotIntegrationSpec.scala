@@ -35,7 +35,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     test("send start command") {
       for {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
+        chatId <- getChatId
         
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         startRequest = TestTelegramWebhook.startRequest(chatId)
@@ -53,7 +53,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     test("send project command") {
       for {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
+        chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         createProjectRequest = TestTelegramWebhook.createProjectRequest(chatId)
@@ -75,7 +75,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
+        chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         createSpreadRequest = TestTelegramWebhook.createSpreadRequest(chatId, cardCount)
@@ -101,7 +101,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
+        chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
 
@@ -133,7 +133,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     test("publish spread command") {
       for {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- ZIO.serviceWith[BotEnv](_.appConfig.telegram.chatId)
+        chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
         now <- Clock.instant
@@ -163,9 +163,15 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     for {
       fileStorageService <- ZIO.serviceWith[BotEnv](_.botService.fileStorageService)
       telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
-      telegramConfig <- ZIO.serviceWith[BotEnv](_.appConfig.telegram)
       photo <- fileStorageService.getResourcePhoto(resourcePath)
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
-      photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
+      chatId <- getChatId
+      photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
     } yield photoId
+    
+  private def getChatId: ZIO[BotEnv, Throwable, Long] =
+    for {
+      telegramConfig <- ZIO.serviceWith[BotEnv](_.config.telegram)    
+      chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(RuntimeException("chatId not set"))
+    } yield chatId
 }

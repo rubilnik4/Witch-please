@@ -30,8 +30,8 @@ import zio.http.*
 import java.util.UUID
 
 object ProjectIntegrationSpec extends ZIOSpecDefault {
-  private val clientId = UserData.generateClientId()
-  private val clientSecret = UserData.generateClientSecret()
+  private final val clientId = UserData.generateClientId()
+  private final val clientSecret = UserData.generateClientSecret()
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Project API integration")(
     test("create user") {

@@ -1,6 +1,6 @@
 package tarot.application.configurations
 
-import shared.application.configurations.TelemetryConfig
+import shared.application.configurations.*
 import zio.Config
 import zio.config.derivation.*
 import zio.config.magnolia.deriveConfig

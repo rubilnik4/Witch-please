@@ -1,6 +1,6 @@
 package bot.application.configurations
 
-import shared.application.configurations.TelemetryConfig
+import shared.application.configurations.{TelegramConfig, TelemetryConfig}
 import tarot.application.configurations.LocalStorageConfig
 import zio.Config
 import zio.config.derivation.*

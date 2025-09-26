@@ -2,7 +2,7 @@ package tarot.infrastructure.services
 
 import shared.models.files.FileSource
 import shared.models.telegram.*
-import tarot.domain.models.photo.Photo
+import tarot.domain.models.TarotError
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import zio.*
 import zio.nio.file.{Files, Path}
@@ -20,7 +20,8 @@ object PhotoServiceSpec extends ZIOSpecDefault {
         telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramApiService)
         telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
         telegramFile = TelegramFile(photo.fileName, photo.bytes)
-        photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
+        chatId <- getChatId
+        photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
 
         photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
         photoSource <- photoService.fetchAndStore(photoId)
@@ -34,4 +35,10 @@ object PhotoServiceSpec extends ZIOSpecDefault {
       } yield result
     }
   ).provideShared(TestTarotEnvLayer.testEnvLive)
+
+  private def getChatId: ZIO[TarotEnv, Throwable, Long] =
+    for {
+      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
+      chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(RuntimeException("chatId not set"))
+    } yield chatId
 }

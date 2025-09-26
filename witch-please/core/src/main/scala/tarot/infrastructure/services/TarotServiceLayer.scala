@@ -1,16 +1,14 @@
 package tarot.infrastructure.services
 
+import shared.application.configurations.TelegramConfig
 import shared.infrastructure.services.files.*
 import shared.infrastructure.services.telegram.*
-import tarot.application.configurations.TarotConfig
+import tarot.application.configurations.*
 import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*
 import zio.{ZIO, ZLayer}
 
 object TarotServiceLayer {
-  private val tokenLayer: ZLayer[TarotConfig, Nothing, String] =
-    ZLayer.fromFunction((config: TarotConfig) => config.telegram.token)
-
   private val storedLayer: ZLayer[TarotConfig, Throwable, String] =
     ZLayer.fromZIO {
       for {
@@ -19,9 +17,12 @@ object TarotServiceLayer {
           .orElseFail(new RuntimeException("Local storage config is missing"))
       } yield localStorage.path
     }
-
-  private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramApiService] =
-    tokenLayer >>> TelegramApiServiceLayer.telegramApiServiceLive
+    
+  private val tokenLayer: ZLayer[TarotConfig, Nothing, TelegramConfig] =
+    ZLayer.fromFunction((config: TarotConfig) => config.telegram)
+    
+  private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramChannelService] =
+    tokenLayer >>> TelegramChannelServiceLayer.telegramChannelServiceLive
 
   private val storageLayer: ZLayer[TarotConfig, Throwable, FileStorageService] =
     storedLayer >>> FileStorageServiceLayer.localFileStorageServiceLive

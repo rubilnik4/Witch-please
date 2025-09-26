@@ -27,10 +27,10 @@ import zio.test.TestAspect.sequential
 import java.util.UUID
 
 object SpreadIntegrationSpec extends ZIOSpecDefault {
-  private val cardCount = 2
-  private val clientId = "123456789"
-  private val clientType = ClientType.Telegram
-  private val clientSecret = "test-secret-token"
+  private final val cardCount = 2
+  private final val clientId = "123456789"
+  private final val clientType = ClientType.Telegram
+  private final val clientSecret = "test-secret-token"
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
     test("initialize test state") {
@@ -139,11 +139,11 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     for {
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramApiService)
-      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
       photo <- fileStorageService.getResourcePhoto(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
-      photoId <- telegramApiService.sendPhoto(telegramConfig.chatId, telegramFile)
+      chatId <- getChatId
+      photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
         .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
     } yield photoId
 
@@ -169,4 +169,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
       token <- authService.issueToken(clientType, userId, clientSecret, Some(projectId))
     } yield token.token
+
+  private def getChatId: ZIO[TarotEnv, TarotError, Long] =
+    for {
+      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
+      chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(TarotError.NotFound("chatId not set"))
+    } yield chatId  
 }
