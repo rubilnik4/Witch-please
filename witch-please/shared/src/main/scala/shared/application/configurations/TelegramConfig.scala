@@ -6,6 +6,7 @@ import zio.config.magnolia.deriveConfig
 final case class TelegramConfig(
   chatId: Option[Long] = None,
   token: String,
+  secret: String,                              
   baseUrl: String
 )
 

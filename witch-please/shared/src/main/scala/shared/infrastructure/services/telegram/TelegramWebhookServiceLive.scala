@@ -51,7 +51,7 @@ final class TelegramWebhookServiceLive(config: TelegramConfig, client: SttpBacke
   private def setWebhookRequest(webhookPath: String) = {
     val request = TelegramSetWebhookRequest(
       url = s"${config.baseUrl}$webhookPath",
-      secretToken = config.token,
+      secretToken = config.secret,
       maxConnections = maxConnections,
       dropPendingUpdates = true,
       allowedUpdates = None
