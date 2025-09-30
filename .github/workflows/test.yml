@@ -16,7 +16,8 @@ jobs:
     env:
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-
+      TELEGRAM_BOT_SECRET: ${{ secrets.TELEGRAM_BOT_SECRET }}
+      
     steps:
       - uses: actions/checkout@v3
 
