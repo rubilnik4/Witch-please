@@ -5,6 +5,7 @@ import bot.application.configurations.*
 import bot.application.handlers.BotCommandHandlerLayer
 import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.BotServiceLayer
+import bot.infrastructure.services.telegram.TelegramWebhookLaunch
 import bot.infrastructure.telemetry.BotTelemetryLayer
 import bot.layers.{BotConfigLayer, BotEnv, BotEnvLayer}
 import shared.application.configurations.TelemetryConfig
@@ -30,7 +31,7 @@ object MainBotLayer {
     BotConfigLayer.configLive >>>
       ((BotTelemetryLayer.telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
         (envLive >>>
-          (BotRoutesLayer.apiRoutesLive >>> BotServerLayer.serverLive)))
+          (BotRoutesLayer.apiRoutesLive >>> (BotServerLayer.serverLive ++ TelegramWebhookLaunch.launch))))
 
   def run: ZIO[Any, Throwable, Nothing] =
     ZIO.logInfo("Starting witch bot application...") *>

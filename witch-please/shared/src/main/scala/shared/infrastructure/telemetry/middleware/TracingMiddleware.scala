@@ -1,21 +1,20 @@
-package tarot.api.infrastructure
+package shared.infrastructure.telemetry.middleware
 
 import io.opentelemetry.api.trace.SpanKind
-import tarot.layers.TarotEnv
 import zio.ZIO
 import zio.http.{Handler, Middleware, Request, Routes}
-
+import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 object TracingMiddleware {
-  def tracing: Middleware[TarotEnv] =
-    new Middleware[TarotEnv] {
-      override def apply[Env1 <: TarotEnv, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
+  def tracing: Middleware[Tracing] =
+    new Middleware[Tracing] {
+      override def apply[Env1 <: Tracing, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
         routes.transform { handler =>
           Handler.scoped[Env1] {
             Handler.fromFunctionZIO[Request] { req =>
               for {
-                tracing <- ZIO.serviceWith[TarotEnv](_.telemetryTracing.tracing)
+                tracing <- ZIO.service[Tracing]
 
                 headersMap = req.headers.toList
                   .map(h => h.headerName -> h.renderedValue)

@@ -4,6 +4,7 @@ import zio.{Config, Duration}
 import zio.config.magnolia.deriveConfig
 
 final case class ProjectConfig(
+  port: Int,
   minFutureTime: Duration,
   maxFutureTime: Duration                            
 )

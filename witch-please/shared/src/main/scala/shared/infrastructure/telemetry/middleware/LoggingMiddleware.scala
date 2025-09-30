@@ -1,13 +1,12 @@
-package tarot.api.infrastructure
+package shared.infrastructure.telemetry.middleware
 
-import tarot.layers.TarotEnv
 import zio.LogLevel
-import zio.http.{HandlerAspect, Header, Middleware, Routes, Status}
+import zio.http.*
 
 object LoggingMiddleware {
-  def logging: Middleware[TarotEnv] = {
-    new Middleware[TarotEnv] {
-      def apply[Env1 <: TarotEnv, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
+  def logging: Middleware[Any] = {
+    new Middleware[Any] {
+      def apply[Env1, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
         Routes.fromIterable(
           routes.routes.map(route => route.transform[Env1](_ @@ HandlerAspect.requestLogging(
             level = _ => LogLevel.Debug,
