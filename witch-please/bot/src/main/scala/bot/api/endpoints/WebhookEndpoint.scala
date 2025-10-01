@@ -2,11 +2,9 @@ package bot.api.endpoints
 
 import bot.api.BotApiRoutes
 import bot.api.dto.*
-import bot.application.handlers.telegram.TelegramCommandHandlerLive
 import bot.domain.models.telegram.TelegramMessage
 import bot.layers.BotEnv
 import sttp.model.StatusCode
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import zio.ZIO

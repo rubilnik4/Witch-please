@@ -1,7 +1,7 @@
 package bot.application.configurations
 
+import zio.Config
 import zio.config.magnolia.deriveConfig
-import zio.{Config, Duration}
 
 final case class BotProjectConfig(
   host: String,                            
