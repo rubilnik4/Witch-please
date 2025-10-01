@@ -18,7 +18,7 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_BOT_SECRET: ${{ secrets.TELEGRAM_BOT_SECRET }}
       USER_SECRET_PEPPER: ${{ secrets.USER_SECRET_PEPPER }}
-      USER_SECRET_PEPPER: ${{ secrets.USER_SECRET_PEPPER }}
+      
     steps:
       - uses: actions/checkout@v3
 
