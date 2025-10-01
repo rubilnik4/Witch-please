@@ -43,6 +43,15 @@ jobs:
           key: scala-cache-${{ runner.os }}-${{ hashFiles('**/build.sbt') }}
           restore-keys: |
             scala-cache-${{ runner.os }}
-
+            
+      - name: Debug USER_SECRET_PEPPER
+        run: |
+          if [ -z "${USER_SECRET_PEPPER}" ]; then
+            echo "USER_SECRET_PEPPER is NOT set"
+          else
+            echo "USER_SECRET_PEPPER length: ${#USER_SECRET_PEPPER}"
+            echo "USER_SECRET_PEPPER starts with: ${USER_SECRET_PEPPER:0:5}..."
+          fi
+          
       - name: Run tests
         run: sbt test
