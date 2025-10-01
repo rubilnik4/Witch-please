@@ -2,14 +2,13 @@ package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
-import shared.api.dto.tarot.errors.TarotErrorResponse
-import shared.models.tarot.authorize.{ClientType, Role}
-import sttp.model.StatusCode
+import shared.models.tarot.authorize.Role
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.*
 import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.endpoints.errors.TapirError
 import tarot.domain.models.authorize.{AuthResponseMapper, UserId}
 import tarot.domain.models.projects.ProjectId
 import tarot.layers.TarotEnv
@@ -18,18 +17,13 @@ import zio.ZIO
 object AuthEndpoint {
   private final val tag = "auth"
 
-  val postAuthEndpoint: ZServerEndpoint[TarotEnv, Any] =
+  private val postAuthEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
       .in(TarotApiRoutes.apiPath / "auth")
       .in(jsonBody[AuthRequest])
       .out(jsonBody[AuthResponse])
-      .errorOut(
-        oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
-        )
-      )
+      .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .zServerLogic { request =>
         (for {

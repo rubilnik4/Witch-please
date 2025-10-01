@@ -28,7 +28,7 @@ object UserIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
 
-        app = ZioHttpInterpreter().toHttp(List(UserEndpoint.postUserEndpoint))        
+        app = ZioHttpInterpreter().toHttp(UserEndpoint.endpoints)        
         userRequest = getUserCreateRequest(clientId, clientSecret)
         request = ZIOHttpClient.postRequest(TarotApiRoutes.userCreatePath(""), userRequest)
         response <- app.runZIO(request)
@@ -44,7 +44,7 @@ object UserIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
         
-        app = ZioHttpInterpreter().toHttp(List(UserEndpoint.getUserEndpoint))
+        app = ZioHttpInterpreter().toHttp(UserEndpoint.endpoints)
         request = ZIOHttpClient.getRequest(TarotApiRoutes.userGetByClientIdPath("", clientId))
         response <- app.runZIO(request)        
         user <- ZIOHttpClient.getResponse[UserResponse](response)

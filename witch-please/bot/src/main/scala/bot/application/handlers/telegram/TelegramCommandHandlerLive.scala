@@ -15,7 +15,5 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
         TelegramRouterHandler.handle(context, cmd)
       case _ =>
         ZIO.logError("Unsupported telegram request type received")
-    }   
-
- 
+    }    
 }

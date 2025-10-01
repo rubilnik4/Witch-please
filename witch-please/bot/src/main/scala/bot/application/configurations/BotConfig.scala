@@ -7,7 +7,7 @@ import zio.config.derivation.*
 import zio.config.magnolia.deriveConfig
 
 final case class BotConfig(
-  project: ProjectConfig,
+  project: BotProjectConfig,
   telegram: TelegramConfig,
   localStorage: Option[LocalStorageConfig],
   telemetry: Option[TelemetryConfig]

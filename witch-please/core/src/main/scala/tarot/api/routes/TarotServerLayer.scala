@@ -6,6 +6,8 @@ import zio.{ZIO, ZLayer}
 import zio.http.{Response, Routes, Server}
 import zio.telemetry.opentelemetry.tracing.Tracing
 
+import java.net.InetSocketAddress
+
 object TarotServerLayer {
   private val tracingLayer: ZLayer[TarotEnv, Nothing, Tracing] =
     ZLayer.fromFunction((env: TarotEnv) => env.telemetryTracing.tracing)
@@ -19,7 +21,8 @@ object TarotServerLayer {
         httpApp = routes @@ middlewares
         server <- Server.serve(httpApp)
           .provideSomeLayer[TarotEnv & Routes[TarotEnv, Response]](
-            Server.defaultWithPort(config.project.port) ++ tracingLayer
+            Server.defaultWith(_.binding(new InetSocketAddress("0.0.0.0", config.project.port))) ++
+              tracingLayer
           )
       } yield server
     }

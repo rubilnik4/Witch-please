@@ -2,42 +2,33 @@ package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
-import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*
 import shared.models.tarot.authorize.Role
 import shared.models.tarot.contracts.TarotChannelType
-import sttp.model.StatusCode
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.zio.jsonBody
+import sttp.tapir.ztapir.*
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.dto.tarot.spreads.*
+import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.*
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
 import zio.ZIO
-import sttp.tapir.json.zio.jsonBody
-import sttp.tapir.ztapir.*
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.generic.auto.*
-import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
-import tarot.api.dto.tarot.spreads.*
 
 import java.util.UUID
 
 object SpreadEndpoint {
   private final val tag = "spreads"
 
-  val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
+  private val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
       .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread")
       .in(jsonBody[TelegramSpreadCreateRequest])
       .out(jsonBody[IdResponse])
-      .errorOut(
-        oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
-        )
-      )
+      .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
@@ -53,19 +44,12 @@ object SpreadEndpoint {
             .mapError(err => TarotErrorResponseMapper.toResponse(err))
       }
 
-  val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
+  private val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
       .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
       .in(jsonBody[TelegramCardCreateRequest])
       .out(jsonBody[IdResponse])
-      .errorOut(
-        oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
-          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse.NotFoundError]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
-        )
-      )
+      .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
@@ -83,20 +67,12 @@ object SpreadEndpoint {
         }
       }
 
-  val publishSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
+  private val publishSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.put
       .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "publish")
       .in(jsonBody[SpreadPublishRequest])
       .out(emptyOutput)
-      .errorOut(
-        oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
-          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse.NotFoundError]),
-          oneOfVariant(StatusCode.Conflict, jsonBody[TarotErrorResponse.ConflictError]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
-        )
-      )
+      .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))

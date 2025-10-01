@@ -12,7 +12,7 @@ import sttp.tapir.ztapir.*
 import zio.ZIO
 
 object WebhookEndpoint {
-  val postWebhookEndpoint: ZServerEndpoint[BotEnv, Any] =
+  private val postWebhookEndpoint: ZServerEndpoint[BotEnv, Any] =
     endpoint.post
       .in(BotApiRoutes.apiPath / "webhook")
       .in(jsonBody[TelegramWebhookRequest])

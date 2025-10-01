@@ -28,7 +28,7 @@ object TelegramRouterHandler {
           for {
             userName <- ZIO.fromOption(context.username)
               .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.username}"))
-            session <- botSessionService.start(context.chatId)
+            session <- botSessionService.start(context.chatId, userName)
 
             userRequest = UserCreateRequest(context.clientId.toString, session.clientSecret, userName)
             userId <- tarotApiService.getOrCreateUserId(userRequest)

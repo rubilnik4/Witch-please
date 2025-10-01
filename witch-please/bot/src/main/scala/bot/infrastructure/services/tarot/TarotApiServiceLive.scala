@@ -3,23 +3,20 @@ package bot.infrastructure.services.tarot
 import shared.api.dto.*
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.telegram.*
-import shared.models.telegram.*
-import sttp.client3.*
-import sttp.client3.ziojson.{asJson, asJsonEither}
-import sttp.model.{MediaType, StatusCode, Uri}
-import zio.*
-import zio.json.*
+import shared.api.dto.tarot.common.*
+import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
-import shared.api.dto.tarot.common.*
-import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.infrastructure.services.clients.SttpClient
 import shared.models.api.*
+import sttp.client3.*
+import sttp.client3.ziojson.asJsonEither
+import sttp.model.{StatusCode, Uri}
+import zio.*
+import zio.json.*
 
 import java.util.UUID
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any]) extends TarotApiService:
   def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =

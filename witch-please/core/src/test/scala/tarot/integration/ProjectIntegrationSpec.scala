@@ -38,7 +38,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
 
-        app = ZioHttpInterpreter().toHttp(List(UserEndpoint.postUserEndpoint))
+        app = ZioHttpInterpreter().toHttp(UserEndpoint.endpoints)
         userRequest = getUserCreateRequest(clientId, clientSecret)
         request = ZIOHttpClient.postRequest(TarotApiRoutes.userCreatePath(""), userRequest)
         response <- app.runZIO(request)
@@ -54,7 +54,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(AuthEndpoint.postAuthEndpoint))
+        app = ZioHttpInterpreter().toHttp(AuthEndpoint.endpoints)
         authRequest = getAuthRequest(userId, clientSecret, None)
         request = ZIOHttpClient.postRequest(TarotApiRoutes.tokenAuthPath(""), authRequest)
         response <- app.runZIO(request)
@@ -73,7 +73,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(ProjectEndpoint.postProjectEndpoint))
+        app = ZioHttpInterpreter().toHttp(ProjectEndpoint.endpoints)
         projectRequest = getProjectCreateRequest
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.projectCreatePath(""), projectRequest, token)
         response <- app.runZIO(request)
@@ -91,7 +91,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
         userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
         projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(AuthEndpoint.postAuthEndpoint))
+        app = ZioHttpInterpreter().toHttp(AuthEndpoint.endpoints)
         authRequest = getAuthRequest(userId, clientSecret, Some(projectId))
         request = ZIOHttpClient.postRequest(TarotApiRoutes.tokenAuthPath(""), authRequest)
         response <- app.runZIO(request)

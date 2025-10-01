@@ -11,6 +11,7 @@ import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.dto.tarot.projects.ProjectCreateRequestMapper
+import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.projects.ProjectCreateCommand
@@ -23,20 +24,13 @@ import java.util.UUID
 object ProjectEndpoint {
   private final val tag = "projects"
 
-  val postProjectEndpoint: ZServerEndpoint[TarotEnv, Any] =
+  private val postProjectEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
       .in(TarotApiRoutes.apiPath / "project")
       .in(jsonBody[ProjectCreateRequest])
       .out(jsonBody[IdResponse])
-      .errorOut(
-        oneOf[TarotErrorResponse](
-          oneOfVariant(StatusCode.BadRequest, jsonBody[TarotErrorResponse.BadRequestError]),
-          oneOfVariant(StatusCode.NotFound, jsonBody[TarotErrorResponse.NotFoundError]),
-          oneOfVariant(StatusCode.InternalServerError, jsonBody[TarotErrorResponse.InternalServerError]),
-          oneOfVariant(StatusCode.Unauthorized, jsonBody[TarotErrorResponse.Unauthorized])
-        )
-      )
+      .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(AuthValidator.verifyToken(Role.PreProject))

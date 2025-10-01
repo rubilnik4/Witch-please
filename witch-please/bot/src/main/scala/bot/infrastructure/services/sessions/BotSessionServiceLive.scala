@@ -18,10 +18,10 @@ final class BotSessionServiceLive extends BotSessionService {
         .someOrFail(new RuntimeException(s"Session not found for chat $chatId"))
     } yield currentSession
 
-  def start(chatId: Long): ZIO[BotEnv, Throwable, BotSession] =
+  def start(chatId: Long, username: String): ZIO[BotEnv, Throwable, BotSession] =
     for {
       _ <- ZIO.logDebug(s"Starting session for chat $chatId")
-
+      config <- ZIO.serviceWith[BotEnv](_.config.project)
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       currentSession <- botSessionRepository.get(chatId)
       now <- DateTimeService.getDateTimeNow
@@ -31,7 +31,7 @@ final class BotSessionServiceLive extends BotSessionService {
           botSessionRepository.put(chatId, updated).as(updated)
         case _ =>
           for {
-            clientSecret <- SecretService.generateSecret()
+            clientSecret <- SecretService.generateSecret(chatId, username, config.userSecretPepper)
             newSession = BotSession.newSession(clientSecret, now)
             _ <- botSessionRepository.create(chatId, newSession)
           } yield newSession

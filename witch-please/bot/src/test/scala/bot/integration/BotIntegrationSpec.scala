@@ -10,13 +10,11 @@ import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import sttp.tapir.ztapir.*
-import zio.*
 import zio.http.*
 import zio.json.*
 import zio.test.*
 import zio.test.TestAspect.sequential
-import zio.{Clock, Ref, Scope, ZIO, ZLayer}
+import zio.*
 
 object BotIntegrationSpec extends ZIOSpecDefault {
   final val resourcePath = "photos/test.png"
@@ -37,7 +35,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
         
-        app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         startRequest = TestTelegramWebhook.startRequest(chatId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startRequest)
         response <- app.runZIO(request)        
@@ -55,7 +53,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
 
-        app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         createProjectRequest = TestTelegramWebhook.createProjectRequest(chatId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createProjectRequest)
         response <- app.runZIO(request)
@@ -77,7 +75,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
 
-        app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         createSpreadRequest = TestTelegramWebhook.createSpreadRequest(chatId, cardCount)
         pendingRequest = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
         _ <- app.runZIO(pendingRequest)
@@ -103,7 +101,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
 
-        app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
 
         _ <- ZIO.foreachDiscard(0 until cardCount) { index =>
             val createCardRequest = TestTelegramWebhook.createCardRequest(chatId, index)
@@ -135,7 +133,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
 
-        app = ZioHttpInterpreter().toHttp(List(WebhookEndpoint.postWebhookEndpoint))
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         now <- Clock.instant
         publishTime = now.plus(10.minute)
         publishSpreadRequest = TestTelegramWebhook.publishSpreadRequest(chatId, publishTime)

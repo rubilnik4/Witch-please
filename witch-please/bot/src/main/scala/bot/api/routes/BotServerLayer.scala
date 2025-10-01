@@ -6,6 +6,8 @@ import zio.http.{Response, Routes, Server}
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.{ZIO, ZLayer}
 
+import java.net.InetSocketAddress
+
 object BotServerLayer {
   private val tracingLayer: ZLayer[BotEnv, Nothing, Tracing] =
     ZLayer.fromFunction((env: BotEnv) => env.telemetryTracing.tracing)
@@ -19,7 +21,8 @@ object BotServerLayer {
         httpApp = routes @@ middlewares
         server <- Server.serve(httpApp)
           .provideSomeLayer[BotEnv & Routes[BotEnv, Response]](
-            Server.defaultWithPort(config.project.port) ++ tracingLayer
+            Server.defaultWith(_.binding(new InetSocketAddress(config.project.host, config.project.port))) ++
+              tracingLayer
           )
       } yield server
     }

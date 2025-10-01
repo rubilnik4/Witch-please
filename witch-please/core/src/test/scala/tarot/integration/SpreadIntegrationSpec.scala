@@ -53,7 +53,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postSpreadEndpoint))
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         spreadRequest = spreadCreateRequest(projectId, cardCount, photoId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         response <- app.runZIO(request)
@@ -71,7 +71,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.postCardEndpoint))
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         cardIds <- ZIO.foreach(0 until cardCount) { index =>
           val cardRequest = cardCreateRequest(photoId)
           val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, index), cardRequest, token)
@@ -90,7 +90,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        app = ZioHttpInterpreter().toHttp(List(SpreadEndpoint.publishSpreadEndpoint))
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishRequest <- spreadPublishRequest
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)

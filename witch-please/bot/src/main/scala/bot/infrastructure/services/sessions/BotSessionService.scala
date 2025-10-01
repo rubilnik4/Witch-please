@@ -8,7 +8,7 @@ import java.util.UUID
 
 trait BotSessionService {
   def get(chatId: Long): ZIO[BotEnv, Throwable, BotSession]
-  def start(chatId: Long): ZIO[BotEnv, Throwable, BotSession]
+  def start(chatId: Long, username: String): ZIO[BotEnv, Throwable, BotSession]
   def setUser(chatId: Long, userId: UUID, token: String): ZIO[BotEnv, Throwable, Unit]
   def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit]
   def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit]
