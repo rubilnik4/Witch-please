@@ -78,8 +78,7 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.projectCreatePath(""), projectRequest, token)
         response <- app.runZIO(request)
         projectId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
-
-        ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
+       
         _ <- ref.set(TestProjectState(state.userId, Some(token), Some(projectId)))
       } yield assertTrue(projectId.toString.nonEmpty)
     },

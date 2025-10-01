@@ -26,12 +26,14 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         photoId <- getPhoto
 
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        _ <- ref.set(TestBotState(Some(photoId)))
+        _ <- ref.set(TestBotState(Some(photoId), None))
       } yield assertTrue(photoId.nonEmpty)
     },
 
     test("send start command") {
       for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
         
@@ -41,9 +43,32 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)        
         
         session <- botSessionService.get(chatId)
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        _ <- ref.set(TestBotState(state.photoId, Some(session.clientSecret)))
       } yield assertTrue(
         response.status == Status.Ok,
         session.clientSecret.nonEmpty,
+        session.token.nonEmpty
+      )
+    },
+
+    test("send restart command") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        clientSecret <- ZIO.fromOption(state.clientSecret).orElseFail(new RuntimeException("clientSecret not set"))
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- getChatId
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        startRequest = TestTelegramWebhook.startRequest(chatId)
+        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startRequest)
+        response <- app.runZIO(request)
+
+        session <- botSessionService.get(chatId)
+      } yield assertTrue(
+        response.status == Status.Ok,
+        session.clientSecret == clientSecret,
         session.token.nonEmpty
       )
     },
@@ -118,8 +143,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         }
 
         session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress)
-          .orElseFail(new RuntimeException("spreadProgress not set"))
+        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("spreadProgress not set"))
       } yield assertTrue(
         spreadProgress.total == cardCount,
         spreadProgress.createdCount == cardCount,
@@ -155,7 +179,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testBotStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestBotState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestBotState(None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestBotState(None, None)))
 
   private def getPhoto: ZIO[BotEnv, Throwable, String] =
     for {
