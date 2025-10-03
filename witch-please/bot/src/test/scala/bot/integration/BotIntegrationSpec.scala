@@ -184,7 +184,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
   private def getPhoto: ZIO[BotEnv, Throwable, String] =
     for {
       fileStorageService <- ZIO.serviceWith[BotEnv](_.botService.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
       photo <- fileStorageService.getResourcePhoto(resourcePath)
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       chatId <- getChatId

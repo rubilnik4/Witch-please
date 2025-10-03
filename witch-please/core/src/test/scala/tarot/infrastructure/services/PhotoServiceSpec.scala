@@ -17,7 +17,7 @@ object PhotoServiceSpec extends ZIOSpecDefault {
         fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
         photo <- fileStorageService.getResourcePhoto(resourcePath)
 
-        telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramApiService)
+        telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramChannelService)
         telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
         telegramFile = TelegramFile(photo.fileName, photo.bytes)
         chatId <- getChatId

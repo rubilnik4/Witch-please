@@ -15,9 +15,11 @@ object TelegramCommandParser {
       case List(TelegramCommands.Start) =>
         BotCommand.Start
       case List(TelegramCommands.Help) =>
-        BotCommand.Help
+        BotCommand.Help    
       case TelegramCommands.ProjectCreate :: nameParts if nameParts.nonEmpty =>
         BotCommand.CreateProject(nameParts.mkString(" "))
+      case List(TelegramCommands.ProjectsGet) =>
+        BotCommand.GetProjects
       case TelegramCommands.SpreadCreate :: cardCountStr :: nameParts if nameParts.nonEmpty =>
         Try(cardCountStr.toInt).toOption match {
           case Some(cardCount) if nameParts.nonEmpty =>

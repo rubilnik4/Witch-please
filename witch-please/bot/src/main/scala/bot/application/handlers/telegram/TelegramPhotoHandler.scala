@@ -9,7 +9,7 @@ object TelegramPhotoHandler {
   def handle(context: TelegramContext, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {     
       botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
       
       session <- botSessionService.get(context.chatId)
       _ <- ZIO.logInfo(s"Received photo (fileId: $fileId) from chat ${context.chatId} for pending action ${session.pending}")

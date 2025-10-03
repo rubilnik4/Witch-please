@@ -1,6 +1,5 @@
 package tarot.infrastructure.services
 
-import shared.application.configurations.TelegramConfig
 import shared.infrastructure.services.files.*
 import shared.infrastructure.services.telegram.*
 import tarot.application.configurations.*
@@ -18,11 +17,11 @@ object TarotServiceLayer {
       } yield localStorage.path
     }
     
-  private val tokenLayer: ZLayer[TarotConfig, Nothing, TelegramConfig] =
-    ZLayer.fromFunction((config: TarotConfig) => config.telegram)
+  private val telegramTokenLayer: ZLayer[TarotConfig, Nothing, String] =
+    ZLayer.fromFunction((config: TarotConfig) => config.telegram.token)
     
-  private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramChannelService] =
-    tokenLayer >>> TelegramChannelServiceLayer.telegramChannelServiceLive
+  private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramApiService] =
+    telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive
 
   private val storageLayer: ZLayer[TarotConfig, Throwable, FileStorageService] =
     storedLayer >>> FileStorageServiceLayer.localFileStorageServiceLive

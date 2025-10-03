@@ -27,8 +27,8 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
         e => DatabaseError(s"Failed to create user $user", e), 
         UserId(_))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to create user $user to database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully create user $user to database")
+        e => ZIO.logErrorCause(s"Failed to create user $user", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully create user $user")
       )
 
   def getUser(userId: UserId): ZIO[Any, TarotError, Option[User]] =
@@ -36,8 +36,8 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
       .getUser(userId.id)
       .mapError(e => DatabaseError(s"Failed to get user $userId", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get user $userId from database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get user $userId from database")
+        e => ZIO.logErrorCause(s"Failed to get user $userId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get user $userId")
       ).map(_.map(UserEntity.toDomain))
 
   def getUserByClientId(clientId: String): ZIO[Any, TarotError, Option[User]] =
@@ -45,8 +45,8 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
       .getUserByClientId(clientId)
       .mapError(e => DatabaseError(s"Failed to get user by clientId $clientId", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get user by clientId $clientId from database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get user by clientId $clientId from database")
+        e => ZIO.logErrorCause(s"Failed to get user by clientId $clientId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get user by clientId $clientId")
       ).map(_.map(UserEntity.toDomain))
 
   def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean] =
@@ -54,8 +54,8 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
       .existsUser(userId.id)
       .mapError(e => DatabaseError(s"Failed to check user $userId", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to check user $userId from database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully check user $userId from database")
+        e => ZIO.logErrorCause(s"Failed to check user $userId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully check user $userId")
       )
 
   def existsUserByClientId(clientId: String): ZIO[Any, TarotError, Boolean] =
@@ -63,7 +63,7 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
       .existsUserByClientId(clientId)
       .mapError(e => DatabaseError(s"Failed to check user by clientId $clientId", e))
       .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to check user by clientId $clientId from database", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully check user by clientId $clientId from database")
+        e => ZIO.logErrorCause(s"Failed to check user by clientId $clientId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully check user by clientId $clientId")
       )
 }

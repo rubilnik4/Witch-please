@@ -6,9 +6,9 @@ import shared.infrastructure.services.files.FileStorageService
 import shared.infrastructure.services.telegram.*
 
 final case class BotServiceLive(
-  telegramApiService: TelegramChannelService,
-  telegramWebhookService: TelegramWebhookService,
-  fileStorageService: FileStorageService,
-  tarotApiService: TarotApiService,
-  botSessionService: BotSessionService
+                                 telegramChannelService: TelegramApiService,
+                                 telegramWebhookService: TelegramWebhookService,
+                                 fileStorageService: FileStorageService,
+                                 tarotApiService: TarotApiService,
+                                 botSessionService: BotSessionService
 ) extends BotService

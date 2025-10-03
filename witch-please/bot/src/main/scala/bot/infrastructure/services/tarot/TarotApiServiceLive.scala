@@ -56,6 +56,15 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
       response <- SttpClient.sendJson(client, projectRequest)
     } yield response
 
+  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get projects request by userId: ${userId}")
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.projectsGetPath(baseUrl, userId))
+      projectsRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, List[ProjectResponse]])
+      response <- SttpClient.sendJson(client, projectsRequest)
+    } yield response
+
   def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending create spread request: ${request.title}; for project: ${request.projectId} ")

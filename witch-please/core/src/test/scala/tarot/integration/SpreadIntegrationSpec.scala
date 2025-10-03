@@ -138,7 +138,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   private def getPhoto: ZIO[TarotEnv, TarotError, String] =
     for {
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramChannelService)
       photo <- fileStorageService.getResourcePhoto(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)

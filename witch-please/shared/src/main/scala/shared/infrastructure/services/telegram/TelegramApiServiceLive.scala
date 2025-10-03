@@ -11,7 +11,7 @@ import sttp.model.MediaType
 import zio.*
 import zio.json.*
 
-final class TelegramChannelServiceLive(token: String, client: SttpBackend[Task, Any]) extends TelegramChannelService:
+final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]) extends TelegramApiService:
   private final val baseUrl = s"https://api.telegram.org/bot$token"
   private final val fileBaseUrl = s"https://api.telegram.org/file/bot$token"
   private final val sendMessageUrl = uri"$baseUrl/sendMessage"
@@ -22,17 +22,20 @@ final class TelegramChannelServiceLive(token: String, client: SttpBackend[Task, 
       _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
       request = getSendTextRequest(chatId, text)
       response <- SttpClient.sendJson(client, request)
-      textResponse <- TelegramApiService.getTelegramResponse(response)
+      textResponse <- TelegramApi.getTelegramResponse(response)
     } yield textResponse.messageId
   }
 
-  def sendButton(chatId: Long, text: String, button: TelegramKeyboardButton): ZIO[Any, ApiError, Long] = {
+  def sendButton(chatId: Long, text: String, button: TelegramKeyboardButton): ZIO[Any, ApiError, Long] =
+    sendButtons(chatId, text, List(button))
+
+  def sendButtons(chatId: Long, text: String, buttons: List[TelegramKeyboardButton]): ZIO[Any, ApiError, Long] = {
     for {
-      _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
-      markup = TelegramKeyboardMarkup(List(List(button)))
+      _ <- ZIO.logDebug(s"Sending button message to chat $chatId: $text")
+      markup = TelegramKeyboardMarkup(List(buttons))
       request = getSendButtonRequest(chatId, text, markup)
       response <- SttpClient.sendJson(client, request)
-      textResponse <- TelegramApiService.getTelegramResponse(response)
+      textResponse <- TelegramApi.getTelegramResponse(response)
     } yield textResponse.messageId
   }
 
@@ -41,7 +44,7 @@ final class TelegramChannelServiceLive(token: String, client: SttpBackend[Task, 
       _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
       fileRequest = getFileRequest(fileId)
       fileResponse <- SttpClient.sendJson(client, fileRequest)
-      telegramFile <- TelegramApiService.getTelegramResponse(fileResponse)
+      telegramFile <- TelegramApi.getTelegramResponse(fileResponse)
       fileName = telegramFile.filePath.split("/").lastOption.getOrElse(s"${telegramFile.fileId}.jpg")
 
       _ <- ZIO.logDebug(s"Downloading telegram image from path: $telegramFile.filePath")
@@ -54,7 +57,7 @@ final class TelegramChannelServiceLive(token: String, client: SttpBackend[Task, 
       _ <- ZIO.logDebug(s"Sending existing photo fileId=$fileId to chat $chatId")
       photoRequest = getSendPhotoRequest(chatId, fileId)
       response <- SttpClient.sendJson(client, photoRequest)
-      telegramMessage <- TelegramApiService.getTelegramResponse(response)
+      telegramMessage <- TelegramApi.getTelegramResponse(response)
       fileId <- getPhotoId(telegramMessage, fileId)
     } yield fileId
   }
@@ -64,7 +67,7 @@ final class TelegramChannelServiceLive(token: String, client: SttpBackend[Task, 
       _ <- ZIO.logDebug(s"Sending telegram file ${photo.fileName} to chat $chatId")
       photoRequest = getSendPhotoRequest(chatId, photo)
       response <- SttpClient.sendJson(client, photoRequest)
-      telegramMessage <- TelegramApiService.getTelegramResponse(response)
+      telegramMessage <- TelegramApi.getTelegramResponse(response)
       fileId <- getPhotoId(telegramMessage, photo.fileName)
     } yield fileId
   }

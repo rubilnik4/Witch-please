@@ -5,6 +5,9 @@ import sttp.model.StatusCode
 import sttp.tapir.EndpointOutput
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.domain.models.TarotError
+import zio.ZIO
 
 object TapirError {
   val tapirErrorOut: EndpointOutput.OneOf[TarotErrorResponse, TarotErrorResponse] = {
@@ -27,4 +30,8 @@ object TapirError {
       }
     )
   }
+
+  extension [R, A](zio: ZIO[R, TarotError, A])
+    def mapResponseErrors: ZIO[R, TarotErrorResponse, A] =
+      zio.mapError(TarotErrorResponseMapper.toResponse)
 }

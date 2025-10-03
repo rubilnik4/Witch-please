@@ -3,29 +3,21 @@ package tarot.integration
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.{AuthRequest, AuthResponse}
 import shared.api.dto.tarot.common.IdResponse
-import shared.api.dto.tarot.projects.ProjectCreateRequest
+import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.*
-import shared.models.tarot.contracts.*
-import tarot.api.dto.tarot.authorize.*
-import tarot.api.dto.tarot.users.*
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
+import tarot.data.UserData
 import tarot.domain.models.TarotError
-import tarot.layers.TestTarotEnvLayer
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestProjectState
 import zio.*
-import zio.test.*
-import zio.json.*
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import sttp.tapir.ztapir.*
-import sttp.model.Method
-import sttp.tapir.json.zio.jsonBody
-import tarot.data.UserData
-import zio.http.{Body, Driver, Request, URL}
-import zio.test.TestAspect.sequential
 import zio.http.*
+import zio.json.*
+import zio.test.*
+import zio.test.TestAspect.sequential
 
 import java.util.UUID
 
@@ -36,6 +28,14 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Project API integration")(
     test("create user") {
       for {
+        _ <- ZIO.logLevel(LogLevel.Debug) {
+            for {
+            _ <- ZIO.logTrace("trace msg")
+            _ <- ZIO.logDebug("debug msg")
+            _ <- ZIO.logInfo("info msg")
+          } yield ()
+        }
+
         ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
 
         app = ZioHttpInterpreter().toHttp(UserEndpoint.endpoints)
@@ -83,6 +83,24 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(projectId.toString.nonEmpty)
     },
 
+    test("get project with preProject token") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
+        state <- ref.get
+        userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
+        projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(ProjectEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.projectsGetPath("", userId), token)
+        response <- app.runZIO(request)
+        projects <- ZIOHttpClient.getResponse[List[ProjectResponse]](response)
+      } yield assertTrue(
+          projects.nonEmpty,
+          projects.head.id == projectId
+        )
+    },
+
     test("auth user admin role") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
@@ -95,11 +113,32 @@ object ProjectIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.postRequest(TarotApiRoutes.tokenAuthPath(""), authRequest)
         response <- app.runZIO(request)
         auth <- ZIOHttpClient.getResponse[AuthResponse](response)
+
+        _ <- ref.set(TestProjectState(Some(userId), Some(auth.token), Some(projectId)))
       } yield assertTrue(
         auth.token.nonEmpty,
         auth.role == Role.Admin
       )
-    }
+    },
+
+    test("get project with admin token") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
+        state <- ref.get
+        userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
+        projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(ProjectEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.projectsGetPath("", userId), token)
+        response <- app.runZIO(request)
+        projects <- ZIOHttpClient.getResponse[List[ProjectResponse]](response)
+      } yield
+        assertTrue(
+          projects.nonEmpty,
+          projects.head.id == projectId
+        )
+    },
   ).provideShared(
     Scope.default,
     TestTarotEnvLayer.testEnvLive,

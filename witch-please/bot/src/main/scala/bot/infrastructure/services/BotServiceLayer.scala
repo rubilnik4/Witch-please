@@ -25,12 +25,15 @@ object BotServiceLayer {
   val telegramConfigLayer: ZLayer[BotConfig, Throwable, TelegramConfig] =
     ZLayer.fromFunction((config: BotConfig) => config.telegram)
 
+  val telegramTokenLayer: ZLayer[BotConfig, Throwable, String] =
+    ZLayer.fromFunction((config: BotConfig) => config.telegram.token)
+    
   private val tarotUrlLayer: ZLayer[BotConfig, Nothing, String] =
     ZLayer.fromFunction((config: BotConfig) => config.project.tarotUrl)
 
   val botServiceLive: ZLayer[BotConfig, Throwable, BotService] =
     (
-      (telegramConfigLayer >>> TelegramChannelServiceLayer.telegramChannelServiceLive) ++
+      (telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive) ++
       (telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       (tarotUrlLayer >>> TarotApiServiceLayer.tarotApiServiceLive) ++
       storageLayer ++

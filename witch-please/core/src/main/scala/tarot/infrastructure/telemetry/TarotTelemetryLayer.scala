@@ -1,8 +1,10 @@
 package tarot.infrastructure.telemetry
 
 import shared.application.configurations.TelemetryConfig
+import shared.infrastructure.telemetry.LogLevelMapper
 import tarot.application.configurations.TarotConfig
-import zio.{ZIO, ZLayer}
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.{LogLevel, ZIO, ZLayer}
 
 object TarotTelemetryLayer {
   val telemetryConfigLayer: ZLayer[TarotConfig, Throwable, TelemetryConfig] =

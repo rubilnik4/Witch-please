@@ -1,8 +1,8 @@
 package bot.infrastructure.services.telegram
 
 import bot.api.BotApiRoutes
+import bot.application.commands.telegram.TelegramCommands
 import bot.layers.BotEnv
-import shared.models.api.ApiError
 import zio.{Scope, ZIO, ZLayer}
 
 object TelegramWebhookLaunch {
@@ -11,8 +11,13 @@ object TelegramWebhookLaunch {
       for {
         telegramConfig <- ZIO.serviceWith[BotEnv](_.config.telegram)
         telegramWebhookService <- ZIO.serviceWith[BotEnv](_.botService.telegramWebhookService)
+
+        _ <- ZIO.logInfo(s"Launching telegram webhook")
+        _ <- telegramWebhookService.setCommands(TelegramCommands.Commands)
         _ <- telegramWebhookService.setWebhook(s"${BotApiRoutes.apiPath}/webhook")
         info <- telegramWebhookService.getWebhookInfo
+        _    <- ZIO.logInfo(s"Webhook info: ${info.url}")
+
         _ <- Scope.addFinalizer(telegramWebhookService.deleteWebhook().ignore)
       } yield ()
     }

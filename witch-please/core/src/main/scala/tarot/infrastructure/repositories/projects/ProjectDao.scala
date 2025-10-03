@@ -12,7 +12,7 @@ import java.util.UUID
 
 final class ProjectDao(quill: Quill.Postgres[SnakeCase]) {
   import quill.*
-
+    
   def insertProject(project: ProjectEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {

@@ -7,6 +7,7 @@ import io.opentelemetry.sdk.logs.*
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import shared.application.configurations.TelemetryConfig
+import shared.infrastructure.telemetry.logging.LoggerLayer
 import zio.*
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -51,9 +52,7 @@ object TelemetryLayer {
     ZLayer.scoped {
       for {
         telemetryConfig <- ZIO.service[TelemetryConfig]
-        logLevel <- ZIO.fromOption(LogLevelMapper.parseLogLevel(telemetryConfig.logLevel))
-          .orElseFail(new RuntimeException(s"Invalid log level: ${telemetryConfig.logLevel}"))
-
+        logLevel <- LoggerLayer.logLevel
         _ <- OpenTelemetry.logging(telemetryConfig.appName, logLevel).build
       } yield ()
     }

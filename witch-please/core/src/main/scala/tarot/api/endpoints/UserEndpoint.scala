@@ -19,6 +19,8 @@ import tarot.layers.TarotEnv
 import zio.ZIO
 
 object UserEndpoint {
+  import TapirError._
+  
   private final val tag = "users"
 
   private val getUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
@@ -34,8 +36,7 @@ object UserEndpoint {
           userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userByClientIdQueryHandler)
           userQuery = UserByClientIdQuery(clientId)
           user <- userQueryHandler.handle(userQuery)
-        } yield UserResponseMapper.toResponse(user))
-          .mapError(TarotErrorResponseMapper.toResponse)
+        } yield UserResponseMapper.toResponse(user)).mapResponseErrors
       }
 
   private val postUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
@@ -53,8 +54,7 @@ object UserEndpoint {
           userCreateCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCreateCommandHandler)
           userCreateCommand = UserCreateCommand(externalUser)
           userId <- userCreateCommandHandler.handle(userCreateCommand)
-        } yield IdResponse(userId.id))
-          .mapError(TarotErrorResponseMapper.toResponse)
+        } yield IdResponse(userId.id)).mapResponseErrors
       }
 
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] = 

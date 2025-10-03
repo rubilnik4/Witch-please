@@ -10,13 +10,13 @@ import zio.ZIO
 import zio.http.{Handler, HandlerAspect, Header, Request}
 
 object AuthValidator {
-  def verifyToken(requiredRole: Role)(token: String): ZIO[TarotEnv, TarotErrorResponse, TokenPayload] =
-    (for {
+  def verifyToken(requiredRole: Role)(token: String): ZIO[TarotEnv, TarotError, TokenPayload] =
+    for {
       authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
       payload <- authService.validateToken(token)
-      _ <- ZIO.when(payload.role != requiredRole) {
-        ZIO.fail(TarotError.Unauthorized(s"Required $requiredRole, got ${payload.role}"))
+      _ <- ZIO.unless(Role.atLeast(payload.role, requiredRole)) {
+        ZIO.logWarning(s"Authorization for user ${payload.userId} failed: required $requiredRole, got ${payload.role}") *>
+          ZIO.fail(TarotError.Unauthorized(s"Dor user ${payload.userId} required $requiredRole, got ${payload.role}"))
       }
-    } yield payload)
-      .mapError(TarotErrorResponseMapper.toResponse)
+    } yield payload      
 }

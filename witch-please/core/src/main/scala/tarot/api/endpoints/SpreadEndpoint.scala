@@ -8,7 +8,6 @@ import shared.models.tarot.contracts.TarotChannelType
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
-import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
@@ -21,6 +20,8 @@ import zio.ZIO
 import java.util.UUID
 
 object SpreadEndpoint {
+  import TapirError.*
+  
   private final val tag = "spreads"
 
   private val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
@@ -31,7 +32,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload =>
         request =>
           (for {
@@ -40,8 +41,7 @@ object SpreadEndpoint {
             handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCreateCommandHandler)
             cmd = SpreadCreateCommand(externalSpread)
             spreadId <- handler.handle(cmd)
-          } yield IdResponse(spreadId.id))
-            .mapError(err => TarotErrorResponseMapper.toResponse(err))
+          } yield IdResponse(spreadId.id)).mapResponseErrors
       }
 
   private val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
@@ -52,7 +52,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload => {
         case (spreadId, index, request) =>
           (for {
@@ -62,8 +62,7 @@ object SpreadEndpoint {
             handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.cardCreateCommandHandler)
             cmd = CardCreateCommand(externalCard)
             cardId <- handler.handle(cmd)
-          } yield IdResponse(cardId.id))
-            .mapError(err => TarotErrorResponseMapper.toResponse(err))
+          } yield IdResponse(cardId.id)).mapResponseErrors
         }
       }
 
@@ -75,7 +74,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(AuthValidator.verifyToken(Role.Admin))
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload => {
         case (spreadId, request) =>
           (for {
@@ -84,8 +83,7 @@ object SpreadEndpoint {
             handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadPublishCommandHandler)
             cmd = SpreadPublishCommand(SpreadId(spreadId), request.scheduledAt)
             _ <- handler.handle(cmd)
-          } yield ())
-            .mapError(err => TarotErrorResponseMapper.toResponse(err))
+          } yield ()).mapResponseErrors
         }
       }
 

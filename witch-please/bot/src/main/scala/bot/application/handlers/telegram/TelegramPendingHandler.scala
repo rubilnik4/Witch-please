@@ -10,7 +10,7 @@ object TelegramPendingHandler {
   def handleSpreadCover(context: TelegramContext, session: BotSession,
                         title: String, cardCount: Int, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
       botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
       tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
 
@@ -29,7 +29,7 @@ object TelegramPendingHandler {
   def handleCardCover(context: TelegramContext, session: BotSession,
                       description: String, index: Int, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
       botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
       tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
 

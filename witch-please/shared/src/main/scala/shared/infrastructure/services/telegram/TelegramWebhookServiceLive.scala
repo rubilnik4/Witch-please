@@ -16,31 +16,40 @@ final class TelegramWebhookServiceLive(config: TelegramConfig, client: SttpBacke
   private final val getWebhookUrl = uri"$baseUrl/getWebhookInfo"
   private final val setWebhookUrl = uri"$baseUrl/setWebhook"
   private final val deleteWebhookUrl = uri"$baseUrl/deleteWebhook"
+  private final val setCommandsUrl = uri"$baseUrl/setMyCommands"
   private final val maxConnections = 40
 
   def setWebhook(webhookPath: String): ZIO[Any, ApiError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Setting webhook $webhookPath")
+      _ <- ZIO.logInfo(s"Setting telegram webhook $webhookPath")
       request = setWebhookRequest(webhookPath)
       response <- SttpClient.sendJson(client, request)
-      _ <- TelegramApiService.getTelegramResponse[Boolean](response)
+      _ <- TelegramApi.getTelegramResponse[Boolean](response)
     } yield ()
 
   def deleteWebhook(): ZIO[Any, ApiError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Deleting webhook")
+      _ <- ZIO.logInfo(s"Deleting telegram webhook")
       request = deleteWebhookRequest()
       response <- SttpClient.sendJson(client, request)
-      _ <- TelegramApiService.getTelegramResponse[Boolean](response)
+      _ <- TelegramApi.getTelegramResponse[Boolean](response)
     } yield ()
 
   def getWebhookInfo: ZIO[Any, ApiError, TelegramWebhookInfo] =
     for {
-      _ <- ZIO.logInfo(s"Getting webhook info")
+      _ <- ZIO.logDebug(s"Getting telegram webhook info")
       request = getWebhookRequest
       response <- SttpClient.sendJson(client, request)
-      webhookInfo <- TelegramApiService.getTelegramResponse[TelegramWebhookInfo](response)
+      webhookInfo <- TelegramApi.getTelegramResponse[TelegramWebhookInfo](response)
     } yield webhookInfo
+
+  def setCommands(commands: List[TelegramCommandRequest]): ZIO[Any, ApiError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Setting telegram commands")
+      request = setCommandsRequest(commands)
+      response <- SttpClient.sendJson(client, request)
+      _ <- TelegramApi.getTelegramResponse[Boolean](response)
+    } yield ()
 
   private def getWebhookRequest = {
     SttpClient
@@ -61,11 +70,15 @@ final class TelegramWebhookServiceLive(config: TelegramConfig, client: SttpBacke
   }
 
   private def deleteWebhookRequest() = {
-    val body = TelegramDeleteWebhookRequest(
-      dropPendingUpdates = true
-    )
+    val body = TelegramDeleteWebhookRequest(dropPendingUpdates = true)
     SttpClient
       .postRequest(deleteWebhookUrl, body)
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[Boolean]])
+  }
+
+  private def setCommandsRequest(commands: List[TelegramCommandRequest]) = {
+    val request = TelegramSetCommandsRequest(commands)
+    SttpClient.postRequest(setCommandsUrl, request)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[Boolean]])
   }
 }
