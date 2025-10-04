@@ -66,6 +66,9 @@ object TestTelegramWebhook {
   def createProjectRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.ProjectCreate} Test project")
 
+  def getProjectsRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, s"${TelegramCommands.ProjectsGet}")
+    
   def createSpreadRequest(chatId: Long, cardCount: Int): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.SpreadCreate} $cardCount Test spread")
 

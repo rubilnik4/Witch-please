@@ -91,6 +91,20 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
+    test("get project command") {
+      for {
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- getChatId
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        getProjectsRequest = TestTelegramWebhook.getProjectsRequest(chatId)
+        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), getProjectsRequest)
+        response <- app.runZIO(request)
+      } yield assertTrue(
+        response.status == Status.Ok
+      )
+    },
+
     test("create spread command") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
