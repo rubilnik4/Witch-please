@@ -1,12 +1,65 @@
 package bot.application.handlers.telegram
 
-import bot.domain.models.session.BotSession
+import bot.application.commands.telegram.TelegramCommands
+import bot.domain.models.session.*
 import bot.domain.models.telegram.*
 import bot.layers.*
+import shared.api.dto.tarot.authorize.AuthRequest
+import shared.api.dto.tarot.projects.ProjectCreateRequest
 import shared.api.dto.tarot.spreads.*
+import shared.api.dto.telegram.*
+import shared.models.tarot.authorize.ClientType
 import zio.*
 
 object TelegramPendingHandler {
+  def handleProjectName(context: TelegramContext, session: BotSession, projectName: String): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+
+      _ <- ZIO.logInfo(s"Handle project name from chat ${context.chatId}")
+      session <- botSessionService.get(context.chatId)
+      userId <- ZIO.fromOption(session.userId)
+        .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+      projectId <- tarotApiService.createProject(ProjectCreateRequest(projectName), token).map(_.id)
+      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, Some(projectId))
+      authResponse <- tarotApiService.tokenAuth(authRequest)
+      _ <- botSessionService.setProject(context.chatId, projectId, authResponse.token)
+
+      button = TelegramInlineKeyboardButton("Создать расклад!", Some(TelegramCommands.SpreadCreate))
+      _ <- telegramApiService.sendInlineButton(context.chatId, s"Создана сущность $projectId. Напиши название расклада", button)
+    } yield ()
+
+  def handleSpreadTitle(context: TelegramContext, session: BotSession, title: String): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+
+      _ <- ZIO.logInfo(s"Handle spread title from chat ${context.chatId}")
+      session <- botSessionService.get(context.chatId)
+
+      _ <- botSessionService.setPending(context.chatId, BotPendingAction.SpreadCardCount(title))
+      _ <- telegramApiService.sendReplyText(context.chatId, s"Укажи количество карт в раскладе")
+    } yield ()
+
+  def handleSpreadCardCount(context: TelegramContext, session: BotSession, title: String, cardCount: Int): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+
+      _ <- ZIO.logInfo(s"Handle spread card count from chat ${context.chatId}")
+      session <- botSessionService.get(context.chatId)
+
+      _ <- botSessionService.setPending(context.chatId, BotPendingAction.SpreadCover(title, cardCount))
+      _ <- telegramApiService.sendReplyText(context.chatId, s"Прикрепи фото для создания расклада")
+    } yield ()
+
   def handleSpreadCover(context: TelegramContext, session: BotSession,
                         title: String, cardCount: Int, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {

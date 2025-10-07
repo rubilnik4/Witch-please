@@ -8,16 +8,14 @@ import java.util.UUID
 import scala.util.Try
 
 object TelegramCommandParser {
-  def handle(command: String): BotCommand = {
-    val parts = command.trim.split("\\s+").toList
-
-    parts match {
+  def handle(command: String): BotCommand =
+    command.trim.split("\\s+").toList match {
       case List(TelegramCommands.Start) =>
         BotCommand.Start
       case List(TelegramCommands.Help) =>
-        BotCommand.Help    
-      case TelegramCommands.ProjectCreate :: nameParts if nameParts.nonEmpty =>
-        BotCommand.CreateProject(nameParts.mkString(" "))
+        BotCommand.Help
+      case List(TelegramCommands.ProjectCreate) =>
+        BotCommand.CreateProject
       case List(TelegramCommands.ProjectsGet) =>
         BotCommand.GetProjects
       case TelegramCommands.SpreadCreate :: cardCountStr :: nameParts if nameParts.nonEmpty =>
@@ -25,6 +23,13 @@ object TelegramCommandParser {
           case Some(cardCount) if nameParts.nonEmpty =>
             BotCommand.CreateSpread(nameParts.mkString(" "), cardCount)
           case _ => BotCommand.Unknown
+        }
+      case TelegramCommands.SpreadsGet :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            BotCommand.GetSpreads(spreadId)
+          case _ =>
+            BotCommand.Unknown
         }
       case TelegramCommands.CardCreate :: indexStr :: nameParts =>
         Try(indexStr.toInt).toOption match {
@@ -37,8 +42,7 @@ object TelegramCommandParser {
           case Some(scheduledAt) => BotCommand.PublishSpread(scheduledAt)
           case None => BotCommand.Unknown
         }
-      case _ =>
+      case List(_, _*) | Nil =>
         BotCommand.Unknown
     }
-  }
 }

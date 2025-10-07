@@ -1,6 +1,7 @@
 package tarot.domain.entities
 
 import tarot.domain.models.TarotError
+import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId}
 import zio.ZIO
 
@@ -17,7 +18,7 @@ object SpreadPhotoEntity {
       coverPhoto <- PhotoEntity.toDomain(spreadPhoto.coverPhoto)
       spread = Spread(
         id = SpreadId(spreadPhoto.spread.id),
-        projectId = spreadPhoto.spread.projectId,
+        projectId = ProjectId(spreadPhoto.spread.projectId),
         title = spreadPhoto.spread.title,
         cardCount = spreadPhoto.spread.cardCount,
         spreadStatus = spreadPhoto.spread.spreadStatus,

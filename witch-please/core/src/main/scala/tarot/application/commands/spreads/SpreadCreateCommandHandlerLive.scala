@@ -26,7 +26,7 @@ final class SpreadCreateCommandHandlerLive extends SpreadCreateCommandHandler {
     for {
       photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
 
-      storedPhoto <- externalSpread.coverPhotoId match {
+      storedPhoto <- externalSpread.coverPhoto match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
       spread <- Spread.toDomain(externalSpread, storedPhoto)

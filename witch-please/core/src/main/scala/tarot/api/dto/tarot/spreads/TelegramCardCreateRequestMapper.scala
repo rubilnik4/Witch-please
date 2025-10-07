@@ -26,5 +26,5 @@ object TelegramCardCreateRequestMapper {
       index = index,
       spreadId = SpreadId(spreadId),
       description = request.description,
-      coverPhotoId = ExternalPhoto.Telegram(request.coverPhotoId))
+      coverPhoto = ExternalPhoto.Telegram(request.coverPhotoId))
 }

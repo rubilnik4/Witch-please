@@ -13,6 +13,8 @@ import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.*
+import tarot.application.queries.spreads.SpreadsQuery
+import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -23,6 +25,26 @@ object SpreadEndpoint {
   import TapirError.*
   
   private final val tag = "spreads"
+
+  private val getSpreadsEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint
+      .get
+      .in(TarotApiRoutes.apiPath / "spread" / "by-project" / path[UUID]("projectId"))
+      .out(jsonBody[List[SpreadResponse]])
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .serverLogic { tokenPayload =>
+        projectId =>
+          (for {
+            _ <- ZIO.logInfo(s"Received request to get spreads by projectId $projectId")
+
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadsQueryHandler)
+            query = SpreadsQuery(ProjectId(projectId))
+            projects <- handler.handle(query)
+          } yield projects.map(SpreadResponseMapper.toResponse)).mapResponseErrors
+      }
 
   private val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
@@ -88,5 +110,5 @@ object SpreadEndpoint {
       }
 
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
-    List(postSpreadEndpoint, postCardEndpoint, publishSpreadEndpoint)
+    List(getSpreadsEndpoint, postSpreadEndpoint, postCardEndpoint, publishSpreadEndpoint)
 }

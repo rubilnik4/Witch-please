@@ -32,7 +32,7 @@ final class CardCreateCommandHandlerLive extends CardCreateCommandHandler {
     for {
       photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
 
-      storedPhoto <- externalCard.coverPhotoId match {
+      storedPhoto <- externalCard.coverPhoto match {
         case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
       }
       card <- Card.toDomain(externalCard, storedPhoto)

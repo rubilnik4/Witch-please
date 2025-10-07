@@ -2,8 +2,9 @@ package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.*
+import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
+import tarot.domain.models.spreads.SpreadStatusUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
@@ -26,6 +27,16 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
       })
       .map(_.headOption)
+
+  def getSpreads(projectId: UUID): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
+    run(
+      quote {
+        spreadTable
+          .join(photoTable)
+          .on((spread, photo) => spread.coverPhotoId == photo.id)
+          .filter { case (spread, _) => spread.projectId == lift(projectId) }
+          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
+      })
 
   def existsSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
     run(

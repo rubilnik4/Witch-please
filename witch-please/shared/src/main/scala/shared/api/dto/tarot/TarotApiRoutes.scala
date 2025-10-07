@@ -32,6 +32,9 @@ case object TarotApiRoutes {
   def spreadCreatePath(baseUrl: String): URL =
     make(baseUrl, apiPath, TarotChannelType.Telegram, "spread")
 
+  def spreadsGetPath(baseUrl: String, projectId: UUID): URL =
+    make(baseUrl, apiPath, "spread", "by-project", projectId.toString)
+    
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, "spread", spreadId.toString, "publish")
 

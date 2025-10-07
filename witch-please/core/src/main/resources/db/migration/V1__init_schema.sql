@@ -25,7 +25,8 @@ CREATE TABLE photos (
     owner_id UUID NOT NULL,
     path TEXT,
     bucket TEXT,
-    key TEXT
+    key TEXT,
+    file_id TEXT
 );
 
 CREATE TABLE cards (

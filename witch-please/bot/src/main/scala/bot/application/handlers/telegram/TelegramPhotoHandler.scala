@@ -18,7 +18,8 @@ object TelegramPhotoHandler {
           TelegramPendingHandler.handleSpreadCover(context, session, title, cardCount, fileId)
         case Some(BotPendingAction.CardCover(description, index)) =>
           TelegramPendingHandler.handleCardCover(context, session, description, index, fileId)
-        case None =>
+        case None | Some(BotPendingAction.ProjectName) | Some(BotPendingAction.SpreadTitle) |
+             Some(BotPendingAction.SpreadCardCount(_)) =>
           for {
             _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")
             _ <- telegramApiService.sendText(context.chatId, "Неизвестная команда отправки фото")

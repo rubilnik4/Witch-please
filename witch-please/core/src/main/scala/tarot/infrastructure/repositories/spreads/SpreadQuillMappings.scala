@@ -1,8 +1,9 @@
 package tarot.infrastructure.repositories.spreads
 
 import io.getquill.MappedEncoding
-import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
-import tarot.domain.models.spreads.SpreadStatus
+import shared.models.tarot.photo.PhotoOwnerType
+import shared.models.tarot.spreads.SpreadStatus
+import tarot.domain.models.photo.PhotoStorageType
 
 object SpreadQuillMappings {
   given MappedEncoding[SpreadStatus, String] = MappedEncoding(_.toString)

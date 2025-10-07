@@ -2,8 +2,9 @@ package tarot.infrastructure.repositories.users
 
 import io.getquill.*
 import io.getquill.jdbczio.*
+import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.*
-import tarot.domain.models.spreads.{SpreadStatus, SpreadStatusUpdate}
+import tarot.domain.models.spreads.SpreadStatusUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 

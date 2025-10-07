@@ -26,14 +26,36 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
     } yield textResponse.messageId
   }
 
+  def sendReplyText(chatId: Long, text: String): ZIO[Any, ApiError, Long] = {
+    for {
+      _ <- ZIO.logDebug(s"Sending reply text message to chat $chatId: $text")
+      request = getSendMarkupRequest(chatId, text, TelegramForceReply())
+      response <- SttpClient.sendJson(client, request)
+      textResponse <- TelegramApi.getTelegramResponse(response)
+    } yield textResponse.messageId
+  }
+
   def sendButton(chatId: Long, text: String, button: TelegramKeyboardButton): ZIO[Any, ApiError, Long] =
     sendButtons(chatId, text, List(button))
 
   def sendButtons(chatId: Long, text: String, buttons: List[TelegramKeyboardButton]): ZIO[Any, ApiError, Long] = {
     for {
       _ <- ZIO.logDebug(s"Sending button message to chat $chatId: $text")
-      markup = TelegramKeyboardMarkup(List(buttons))
-      request = getSendButtonRequest(chatId, text, markup)
+      markup = TelegramReplyKeyboardMarkup(List(buttons))
+      request = getSendMarkupRequest(chatId, text, markup)
+      response <- SttpClient.sendJson(client, request)
+      textResponse <- TelegramApi.getTelegramResponse(response)
+    } yield textResponse.messageId
+  }
+
+  def sendInlineButton(chatId: Long, text: String, button: TelegramInlineKeyboardButton): ZIO[Any, ApiError, Long] =
+    sendInlineButtons(chatId, text, List(button))
+
+  def sendInlineButtons(chatId: Long, text: String, buttons: List[TelegramInlineKeyboardButton]): ZIO[Any, ApiError, Long] = {
+    for {
+      _ <- ZIO.logDebug(s"Sending inline button message to chat $chatId: $text")
+      markup = TelegramInlineKeyboardMarkup(buttons.map(List(_)))
+      request = getSendMarkupRequest(chatId, text, markup)
       response <- SttpClient.sendJson(client, request)
       textResponse <- TelegramApi.getTelegramResponse(response)
     } yield textResponse.messageId
@@ -97,7 +119,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 
-  private def getSendButtonRequest(chatId: Long, text: String, markup: TelegramKeyboardMarkup) = {
+  private def getSendMarkupRequest(chatId: Long, text: String, markup: TelegramKeyboardMarkup) = {
     val request = TelegramMessageRequest(chatId, text, Some(markup))
     SttpClient.postRequest(sendMessageUrl, request)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])

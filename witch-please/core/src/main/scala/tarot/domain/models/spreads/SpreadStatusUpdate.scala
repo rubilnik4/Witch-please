@@ -1,5 +1,6 @@
 package tarot.domain.models.spreads
 
+import shared.models.tarot.spreads.SpreadStatus
 import java.time.Instant
 
 sealed trait SpreadStatusUpdate(spreadId: SpreadId, spreadStatus: SpreadStatus) {

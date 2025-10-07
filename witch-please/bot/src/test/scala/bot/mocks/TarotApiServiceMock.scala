@@ -20,7 +20,7 @@ import java.util.UUID
 
 final class TarotApiServiceMock(
     userMap: Ref.Synchronized[Map[String, UserResponse]],
-    projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]]
+    projectMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]]
   ) extends TarotApiService {
   def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
@@ -73,7 +73,7 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
+  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     projectMap.get.map(_.get(userId)).flatMap {
       case Some(userProjects) => ZIO.succeed(userProjects.values.toList)
       case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"projects by userId $userId not found"))
@@ -98,7 +98,7 @@ final class TarotApiServiceMock(
     )
 
   private def getProjectResponse(id: UUID, request: ProjectCreateRequest, now: Instant) =
-    ProjectResponse(
+    SpreadResponse(
       id = id,
       name = request.name,
       createdAt = now
@@ -114,7 +114,7 @@ object TarotApiServiceMock {
     ZLayer.fromZIO {
       for {
         usersRef <- Ref.Synchronized.make(Map.empty[String, UserResponse])
-        projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, ProjectResponse]])
+        projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, SpreadResponse]])
       } yield new TarotApiServiceMock(usersRef, projectsRef)
     }
 }

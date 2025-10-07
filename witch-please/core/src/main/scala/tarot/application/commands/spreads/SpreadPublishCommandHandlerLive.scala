@@ -1,6 +1,7 @@
 package tarot.application.commands.spreads
 
 import shared.infrastructure.services.common.DateTimeService
+import shared.models.tarot.spreads.SpreadStatus
 import tarot.application.commands.spreads.SpreadPublishCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError

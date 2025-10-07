@@ -1,23 +1,38 @@
 package tarot.domain.models.photo
 
 import shared.models.files.FileSource
+import shared.models.tarot.photo.PhotoOwnerType
 
 import java.util.UUID
 
-sealed trait Photo(ownerType: PhotoOwnerType, ownerId: UUID)
+sealed trait Photo(
+  ownerType: PhotoOwnerType, 
+  ownerId: UUID,
+  externalFileId: Option[String]    
+)
 
-object Photo:
-  final case class Local(path: String, ownerType: PhotoOwnerType, ownerId: UUID)
-    extends Photo(ownerType, ownerId)
+object Photo {
+  case class Local(
+    path: String,
+    ownerType: PhotoOwnerType,
+    ownerId: UUID,
+    fileId: Option[String]
+  ) extends Photo(ownerType, ownerId, fileId)
 
-  final case class S3(bucket: String, key: String, ownerType: PhotoOwnerType, ownerId: UUID)
-    extends Photo(ownerType, ownerId)
+  case class S3(
+    bucket: String,
+    key: String,
+    ownerType: PhotoOwnerType,
+    ownerId: UUID,
+    fileId: Option[String]
+  ) extends Photo(ownerType, ownerId, fileId)
 
-  def toPhotoSource(stored: FileSource, ownerType: PhotoOwnerType, ownerId: UUID): Photo = 
+  def toPhoto(stored: FileSource, ownerType: PhotoOwnerType, ownerId: UUID, fileId: Option[String]): Photo =
     stored match {
       case FileSource.Local(path) =>
-        Photo.Local(path, ownerType, ownerId)
-  
+        Photo.Local(path, ownerType, ownerId, fileId)
+
       case FileSource.S3(bucket, key) =>
-        Photo.S3(bucket, key, ownerType, ownerId)
+        Photo.S3(bucket, key, ownerType, ownerId, fileId)
     }
+}

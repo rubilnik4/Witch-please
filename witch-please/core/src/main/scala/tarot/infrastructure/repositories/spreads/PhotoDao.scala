@@ -2,8 +2,9 @@ package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.*
+import shared.models.tarot.photo.PhotoOwnerType
 import tarot.domain.entities.PhotoEntity
-import tarot.domain.models.photo.{PhotoOwnerType, PhotoStorageType}
+import tarot.domain.models.photo.PhotoStorageType
 import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
