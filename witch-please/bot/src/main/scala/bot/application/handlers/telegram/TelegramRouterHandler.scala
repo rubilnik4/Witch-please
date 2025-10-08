@@ -21,10 +21,9 @@ import java.util.UUID
 object TelegramRouterHandler {
   def handle(context: TelegramContext, command: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      env <- ZIO.service[BotEnv]
-      telegramApi = env.botService.telegramChannelService
-      tarotApi = env.botService.tarotApiService
-      sessionService = env.botService.botSessionService
+      telegramApi <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
+      sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
 
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
       command <- ZIO.succeed(TelegramCommandParser.handle(command))
@@ -53,7 +52,8 @@ object TelegramRouterHandler {
   private def handleStart(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
-      _ <- ZIO.logInfo(s"Start command: chat=${context.chatId}, clientId=${context.clientId}")
+      _ <- ZIO.logInfo(s"Start command for chat ${context.chatId}")
+
       userName <- ZIO.fromOption(context.username)
         .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.username}"))
       session <- sessionService.start(context.chatId, userName)
@@ -71,7 +71,8 @@ object TelegramRouterHandler {
   private def handleGetProjects(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
-      _ <- ZIO.logInfo(s"GetProjects command: chat=${context.chatId}")
+      _ <- ZIO.logInfo(s"Get projects command for chat ${context.chatId}")
+
       session <- sessionService.get(context.chatId)
       userId <- ZIO.fromOption(session.userId)
         .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
@@ -89,14 +90,19 @@ object TelegramRouterHandler {
 
   private def handleCreateProject(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) = {
-    val message = "Напиши название сущности"
-    createProject(context, message)(telegramApi, sessionService)
+    for {
+      _ <- ZIO.logInfo(s"Create project for chat ${context.chatId}")
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.ProjectName)
+      _ <- telegramApi.sendReplyText(context.chatId, "Напиши название сущности")
+    } yield ()
   }
 
   private def handleCreateSpread(context: TelegramContext)(
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- ZIO.logInfo(s"Create spread for chat ${context.chatId}")
+
       _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadTitle)
       _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
     } yield ()
@@ -104,7 +110,8 @@ object TelegramRouterHandler {
   private def handleGetSpreads(context: TelegramContext, projectId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
-      _ <- ZIO.logInfo(s"GetProjects command: chat=${context.chatId}")
+      _ <- ZIO.logInfo(s"Get spreads command for chat ${context.chatId}")
+
       session <- sessionService.get(context.chatId)
       projectId <- ZIO.fromOption(session.projectId)
         .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
@@ -124,11 +131,12 @@ object TelegramRouterHandler {
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- ZIO.logInfo(s"Create card for chat ${context.chatId}")
+
       _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhotoCover(description, index))
       _ <- telegramApi.sendText(context.chatId, s"Прикрепите фото для карты '$description'")
     } yield ()
 
-  private def handlePublishSpread(context: TelegramContext, at: Instant)(
+  private def handlePublishSpread(context: TelegramContext, publishAt: Instant)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
       session <- sessionService.get(context.chatId)
@@ -142,17 +150,10 @@ object TelegramRouterHandler {
       }
 
       _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
-      _ <- tarotApi.publishSpread(SpreadPublishRequest(at), spreadId, token)
+
+      _ <- tarotApi.publishSpread(SpreadPublishRequest(publishAt), spreadId, token)
       _ <- telegramApi.sendText(context.chatId, s"Расклад $spreadId подтвержден")
       _ <- sessionService.clearSpread(context.chatId)
-    } yield ()
-
-  private def createProject(context: TelegramContext, text: String)(
-    telegramApi: TelegramApiService, sessionService: BotSessionService) =
-    for {
-      _ <- ZIO.logInfo(s"Create project for chat ${context.chatId}")
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.ProjectName)
-      _ <- telegramApi.sendReplyText(context.chatId, text)
     } yield ()
 
   private val helpText: String =
