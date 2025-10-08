@@ -14,9 +14,9 @@ object TelegramPhotoHandler {
       session <- botSessionService.get(context.chatId)
       _ <- ZIO.logInfo(s"Received photo (fileId: $fileId) from chat ${context.chatId} for pending action ${session.pending}")
       _ <- session.pending match {
-        case Some(BotPendingAction.SpreadCover(title, cardCount)) =>
-          TelegramPendingHandler.handleSpreadCover(context, session, title, cardCount, fileId)
-        case Some(BotPendingAction.CardCover(description, index)) =>
+        case Some(BotPendingAction.SpreadPhotoCover(title, cardCount)) =>
+          TelegramPendingHandler.handleSpreadPhotoCover(context, session, title, cardCount, fileId)
+        case Some(BotPendingAction.CardPhotoCover(description, index)) =>
           TelegramPendingHandler.handleCardCover(context, session, description, index, fileId)
         case None | Some(BotPendingAction.ProjectName) | Some(BotPendingAction.SpreadTitle) |
              Some(BotPendingAction.SpreadCardCount(_)) =>

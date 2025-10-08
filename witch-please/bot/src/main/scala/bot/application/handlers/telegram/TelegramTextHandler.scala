@@ -19,8 +19,13 @@ object TelegramTextHandler {
         case Some(BotPendingAction.SpreadTitle) =>
           TelegramPendingHandler.handleSpreadTitle(context, session, text)
         case Some(BotPendingAction.SpreadCardCount(title: String)) =>
-          TelegramPendingHandler.handleSpreadTitle(context, session, text)
-        case None | Some(BotPendingAction.SpreadCover(_, _)) | Some(BotPendingAction.CardCover(_, _)) =>
+          text.toIntOption match {
+            case Some(cardCount) =>
+              TelegramPendingHandler.handleSpreadCardCount(context, session, title, cardCount)
+            case None =>
+              telegramApiService.sendText(context.chatId, "Введи число карт числом")
+          }
+        case None | Some(BotPendingAction.SpreadPhotoCover(_, _)) | Some(BotPendingAction.CardPhotoCover(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)

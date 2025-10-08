@@ -4,6 +4,7 @@ import bot.api.dto.*
 import bot.application.commands.telegram.TelegramCommands
 
 import java.time.Instant
+import java.util.UUID
 
 object TestTelegramWebhook {
   private def getMessage(chatId: Long, text: Option[String], photo: Option[List[TelegramPhotoSizeRequest]]) =
@@ -32,7 +33,7 @@ object TestTelegramWebhook {
       photo = photo
     )
 
-  private def textRequest(chatId: Long, text: String): TelegramWebhookRequest =
+  def textRequest(chatId: Long, text: String): TelegramWebhookRequest =
     TelegramWebhookRequest(
       updateId = 1L,
       message = Some(getMessage(chatId, Some(text), None)),
@@ -64,13 +65,16 @@ object TestTelegramWebhook {
     textRequest(chatId, TelegramCommands.Start)
 
   def createProjectRequest(chatId: Long): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.ProjectCreate} Test project")
+    textRequest(chatId, s"${TelegramCommands.ProjectCreate}")
 
   def getProjectsRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.ProjectsGet}")
     
-  def createSpreadRequest(chatId: Long, cardCount: Int): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.SpreadCreate} $cardCount Test spread")
+  def createSpreadRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, s"${TelegramCommands.SpreadCreate}")
+
+  def getSpreadsRequest(chatId: Long, projectId: UUID): TelegramWebhookRequest =
+    textRequest(chatId, s"${TelegramCommands.SpreadsGet} $projectId")
 
   def createCardRequest(chatId: Long, cardIndex: Int): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.CardCreate} $cardIndex Test card $cardIndex")

@@ -4,5 +4,5 @@ enum BotPendingAction:
   case ProjectName
   case SpreadTitle
   case SpreadCardCount(title: String)
-  case SpreadCover(title: String, cardCount: Int)
-  case CardCover(description: String, index: Int)
+  case SpreadPhotoCover(title: String, cardCount: Int)
+  case CardPhotoCover(description: String, index: Int)

@@ -3,6 +3,7 @@ package bot.mocks
 import bot.infrastructure.services.tarot.TarotApiService
 import shared.api.dto.tarot.authorize.*
 import shared.api.dto.tarot.common.*
+import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
@@ -10,6 +11,8 @@ import shared.infrastructure.services.common.DateTimeService
 import shared.models.api.ApiError
 import shared.models.tarot.authorize.{ClientType, Role}
 import shared.models.tarot.authorize.Role.PreProject
+import shared.models.tarot.photo.PhotoOwnerType
+import shared.models.tarot.spreads.SpreadStatus
 import sttp.model.StatusCode
 import tarot.api.dto.tarot.authorize.TokenPayload
 import zio.*
@@ -20,7 +23,8 @@ import java.util.UUID
 
 final class TarotApiServiceMock(
     userMap: Ref.Synchronized[Map[String, UserResponse]],
-    projectMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]]
+    projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]],
+    spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]]
   ) extends TarotApiService {
   def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
@@ -73,15 +77,31 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
+  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
     projectMap.get.map(_.get(userId)).flatMap {
       case Some(userProjects) => ZIO.succeed(userProjects.values.toList)
       case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"projects by userId $userId not found"))
     }
 
   def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
-    ZIO.succeed(IdResponse(UUID.randomUUID()))
-  
+    for {
+      now <- DateTimeService.getDateTimeNow
+      spreadId = UUID.randomUUID()
+      spread = getSpreadResponse(spreadId, request, now)
+      idResponse <- spreadMap.modifyZIO { spreads =>
+        val projectSpreads = spreads.getOrElse(request.projectId, Map.empty)
+        val updatedProjectSpreads = projectSpreads.updated(spreadId, spread)
+        val updatedSpreads = spreads.updated(request.projectId, updatedProjectSpreads)
+        ZIO.succeed(IdResponse(spreadId), updatedSpreads)
+      }
+    } yield idResponse
+
+  def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
+    spreadMap.get.map(_.get(projectId)).flatMap {
+      case Some(spreads) => ZIO.succeed(spreads.values.toList)
+      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"spreads by projectId $projectId not found"))
+    }
+
   def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     ZIO.succeed(IdResponse(UUID.randomUUID()))
   
@@ -98,10 +118,23 @@ final class TarotApiServiceMock(
     )
 
   private def getProjectResponse(id: UUID, request: ProjectCreateRequest, now: Instant) =
-    SpreadResponse(
+    ProjectResponse(
       id = id,
       name = request.name,
       createdAt = now
+    )
+
+  private def getSpreadResponse(id: UUID, request: TelegramSpreadCreateRequest, now: Instant) =
+    SpreadResponse(
+      id = id,
+      projectId = request.projectId,
+      title = request.title,
+      cardCount = request.cardCount,
+      spreadStatus = SpreadStatus.Draft,
+      coverPhoto = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
+      createdAt =  now,
+      scheduledAt = None,
+      publishedAt = None
     )
 
   private def validateToken(token: String): ZIO[Any, ApiError, TokenPayload] =
@@ -114,7 +147,8 @@ object TarotApiServiceMock {
     ZLayer.fromZIO {
       for {
         usersRef <- Ref.Synchronized.make(Map.empty[String, UserResponse])
-        projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, SpreadResponse]])
-      } yield new TarotApiServiceMock(usersRef, projectsRef)
+        projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, ProjectResponse]])
+        spreadsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, SpreadResponse]])
+      } yield new TarotApiServiceMock(usersRef, projectsRef, spreadsRef)
     }
 }

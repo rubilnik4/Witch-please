@@ -18,12 +18,8 @@ object TelegramCommandParser {
         BotCommand.CreateProject
       case List(TelegramCommands.ProjectsGet) =>
         BotCommand.GetProjects
-      case TelegramCommands.SpreadCreate :: cardCountStr :: nameParts if nameParts.nonEmpty =>
-        Try(cardCountStr.toInt).toOption match {
-          case Some(cardCount) if nameParts.nonEmpty =>
-            BotCommand.CreateSpread(nameParts.mkString(" "), cardCount)
-          case _ => BotCommand.Unknown
-        }
+      case List(TelegramCommands.SpreadCreate) =>
+        BotCommand.CreateSpread
       case TelegramCommands.SpreadsGet :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>

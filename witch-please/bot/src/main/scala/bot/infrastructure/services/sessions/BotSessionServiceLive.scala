@@ -80,6 +80,7 @@ final class BotSessionServiceLive extends BotSessionService {
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.update(chatId)(session => BotSession.withProject(session, projectId, token, now))
+      _ <- clearPending(chatId)
     } yield ()
 
   def setSpread(chatId: Long, spreadId: UUID, cardCount: Int): ZIO[BotEnv, Throwable, Unit] =
@@ -89,6 +90,7 @@ final class BotSessionServiceLive extends BotSessionService {
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spreadId, cardCount, now))
+      _ <- clearPending(chatId)
     } yield ()
 
   def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit] =

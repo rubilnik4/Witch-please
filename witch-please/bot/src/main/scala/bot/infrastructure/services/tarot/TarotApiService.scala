@@ -16,9 +16,9 @@ trait TarotApiService {
   def getOrCreateUserId(request: UserCreateRequest): ZIO[Any, ApiError, UUID]
   def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse]
   def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse]
-  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]]
-  def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]]
+  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]]  
   def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse]
+  def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]]
   def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse]
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
 }

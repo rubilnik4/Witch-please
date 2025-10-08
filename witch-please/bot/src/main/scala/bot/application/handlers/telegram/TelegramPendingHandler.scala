@@ -56,17 +56,18 @@ object TelegramPendingHandler {
       _ <- ZIO.logInfo(s"Handle spread card count from chat ${context.chatId}")
       session <- botSessionService.get(context.chatId)
 
-      _ <- botSessionService.setPending(context.chatId, BotPendingAction.SpreadCover(title, cardCount))
+      _ <- botSessionService.setPending(context.chatId, BotPendingAction.SpreadPhotoCover(title, cardCount))
       _ <- telegramApiService.sendReplyText(context.chatId, s"Прикрепи фото для создания расклада")
     } yield ()
 
-  def handleSpreadCover(context: TelegramContext, session: BotSession,
-                        title: String, cardCount: Int, fileId: String): ZIO[BotEnv, Throwable, Unit] =
+  def handleSpreadPhotoCover(context: TelegramContext, session: BotSession,
+                             title: String, cardCount: Int, fileId: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramChannelService)
       botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
       tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
 
+      _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")      
       _ <- telegramApiService.sendText(context.chatId, s"Создаю расклад '$title'...")
       projectId <- ZIO.fromOption(session.projectId)
         .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
@@ -86,6 +87,7 @@ object TelegramPendingHandler {
       botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
       tarotApiService <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
 
+      _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")      
       _ <- telegramApiService.sendText(context.chatId, s"Создаю карту '$description'...")
       spreadId <- ZIO.fromOption(session.spreadId)
         .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))

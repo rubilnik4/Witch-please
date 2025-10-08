@@ -37,7 +37,7 @@ object TelegramRouterHandler {
           handleCreateProject(context)(telegramApi, tarotApi, sessionService)
         case BotCommand.GetSpreads(projectId: UUID) =>
           handleGetSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
-        case BotCommand.CreateSpread(title, count) =>
+        case BotCommand.CreateSpread =>
           handleCreateSpread(context)(telegramApi, sessionService)
         case BotCommand.CreateCard(description, index) =>
           handleCreateCard(context, description, index)(telegramApi, sessionService)
@@ -124,7 +124,7 @@ object TelegramRouterHandler {
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- ZIO.logInfo(s"Create card for chat ${context.chatId}")
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardCover(description, index))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhotoCover(description, index))
       _ <- telegramApi.sendText(context.chatId, s"Прикрепите фото для карты '$description'")
     } yield ()
 
