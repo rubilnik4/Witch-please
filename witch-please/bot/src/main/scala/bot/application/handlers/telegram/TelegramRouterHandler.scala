@@ -113,13 +113,13 @@ object TelegramRouterHandler {
 
       spreads <- tarotApi.getSpreads(projectId, token)
       cardButtons = spreads.zipWithIndex.map { case (spread, idx) =>
-        TelegramInlineKeyboardButton(s"${idx + 1}. ${spread.name}", Some(s"${TelegramCommands.CardCreate}:${spread.id}"))
+        TelegramInlineKeyboardButton(s"${idx + 1}. ${spread.title}", Some(s"${TelegramCommands.CardCreate}:${spread.id}"))
       }
-      createButton = TelegramInlineKeyboardButton("➕ Создать новую", Some(TelegramCommands.SpreadCreate))
+      createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.SpreadCreate))
       buttons = cardButtons :+ createButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
     } yield ()
-    
+
   private def handleCreateCard(context: TelegramContext, description: String, index: Int)(
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
