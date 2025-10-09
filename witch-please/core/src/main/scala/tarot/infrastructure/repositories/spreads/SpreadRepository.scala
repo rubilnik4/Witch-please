@@ -14,6 +14,7 @@ trait SpreadRepository {
   def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId]
   def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit]
+  def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]]
   def createCard(card: Card): ZIO[Any, TarotError, CardId]
   def countCards(spreadId: SpreadId): ZIO[Any, TarotError, Long]
 }

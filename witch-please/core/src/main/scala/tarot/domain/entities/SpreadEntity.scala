@@ -10,15 +10,15 @@ import java.time.Instant
 import java.util.UUID
 
 final case class SpreadEntity(
-    id: UUID,
-    projectId: UUID,
-    title: String,
-    cardCount: Int,
-    spreadStatus: SpreadStatus,
-    coverPhotoId: UUID,
-    createdAt: Instant,
-    scheduledAt: Option[Instant],
-    publishedAt: Option[Instant]
+  id: UUID,
+  projectId: UUID,
+  title: String,
+  cardCount: Int,
+  spreadStatus: SpreadStatus,
+  photoId: UUID,
+  createdAt: Instant,
+  scheduledAt: Option[Instant],
+  publishedAt: Option[Instant]
 )
 
 object SpreadEntity {
@@ -29,7 +29,7 @@ object SpreadEntity {
       title = spread.title,
       cardCount = spread.cardCount,
       spreadStatus = spread.spreadStatus,
-      coverPhotoId = coverPhotoId,
+      photoId = coverPhotoId,
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
       publishedAt = spread.publishedAt

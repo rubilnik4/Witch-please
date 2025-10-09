@@ -91,7 +91,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("create spread command") {
+    test("create spread flow") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
@@ -153,7 +153,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 //        chatId <- getChatId
 //
 //        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-//        now <- Clock.instant
+//        now <- DateTimeService.getDateTimeNow
 //        publishTime = now.plus(10.minute)
 //        publishSpreadRequest = TestTelegramWebhook.publishSpreadRequest(chatId, publishTime)
 //        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), publishSpreadRequest)

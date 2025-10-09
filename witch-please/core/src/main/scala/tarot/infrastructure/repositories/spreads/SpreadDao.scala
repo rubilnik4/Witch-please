@@ -21,7 +21,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       quote {
         spreadTable
           .join(photoTable)
-          .on((spread, photo) => spread.coverPhotoId == photo.id)
+          .on((spread, photo) => spread.photoId == photo.id)
           .filter { case (spread, _) => spread.id == lift(spreadId) }
           .take(1)
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
@@ -33,7 +33,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       quote {
         spreadTable
           .join(photoTable)
-          .on((spread, photo) => spread.coverPhotoId == photo.id)
+          .on((spread, photo) => spread.photoId == photo.id)
           .filter { case (spread, _) => spread.projectId == lift(projectId) }
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
       })

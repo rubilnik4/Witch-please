@@ -3,6 +3,7 @@ package bot.infrastructure.services.tarot
 import shared.api.dto.*
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
+import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.projects.*
@@ -77,7 +78,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     for {
       _ <- ZIO.logDebug(s"Sending get spread request by projectId: $projectId")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.projectsGetPath(baseUrl, projectId))
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadsGetPath(baseUrl, projectId))
       spreadsRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, List[SpreadResponse]])
       response <- SttpClient.sendJson(client, spreadsRequest)
@@ -92,6 +93,15 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
       response <- SttpClient.sendJson(client, cardRequest)
     } yield response
 
+  def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get card request by spreadId: $spreadId")
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsGetPath(baseUrl, spreadId))
+      cardsRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, List[CardResponse]])
+      response <- SttpClient.sendJson(client, cardsRequest)
+    } yield response
+    
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Sending publish request for spread $spreadId")

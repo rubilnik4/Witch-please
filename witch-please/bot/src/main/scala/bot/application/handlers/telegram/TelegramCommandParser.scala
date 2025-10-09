@@ -20,15 +20,22 @@ object TelegramCommandParser {
         BotCommand.GetProjects
       case List(TelegramCommands.SpreadCreate) =>
         BotCommand.CreateSpread
-      case TelegramCommands.SpreadsGet :: spreadIdStr :: Nil =>
-        Try(UUID.fromString(spreadIdStr)).toOption match {
-          case Some(spreadId) =>
-            BotCommand.GetSpreads(spreadId)
+      case TelegramCommands.SpreadsGet :: projectIdStr :: Nil =>
+        Try(UUID.fromString(projectIdStr)).toOption match {
+          case Some(projectId) =>
+            BotCommand.GetSpreads(projectId)
           case _ =>
             BotCommand.Unknown
         }
       case List(TelegramCommands.CardCreate) =>
         BotCommand.CreateCard
+      case TelegramCommands.CardsGet :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            BotCommand.GetCards(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case TelegramCommands.SpreadPublish :: scheduledAtStr :: Nil =>
         Try(Instant.ofEpochSecond(scheduledAtStr.toLong)).toOption match {
           case Some(scheduledAt) => BotCommand.PublishSpread(scheduledAt)

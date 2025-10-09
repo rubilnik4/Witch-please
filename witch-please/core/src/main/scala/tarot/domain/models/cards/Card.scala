@@ -14,7 +14,7 @@ final case class Card(
   id: CardId,
   spreadId: SpreadId,
   description: String,
-  coverPhoto: Photo,
+  photo: Photo,
   createdAt: Instant
 )
 {
@@ -31,7 +31,7 @@ object Card {
         id = CardId(id),
         spreadId = externalCard.spreadId,
         description = externalCard.description,
-        coverPhoto = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, externalPhotoId),
+        photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, externalPhotoId),
         createdAt = createdAt)
     } yield card
 }

@@ -1,9 +1,11 @@
 package tarot.integration
 
 import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
 import shared.models.telegram.TelegramFile
@@ -101,6 +103,22 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(cardIds.forall(id => id.toString.nonEmpty))
     },
 
+    test("should get cards") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardsGetPath("", spreadId), token)
+        response <- app.runZIO(request)
+        cards <- ZIOHttpClient.getResponse[List[CardResponse]](response)
+      } yield assertTrue(
+        cards.nonEmpty,
+        cards.length == cardCount)
+    },
+    
     test("should publish spread") {
       for {
         _ <- TestClock.adjust(10.minute)
@@ -146,7 +164,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
   private def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
     for {
-      now <- Clock.instant
+      now <- DateTimeService.getDateTimeNow
       minFutureTime <- ZIO.serviceWith[TarotEnv](_.config.project.minFutureTime)
       publishTime = minFutureTime.plus(10.minute)
     } yield SpreadPublishRequest(

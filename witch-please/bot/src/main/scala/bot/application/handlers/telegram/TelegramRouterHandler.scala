@@ -40,6 +40,8 @@ object TelegramRouterHandler {
           handleCreateSpread(context)(telegramApi, sessionService)
         case BotCommand.CreateCard =>
           handleCreateCard(context)(telegramApi, sessionService)
+        case BotCommand.GetCards(spreadId: UUID) =>
+          handleGetCards(context, spreadId)(telegramApi, tarotApi, sessionService)
         case BotCommand.PublishSpread(at) =>
           handlePublishSpread(context, at)(telegramApi, tarotApi, sessionService)
         case BotCommand.Help =>
@@ -110,17 +112,15 @@ object TelegramRouterHandler {
   private def handleGetSpreads(context: TelegramContext, projectId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
-      _ <- ZIO.logInfo(s"Get spreads command for chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Get spreads command by project $projectId for chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
-      projectId <- ZIO.fromOption(session.projectId)
-        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
       spreads <- tarotApi.getSpreads(projectId, token)
       cardButtons = spreads.zipWithIndex.map { case (spread, idx) =>
-        TelegramInlineKeyboardButton(s"${idx + 1}. ${spread.title}", Some(s"${TelegramCommands.CardCreate}:${spread.id}"))
+        TelegramInlineKeyboardButton(s"${idx + 1}. ${spread.title}", Some(s"${TelegramCommands.CardCreate}"))
       }
       createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.SpreadCreate))
       buttons = cardButtons :+ createButton
@@ -134,6 +134,24 @@ object TelegramRouterHandler {
 
       _ <- sessionService.setPending(context.chatId, BotPendingAction.CardIndex)
       _ <- telegramApi.sendText(context.chatId, s"Укажи порядковый номер карты")
+    } yield ()
+
+  private def handleGetCards(context: TelegramContext, spreadId: UUID)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
+    for {
+      _ <- ZIO.logInfo(s"Get cards command by spread $spreadId for chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+      cards <- tarotApi.getCards(spreadId, token)
+      cardButtons = cards.zipWithIndex.map { case (card, idx) =>
+        TelegramInlineKeyboardButton(s"${idx + 1}. ${card.description}", Some(s"${TelegramCommands.CardCreate}"))
+      }
+      createButton = TelegramInlineKeyboardButton("➕ Создать новую", Some(TelegramCommands.CardCreate))
+      buttons = cardButtons :+ createButton
+      _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
     } yield ()
 
   private def handlePublishSpread(context: TelegramContext, publishAt: Instant)(

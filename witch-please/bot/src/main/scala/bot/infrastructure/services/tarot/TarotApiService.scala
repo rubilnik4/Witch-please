@@ -1,6 +1,7 @@
 package bot.infrastructure.services.tarot
 
 import shared.api.dto.tarot.authorize.*
+import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
@@ -19,6 +20,7 @@ trait TarotApiService {
   def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]]  
   def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse]
   def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]]
+  def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]]
   def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse]
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
 }

@@ -10,6 +10,7 @@ object TelegramCommands {
   final val SpreadCreate = "/spread_create"
   final val SpreadsGet = "/spreads_get"
   final val CardCreate = "/card_create"
+  final val CardsGet = "/cards_get"
   final val SpreadPublish = "/spread_publish"
 
   final val Commands: List[TelegramCommandRequest] = List(

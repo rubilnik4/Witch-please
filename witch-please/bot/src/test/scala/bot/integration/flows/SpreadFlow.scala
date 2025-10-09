@@ -13,11 +13,11 @@ import java.util.UUID
 
 object SpreadFlow {
   def startSpread(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.textRequest(chatId, "Test spread")
+    val postRequest = TestTelegramWebhook.createSpreadRequest(chatId)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardIndex", chatId) { case BotPendingAction.SpreadTitle => () }
+      _ <- CommonFlow.expectPending("SpreadTitle", chatId) { case BotPendingAction.SpreadTitle => () }
     } yield ()
 
   def spreadTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -25,7 +25,7 @@ object SpreadFlow {
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardDescription", chatId) { case BotPendingAction.SpreadCardCount(title) => title }
+      _ <- CommonFlow.expectPending("SpreadCardCount", chatId) { case BotPendingAction.SpreadCardCount(title) => title }
     } yield ()
 
   def spreadCardCount(app: Routes[BotEnv, Response], chatId: Long, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -33,7 +33,7 @@ object SpreadFlow {
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardDescription", chatId) { case BotPendingAction.SpreadPhoto(cardCount,_) => cardCount }
+      _ <- CommonFlow.expectPending("SpreadPhoto", chatId) { case BotPendingAction.SpreadPhoto(cardCount,_) => cardCount }
     } yield ()
 
   def getSpreads(app: Routes[BotEnv, Response], chatId: Long, projectId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -42,5 +42,5 @@ object SpreadFlow {
     for {
       response <- app.runZIO(request)
       _ <- CommonFlow.expectStatusOk(response, "get spreads fail")
-    } yield ()  
+    } yield ()
 }

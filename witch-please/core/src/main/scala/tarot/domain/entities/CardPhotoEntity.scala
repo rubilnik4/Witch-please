@@ -20,7 +20,7 @@ object CardPhotoEntity {
         id = CardId(cardPhoto.card.id),
         spreadId = SpreadId(cardPhoto.card.spreadId),
         description = cardPhoto.card.description,
-        coverPhoto = coverPhoto,
+        photo = coverPhoto,
         createdAt = cardPhoto.card.createdAt)
     } yield card
 }

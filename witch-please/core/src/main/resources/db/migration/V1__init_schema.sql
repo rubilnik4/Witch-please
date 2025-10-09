@@ -10,7 +10,7 @@ CREATE TABLE spreads (
     title TEXT NOT NULL,
     card_count INT NOT NULL,
     spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Ready', 'Published', 'Archived')),
-    cover_photo_id UUID NOT NULL,
+    photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
     published_at TIMESTAMPTZ
@@ -33,7 +33,7 @@ CREATE TABLE cards (
     id UUID PRIMARY KEY,
     spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
     description TEXT NOT NULL,
-    cover_photo_id UUID NOT NULL,
+    photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL
 );
 

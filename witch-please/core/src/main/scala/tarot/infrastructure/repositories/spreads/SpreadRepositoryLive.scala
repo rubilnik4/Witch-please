@@ -22,7 +22,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
     quill.transaction {
       for {
-        photoId <- createPhoto(spread.coverPhoto)
+        photoId <- createPhoto(spread.photo)
         spreadEntity = SpreadEntity.toEntity(spread, photoId)
         spreadId <- spreadDao.insertSpread(spreadEntity)
       } yield SpreadId(spreadId)
@@ -83,10 +83,19 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully validate spread $spreadId")
       )
 
+  def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
+    cardDao
+      .getCards(spreadId.id)
+      .mapError(e => DatabaseError(s"Failed to get cards by spreadId $spreadId", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to get cards by spreadId $spreadId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get cards by spreadId $spreadId")
+      ).flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
+  
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
     quill.transaction {
       for {
-        photoId <- createPhoto(card.coverPhoto)
+        photoId <- createPhoto(card.photo)
 
         cardEntity = CardEntity.toEntity(card, photoId)
         cardId <- cardDao.insertCard(cardEntity)

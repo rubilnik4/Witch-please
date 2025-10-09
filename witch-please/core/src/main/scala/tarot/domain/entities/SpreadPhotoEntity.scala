@@ -9,20 +9,20 @@ import java.util.UUID
 
 final case class SpreadPhotoEntity(
   spread: SpreadEntity,
-  coverPhoto: PhotoEntity
+  photo: PhotoEntity
 )
 
 object SpreadPhotoEntity {
   def toDomain(spreadPhoto: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] = {
     for {
-      coverPhoto <- PhotoEntity.toDomain(spreadPhoto.coverPhoto)
+      photo <- PhotoEntity.toDomain(spreadPhoto.photo)
       spread = Spread(
         id = SpreadId(spreadPhoto.spread.id),
         projectId = ProjectId(spreadPhoto.spread.projectId),
         title = spreadPhoto.spread.title,
         cardCount = spreadPhoto.spread.cardCount,
         spreadStatus = spreadPhoto.spread.spreadStatus,
-        coverPhoto = coverPhoto,
+        photo = photo,
         createdAt = spreadPhoto.spread.createdAt,
         scheduledAt = spreadPhoto.spread.scheduledAt,
         publishedAt = spreadPhoto.spread.publishedAt)

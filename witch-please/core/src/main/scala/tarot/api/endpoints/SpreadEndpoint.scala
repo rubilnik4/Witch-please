@@ -1,6 +1,7 @@
 package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.spreads.*
 import shared.models.tarot.authorize.Role
@@ -8,11 +9,13 @@ import shared.models.tarot.contracts.TarotChannelType
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
+import tarot.api.dto.tarot.cards.CardResponseMapper
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
 import tarot.application.commands.spreads.*
+import tarot.application.queries.cards.CardsQuery
 import tarot.application.queries.spreads.SpreadsQuery
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
@@ -66,6 +69,26 @@ object SpreadEndpoint {
           } yield IdResponse(spreadId.id)).mapResponseErrors
       }
 
+  private val getCardsEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint
+      .get
+      .in(TarotApiRoutes.apiPath / "card" / "by-spread" / path[UUID]("spreadId"))
+      .out(jsonBody[List[CardResponse]])
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .serverLogic { tokenPayload =>
+        spreadId =>
+          (for {
+            _ <- ZIO.logInfo(s"Received request to get cards by spreadId $spreadId")
+
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardsQueryHandler)
+            query = CardsQuery(SpreadId(spreadId))
+            cards <- handler.handle(query)
+          } yield cards.map(CardResponseMapper.toResponse)).mapResponseErrors
+      }
+      
   private val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
       .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))

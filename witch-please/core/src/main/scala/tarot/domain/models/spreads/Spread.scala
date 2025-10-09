@@ -17,7 +17,7 @@ final case class Spread(
   title: String,
   cardCount: Int,
   spreadStatus: SpreadStatus,
-  coverPhoto: Photo,
+  photo: Photo,
   createdAt: Instant,
   scheduledAt: Option[Instant],
   publishedAt: Option[Instant]
@@ -38,7 +38,7 @@ object Spread {
         title = externalSpread.title,
         cardCount = externalSpread.cardCount,
         spreadStatus = SpreadStatus.Draft,
-        coverPhoto = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, externalPhotoId),
+        photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, externalPhotoId),
         createdAt = createdAt,
         scheduledAt = None,
         publishedAt = None)

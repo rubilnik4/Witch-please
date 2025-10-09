@@ -131,7 +131,7 @@ final class TarotApiServiceMock(
       title = request.title,
       cardCount = request.cardCount,
       spreadStatus = SpreadStatus.Draft,
-      coverPhoto = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
+      photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
       createdAt =  now,
       scheduledAt = None,
       publishedAt = None

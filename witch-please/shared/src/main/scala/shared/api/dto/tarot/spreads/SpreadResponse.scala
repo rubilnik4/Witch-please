@@ -14,7 +14,7 @@ final case class SpreadResponse(
   title: String,
   cardCount: Int,
   spreadStatus: SpreadStatus,
-  coverPhoto: PhotoResponse,
+  photo: PhotoResponse,
   createdAt: Instant,
   scheduledAt: Option[Instant],
   publishedAt: Option[Instant]
