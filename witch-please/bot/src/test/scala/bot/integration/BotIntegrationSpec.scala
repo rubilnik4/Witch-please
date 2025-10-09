@@ -3,6 +3,7 @@ package bot.integration
 import bot.api.BotApiRoutes
 import bot.api.endpoints.*
 import bot.domain.models.session.BotPendingAction
+import bot.integration.flows.*
 import bot.layers.BotEnv
 import bot.layers.TestBotEnvLayer.testEnvLive
 import bot.models.*
@@ -73,53 +74,20 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("send project command") {
+    test("send project flow") {
       for {
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        createProjectRequest = TestTelegramWebhook.createProjectRequest(chatId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createProjectRequest)
-        response <- app.runZIO(request)
+        _ <- ProjectFlow.startProject(app, chatId)
+        _ <- ProjectFlow.projectName(app, chatId, "Test project")
+        _ <- ProjectFlow.getProjects(app, chatId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        response.status == Status.Ok,
-        session.token.nonEmpty,
-        session.pending.get == BotPendingAction.ProjectName
-      )
-    },
-
-    test("send project pending name command") {
-      for {
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        projectNameRequest = TestTelegramWebhook.textRequest(chatId, "Test project")
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), projectNameRequest)
-        response <- app.runZIO(request)
-
-        session <- botSessionService.get(chatId)
-      } yield assertTrue(
-        response.status == Status.Ok,
         session.projectId.nonEmpty,
         session.pending.isEmpty
-      )
-    },
-
-    test("get project command") {
-      for {
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        getProjectsRequest = TestTelegramWebhook.getProjectsRequest(chatId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), getProjectsRequest)
-        response <- app.runZIO(request)
-      } yield assertTrue(
-        response.status == Status.Ok
       )
     },
 
@@ -131,139 +99,54 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
+        session <- botSessionService.get(chatId)
+        projectId <- ZIO.fromOption(session.projectId).orElseFail(new RuntimeException("projectId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        createSpreadRequest = TestTelegramWebhook.createSpreadRequest(chatId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
-        response <- app.runZIO(request)
+        _ <- SpreadFlow.startSpread(app, chatId)
+        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
+        _ <- SpreadFlow.spreadCardCount(app, chatId, cardCount)
+        _ <- CommonFlow.sendPhoto(app, chatId, photoId)
+        _ <- SpreadFlow.getSpreads(app, chatId, projectId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        response.status == Status.Ok,
-        session.pending.get == BotPendingAction.SpreadTitle,
-      )
-    },
-
-    test("create spread pending title command") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
-
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        createSpreadRequest = TestTelegramWebhook.textRequest(chatId, "Test spread")
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
-        response <- app.runZIO(request)
-
-        session <- botSessionService.get(chatId)
-      } yield assertTrue(
-        response.status == Status.Ok,
-        session.pending.get match {
-          case BotPendingAction.SpreadCardCount(_) => true
-          case _ => false
-        }
-      )
-    },
-
-    test("create spread pending card count command") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
-
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        createSpreadRequest = TestTelegramWebhook.textRequest(chatId, cardCount.toString)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
-        response <- app.runZIO(request)
-
-        session <- botSessionService.get(chatId)
-      } yield assertTrue(
-        response.status == Status.Ok,
-        session.pending.get match {
-          case BotPendingAction.SpreadPhotoCover(_,_) => true
-          case _ => false
-        }
-      )
-    },
-    
-    test("create spread pending photo command") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
-
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        createSpreadRequest = TestTelegramWebhook.photoRequest(chatId, photoId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createSpreadRequest)
-        response <- app.runZIO(request)
-
-        session <- botSessionService.get(chatId)
-      } yield assertTrue(
-        response.status == Status.Ok,
         session.spreadId.nonEmpty,
         session.pending.isEmpty
       )
     },
-//
-//    test("get spread command") {
-//      for {
-//        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-//        chatId <- getChatId
-//        projectId <- ZIO.fromOption(state.).orElseFail(new RuntimeException("photoId not set"))
-//
-//        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-//        getProjectsRequest = TestTelegramWebhook.getSpreadsRequest(chatId)
-//        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), getProjectsRequest)
-//        response <- app.runZIO(request)
-//      } yield assertTrue(
-//        response.status == Status.Ok
-//      )
-//    },
-//
-//    test("create card command") {
-//      for {
-//        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-//        state <- ref.get
-//        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
-//
-//        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-//        chatId <- getChatId
-//
-//        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-//
-//        _ <- ZIO.foreachDiscard(0 until cardCount) { index =>
-//            val createCardRequest = TestTelegramWebhook.createCardRequest(chatId, index)
-//            val pendingRequest = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), createCardRequest)
-//            val photoRequest = TestTelegramWebhook.photoRequest(chatId, photoId)
-//            val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), photoRequest)
-//
-//            for {
-//              _ <- app.runZIO(pendingRequest)
-//              response <- app.runZIO(request)
-//              _ <- ZIO.fail(new RuntimeException(s"photo step failed with index=$index: ${response.status}"))
-//                .unless(response.status == Status.Ok)
-//            } yield ()
-//        }
-//
-//        session <- botSessionService.get(chatId)
-//        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("spreadProgress not set"))
-//      } yield assertTrue(
-//        spreadProgress.total == cardCount,
-//        spreadProgress.createdCount == cardCount,
-//        spreadProgress.createdIndices == (0 until cardCount).toSet,
-//        session.pending.isEmpty
-//      )
-//    },
-//
+
+    test("create card flow") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- getChatId
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+
+        _ <- ZIO.foreachDiscard(1 to cardCount) { index =>
+          for {
+            _ <- CardFlow.startCard(app, chatId)
+            _ <- CardFlow.cardIndex(app, chatId, index)
+            _ <- CardFlow.cardDescription(app, chatId, s"Test card $index")
+            _ <- CommonFlow.sendPhoto(app, chatId, photoId)
+            _ <- CommonFlow.expectNoPending(chatId)
+          } yield ()
+        }
+
+        session <- botSessionService.get(chatId)
+        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+      } yield assertTrue(
+        spreadProgress.total == cardCount,
+        spreadProgress.createdCount == cardCount,
+        spreadProgress.createdIndices == (0 until cardCount).toSet,
+        session.pending.isEmpty
+      )
+    },
+
 //    test("publish spread command") {
 //      for {
 //        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)

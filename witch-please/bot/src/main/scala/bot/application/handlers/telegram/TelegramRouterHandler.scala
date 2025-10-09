@@ -38,8 +38,8 @@ object TelegramRouterHandler {
           handleGetSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
         case BotCommand.CreateSpread =>
           handleCreateSpread(context)(telegramApi, sessionService)
-        case BotCommand.CreateCard(description, index) =>
-          handleCreateCard(context, description, index)(telegramApi, sessionService)
+        case BotCommand.CreateCard =>
+          handleCreateCard(context)(telegramApi, sessionService)
         case BotCommand.PublishSpread(at) =>
           handlePublishSpread(context, at)(telegramApi, tarotApi, sessionService)
         case BotCommand.Help =>
@@ -127,13 +127,13 @@ object TelegramRouterHandler {
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
     } yield ()
 
-  private def handleCreateCard(context: TelegramContext, description: String, index: Int)(
+  private def handleCreateCard(context: TelegramContext)(
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- ZIO.logInfo(s"Create card for chat ${context.chatId}")
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhotoCover(description, index))
-      _ <- telegramApi.sendText(context.chatId, s"Прикрепите фото для карты '$description'")
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardIndex)
+      _ <- telegramApi.sendText(context.chatId, s"Укажи порядковый номер карты")
     } yield ()
 
   private def handlePublishSpread(context: TelegramContext, publishAt: Instant)(
@@ -145,11 +145,13 @@ object TelegramRouterHandler {
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
 
-      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdCount == p.total)) {
-        ZIO.fail(new RuntimeException("Нельзя опубликовать: не все карты загружены"))
-      }
-
       _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
+
+      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdCount == p.total)) {
+        telegramApi.sendText(context.chatId, s"Нельзя опубликовать: не все карты загружены") *>
+          ZIO.logError("Can't publish. Not all cards uploaded") *>
+            ZIO.fail(new RuntimeException("Can't publish. Not all cards uploaded"))
+      }
 
       _ <- tarotApi.publishSpread(SpreadPublishRequest(publishAt), spreadId, token)
       _ <- telegramApi.sendText(context.chatId, s"Расклад $spreadId подтвержден")

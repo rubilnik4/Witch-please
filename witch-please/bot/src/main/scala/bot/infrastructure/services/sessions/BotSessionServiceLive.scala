@@ -109,5 +109,6 @@ final class BotSessionServiceLive extends BotSessionService {
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.withCard(session, index, now))
+      _ <- clearPending(chatId)
     } yield ()
 }

@@ -76,8 +76,8 @@ object TestTelegramWebhook {
   def getSpreadsRequest(chatId: Long, projectId: UUID): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.SpreadsGet} $projectId")
 
-  def createCardRequest(chatId: Long, cardIndex: Int): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.CardCreate} $cardIndex Test card $cardIndex")
+  def createCardRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, s"${TelegramCommands.CardCreate}")
 
   def publishSpreadRequest(chatId: Long, scheduledAt: Instant): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.SpreadPublish} ${scheduledAt.getEpochSecond}")

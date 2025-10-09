@@ -13,17 +13,18 @@ object TelegramPhotoHandler {
       sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
       
       session <- sessionService.get(context.chatId)
-      _ <- ZIO.logInfo(s"Received photo $fileId from chat ${context.chatId} for pending action ${session.pending}")
+      _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action ${session.pending}")
       
       _ <- session.pending match {
-        case Some(BotPendingAction.SpreadPhotoCover(title, cardCount)) =>
+        case Some(BotPendingAction.SpreadPhoto(title, cardCount)) =>
           TelegramPendingHandler.handleSpreadPhoto(context, title, cardCount, fileId)(
             telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardPhotoCover(description, index)) =>
-          TelegramPendingHandler.handleCardPhoto(context, description, index, fileId)(
+        case Some(BotPendingAction.CardPhoto(index, description)) =>
+          TelegramPendingHandler.handleCardPhoto(context, index, description, fileId)(
             telegramApi, tarotApi, sessionService)
-        case None | Some(BotPendingAction.ProjectName) | Some(BotPendingAction.SpreadTitle) |
-             Some(BotPendingAction.SpreadCardCount(_)) =>
+        case None | Some(BotPendingAction.ProjectName)
+             | Some(BotPendingAction.SpreadTitle) | Some(BotPendingAction.SpreadCardCount(_))
+             | Some(BotPendingAction.CardIndex) | Some(BotPendingAction.CardDescription(_)) =>
           for {
             _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")
             _ <- telegramApi.sendText(context.chatId, "Неизвестная команда отправки фото")

@@ -11,7 +11,7 @@ object BotCommand {
   case object GetProjects extends BotCommand
   case object CreateSpread extends BotCommand
   final case class GetSpreads(projectId: UUID) extends BotCommand
-  final case class CreateCard(description: String, index: Int) extends BotCommand
+  case object CreateCard extends BotCommand
   final case class PublishSpread(scheduledAt: Instant) extends BotCommand
   case object Help extends BotCommand
   case object Unknown extends BotCommand

@@ -27,12 +27,8 @@ object TelegramCommandParser {
           case _ =>
             BotCommand.Unknown
         }
-      case TelegramCommands.CardCreate :: indexStr :: nameParts =>
-        Try(indexStr.toInt).toOption match {
-          case Some(index) if nameParts.nonEmpty =>
-            BotCommand.CreateCard(nameParts.mkString(" "), index)
-          case _ => BotCommand.Unknown
-        }
+      case List(TelegramCommands.CardCreate) =>
+        BotCommand.CreateCard
       case TelegramCommands.SpreadPublish :: scheduledAtStr :: Nil =>
         Try(Instant.ofEpochSecond(scheduledAtStr.toLong)).toOption match {
           case Some(scheduledAt) => BotCommand.PublishSpread(scheduledAt)

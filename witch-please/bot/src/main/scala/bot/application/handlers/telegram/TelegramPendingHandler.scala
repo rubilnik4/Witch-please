@@ -53,7 +53,7 @@ object TelegramPendingHandler {
       
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadPhotoCover(title, cardCount))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadPhoto(title, cardCount))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания расклада")
     } yield ()
 
@@ -73,7 +73,29 @@ object TelegramPendingHandler {
       _ <- sessionService.setSpread(context.chatId, spreadId, cardCount)
     } yield ()
 
-  def handleCardPhoto(context: TelegramContext, description: String, index: Int, fileId: String)(
+  def handleCardIndex(context: TelegramContext, index: Int)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle card index $index from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardDescription(index))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Напиши описание карты")
+    } yield ()
+
+  def handleCardDescription(context: TelegramContext, index: Int, description: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle card description from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(index, description))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания карты")
+    } yield ()
+    
+  def handleCardPhoto(context: TelegramContext, index: Int, description: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
