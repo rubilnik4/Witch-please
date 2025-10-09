@@ -133,5 +133,5 @@ object SpreadEndpoint {
       }
 
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
-    List(getSpreadsEndpoint, postSpreadEndpoint, postCardEndpoint, publishSpreadEndpoint)
+    List(getSpreadsEndpoint, postSpreadEndpoint, getCardsEndpoint, postCardEndpoint, publishSpreadEndpoint)
 }
