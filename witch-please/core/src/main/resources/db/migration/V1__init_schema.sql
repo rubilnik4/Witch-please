@@ -37,8 +37,8 @@ CREATE TABLE cards (
     created_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE INDEX idx_spreads_cover_photo_id ON spreads(cover_photo_id);
-CREATE INDEX idx_cards_cover_photo_id ON cards(cover_photo_id);
+CREATE INDEX idx_spreads_photo_id ON spreads(photo_id);
+CREATE INDEX idx_cards_photo_id ON cards(photo_id);
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
