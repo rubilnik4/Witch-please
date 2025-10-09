@@ -8,6 +8,8 @@ import shared.infrastructure.services.clients.ZIOHttpClient
 import zio.{Scope, ZIO}
 import zio.http.{Response, Routes}
 
+import java.util.UUID
+
 
 object CardFlow {
   def startCard(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -34,8 +36,8 @@ object CardFlow {
       _ <- CommonFlow.expectPending("CardPhoto", chatId) { case BotPendingAction.CardPhoto(index, description) => index }
     } yield ()
 
-  def getSpreads(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.getProjectsRequest(chatId)
+  def getCards(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.getCardsRequest(chatId, spreadId)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       response <- app.runZIO(request)

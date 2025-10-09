@@ -124,7 +124,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
-
+        session <- botSessionService.get(chatId)
+        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
 
         _ <- ZIO.foreachDiscard(1 to cardCount) { index =>
@@ -136,7 +138,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()
         }
-
+        _ <- CardFlow.getCards(app, chatId, spreadId)
+        
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(

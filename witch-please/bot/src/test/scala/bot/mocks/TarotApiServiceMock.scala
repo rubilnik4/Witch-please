@@ -2,6 +2,7 @@ package bot.mocks
 
 import bot.infrastructure.services.tarot.TarotApiService
 import shared.api.dto.tarot.authorize.*
+import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.projects.*
@@ -24,7 +25,8 @@ import java.util.UUID
 final class TarotApiServiceMock(
     userMap: Ref.Synchronized[Map[String, UserResponse]],
     projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]],
-    spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]]
+    spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
+    cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
   ) extends TarotApiService {
   def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
@@ -103,8 +105,24 @@ final class TarotApiServiceMock(
     }
 
   def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
-    ZIO.succeed(IdResponse(UUID.randomUUID()))
-  
+    for {
+      now <- DateTimeService.getDateTimeNow
+      cardId = UUID.randomUUID()
+      card = getCardResponse(cardId, request, spreadId, now)
+      idResponse <- cardMap.modifyZIO { cards =>
+        val spreadCards = cards.getOrElse(spreadId, Map.empty)
+        val updatedSpreadCards = spreadCards.updated(cardId, card)
+        val updatedCards = cards.updated(spreadId, updatedSpreadCards)
+        ZIO.succeed(IdResponse(cardId), updatedCards)
+      }
+    } yield idResponse
+
+  def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+    cardMap.get.map(_.get(spreadId)).flatMap {
+      case Some(cards) => ZIO.succeed(cards.values.toList)
+      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"cards by spreadId $spreadId not found"))
+    }
+
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     ZIO.unit     
   
@@ -137,6 +155,15 @@ final class TarotApiServiceMock(
       publishedAt = None
     )
 
+  private def getCardResponse(id: UUID, request: TelegramCardCreateRequest, spreadId: UUID, now: Instant) =
+    CardResponse(
+      id = id,
+      spreadId = spreadId,
+      description = request.description,
+      photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
+      createdAt = now
+    )
+
   private def validateToken(token: String): ZIO[Any, ApiError, TokenPayload] =
     ZIO.fromEither(token.fromJson[TokenPayload])
       .mapError(error => ApiError.InvalidResponse(token, error))
@@ -149,6 +176,7 @@ object TarotApiServiceMock {
         usersRef <- Ref.Synchronized.make(Map.empty[String, UserResponse])
         projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, ProjectResponse]])
         spreadsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, SpreadResponse]])
-      } yield new TarotApiServiceMock(usersRef, projectsRef, spreadsRef)
+        cardsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, CardResponse]])
+      } yield new TarotApiServiceMock(usersRef, projectsRef, spreadsRef, cardsRef)
     }
 }
