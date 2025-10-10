@@ -1,5 +1,6 @@
 package bot.application.handlers.telegram
 
+import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.*
 import bot.layers.BotEnv
@@ -17,14 +18,13 @@ object TelegramTextHandler {
 
       _ <- session.pending match {
         case Some(BotPendingAction.ProjectName) =>
-          TelegramPendingHandler.handleProjectName(context, text)(telegramApi, tarotApi, sessionService)
+          ProjectFlow.setProjectName(context, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.SpreadTitle) =>
-          TelegramPendingHandler.handleSpreadTitle(context, text)(telegramApi, tarotApi, sessionService)
+          SpreadFlow.setSpreadTitle(context, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.SpreadCardCount(title: String)) =>
           text.toIntOption match {
             case Some(cardCount) =>
-              TelegramPendingHandler.handleSpreadCardCount(context, title, cardCount)(
-                telegramApi, tarotApi, sessionService)
+              SpreadFlow.setSpreadCardCount(context, title, cardCount)(telegramApi, tarotApi, sessionService)
             case None =>
               telegramApi.sendText(context.chatId, "Введи число карт числом")
           }
@@ -32,12 +32,12 @@ object TelegramTextHandler {
           text.toIntOption match {
             case Some(userCardIndex) =>
               val cardIndex = userCardIndex - 1
-              TelegramPendingHandler.handleCardIndex(context, cardIndex)(telegramApi, tarotApi, sessionService)
+              CardFlow.setCardIndex(context, cardIndex)(telegramApi, tarotApi, sessionService)
             case None =>
               telegramApi.sendText(context.chatId, "Введи номер карты числом")
           }
         case Some(BotPendingAction.CardDescription(index: Int)) =>
-          TelegramPendingHandler.handleCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
+          CardFlow.setCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
         case None | Some(BotPendingAction.SpreadPhoto(_, _)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")

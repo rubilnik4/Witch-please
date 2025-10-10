@@ -49,8 +49,8 @@ object BotSession {
         .orElseFail(new IllegalStateException(
           s"Cannot add card $index: spreadProgress is empty for userId=${session.userId}"))
 
-      _ <- ZIO.fail(new IllegalArgumentException(s"Card index $index is out of bounds [0, ${progress.total - 1}]"))
-        .unless(index >= 0 && index < progress.total)
+      _ <- ZIO.fail(new IllegalArgumentException(s"Card index $index is out of bounds [0, ${progress.cardsCount - 1}]"))
+        .unless(index >= 0 && index < progress.cardsCount)
 
       nextProgress = if (progress.createdIndices.contains(index)) progress
         else progress.copy(

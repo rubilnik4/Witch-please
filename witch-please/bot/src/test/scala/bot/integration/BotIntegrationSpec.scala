@@ -143,7 +143,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(
-        spreadProgress.total == cardCount,
+        spreadProgress.cardsCount == cardCount,
         spreadProgress.createdCount == cardCount,
         spreadProgress.createdIndices == (0 until cardCount).toSet,
         session.pending.isEmpty

@@ -1,5 +1,6 @@
 package bot.application.handlers.telegram
 
+import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.layers.BotEnv
@@ -17,11 +18,9 @@ object TelegramPhotoHandler {
       
       _ <- session.pending match {
         case Some(BotPendingAction.SpreadPhoto(title, cardCount)) =>
-          TelegramPendingHandler.handleSpreadPhoto(context, title, cardCount, fileId)(
-            telegramApi, tarotApi, sessionService)
+          SpreadFlow.setSpreadPhoto(context, title, cardCount, fileId)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.CardPhoto(index, description)) =>
-          TelegramPendingHandler.handleCardPhoto(context, index, description, fileId)(
-            telegramApi, tarotApi, sessionService)
+          CardFlow.setCardPhoto(context, index, description, fileId)(telegramApi, tarotApi, sessionService)
         case None | Some(BotPendingAction.ProjectName)
              | Some(BotPendingAction.SpreadTitle) | Some(BotPendingAction.SpreadCardCount(_))
              | Some(BotPendingAction.CardIndex) | Some(BotPendingAction.CardDescription(_)) =>

@@ -12,6 +12,7 @@ import java.util.UUID
 
 final case class Card(
   id: CardId,
+  index: Int,
   spreadId: SpreadId,
   description: String,
   photo: Photo,
@@ -29,6 +30,7 @@ object Card {
       createdAt <- DateTimeService.getDateTimeNow
       card = Card(
         id = CardId(id),
+        index = externalCard.index,
         spreadId = externalCard.spreadId,
         description = externalCard.description,
         photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, externalPhotoId),
