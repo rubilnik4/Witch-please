@@ -32,6 +32,7 @@ object BotSession {
   def withSpread(session: BotSession, spreadId: UUID, cardCount: Int, now: Instant): BotSession =
     session.copy(
       spreadId = Some(spreadId),
+      spreadProgress = Some(SpreadProgress(cardCount, 0, Set.empty)),
       pending = None,
       updatedAt = now)
 

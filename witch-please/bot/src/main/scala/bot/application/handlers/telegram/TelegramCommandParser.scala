@@ -16,14 +16,19 @@ object TelegramCommandParser {
         BotCommand.Help
       case List(TelegramCommands.ProjectCreate) =>
         BotCommand.CreateProject
-      case List(TelegramCommands.ProjectsGet) =>
-        BotCommand.GetProjects
-      case List(TelegramCommands.SpreadCreate) =>
-        BotCommand.CreateSpread
-      case TelegramCommands.SpreadsGet :: projectIdStr :: Nil =>
+      case TelegramCommands.ProjectSelect :: projectIdStr :: Nil =>
         Try(UUID.fromString(projectIdStr)).toOption match {
           case Some(projectId) =>
-            BotCommand.GetSpreads(projectId)
+            BotCommand.SelectProject(projectId)
+          case _ =>
+            BotCommand.Unknown
+        }
+      case List(TelegramCommands.SpreadCreate) =>
+        BotCommand.CreateSpread
+      case TelegramCommands.SpreadSelect :: spreadIdStr :: cardCountStr :: Nil =>
+        (Try(UUID.fromString(spreadIdStr)).toOption, cardCountStr.toIntOption) match {
+          case (Some(spreadId), Some(cardCount)) =>
+            BotCommand.SelectSpread(spreadId, cardCount)
           case _ =>
             BotCommand.Unknown
         }
@@ -34,10 +39,10 @@ object TelegramCommandParser {
           case _ =>
             BotCommand.Unknown
         }
-      case TelegramCommands.CardsGet :: spreadIdStr :: Nil =>
-        Try(UUID.fromString(spreadIdStr)).toOption match {
-          case Some(spreadId) =>
-            BotCommand.GetCards(spreadId)
+      case TelegramCommands.CardSelect :: cardIdStr :: indexStr :: Nil =>
+        (Try(UUID.fromString(cardIdStr)).toOption, indexStr.toIntOption) match {
+          case (Some(cardId), Some(index)) =>
+            BotCommand.SelectCard(cardId, index)
           case _ =>
             BotCommand.Unknown
         }  

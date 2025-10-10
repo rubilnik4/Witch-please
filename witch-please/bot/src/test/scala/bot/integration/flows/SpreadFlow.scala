@@ -36,8 +36,8 @@ object SpreadFlow {
       _ <- CommonFlow.expectPending("SpreadPhoto", chatId) { case BotPendingAction.SpreadPhoto(cardCount,_) => cardCount }
     } yield ()
 
-  def getSpreads(app: Routes[BotEnv, Response], chatId: Long, projectId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.getSpreadsRequest(chatId, projectId)
+  def getSpreads(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.selectSpreadsRequest(chatId, spreadId, cardCount)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       response <- app.runZIO(request)

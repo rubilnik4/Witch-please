@@ -82,7 +82,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ProjectFlow.startProject(app, chatId)
         _ <- ProjectFlow.projectName(app, chatId, "Test project")
-        _ <- ProjectFlow.getProjects(app, chatId)
+        _ <- ProjectFlow.selectProject(app, chatId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(

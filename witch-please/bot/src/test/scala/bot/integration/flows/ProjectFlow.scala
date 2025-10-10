@@ -8,6 +8,8 @@ import shared.infrastructure.services.clients.ZIOHttpClient
 import zio.http.{Response, Routes}
 import zio.{Scope, ZIO}
 
+import java.util.UUID
+
 
 object ProjectFlow {
   def startProject(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -25,8 +27,8 @@ object ProjectFlow {
       _ <- app.runZIO(request)
     } yield ()
 
-  def getProjects(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.getProjectsRequest(chatId)
+  def selectProject(app: Routes[BotEnv, Response], chatId: Long, projectId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.selectProjectRequest(chatId, projectId)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       response <- app.runZIO(request)

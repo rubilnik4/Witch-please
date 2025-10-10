@@ -1,6 +1,7 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.TelegramCommands
+import bot.application.handlers.telegram.flows.SpreadFlow
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
@@ -67,14 +68,28 @@ object CardFlow {
       _ <- telegramApi.sendText(context.chatId, s"Создаю карту '$description'...")
       spreadId <- ZIO.fromOption(session.spreadId)
         .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
+      cardCount <- ZIO.fromOption(session.spreadProgress.map(_.cardsCount))
+        .orElseFail(new RuntimeException(s"CardCount not found in session for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
       request = TelegramCardCreateRequest(description, fileId)
       _ <- tarotApi.createCard(request, spreadId, index, token)
-      _ <- sessionService.setCard(context.chatId, index)
 
-      button = TelegramInlineKeyboardButton("Создать карту!", Some(TelegramCommands.cardsGetCommand(spreadId)))
-      _ <- telegramApi.sendInlineButton(context.chatId, s"Создан расклад. Теперь создай карту", button)
+      _ <- telegramApi.sendText(context.chatId, s"Карта $description создана")
+      _ <- SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
+    } yield ()
+
+  def selectCard(context: TelegramContext, cardId: UUID, index: Int)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Select card $index from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+      _ <- sessionService.setCard(context.chatId, index)
+      //_ <- CardFlow.getCards(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 }

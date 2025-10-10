@@ -13,6 +13,8 @@ import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.tarot.authorize.ClientType
 import zio.ZIO
 
+import java.util.UUID
+
 object ProjectFlow {
   def getProjects(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
@@ -27,7 +29,7 @@ object ProjectFlow {
 
       projects <- tarotApi.getProjects(userId, token)
       projectButtons = projects.zipWithIndex.map { case (project, idx) =>
-        TelegramInlineKeyboardButton(s"${idx + 1}. ${project.name}", Some(TelegramCommands.spreadsGetCommand(project.id)))
+        TelegramInlineKeyboardButton(s"${idx + 1}. ${project.name}", Some(TelegramCommands.projectSelectCommand(project.id)))
       }
       createButton = TelegramInlineKeyboardButton("➕ Создать новую", Some(TelegramCommands.ProjectCreate))
       buttons = projectButtons :+ createButton
@@ -49,18 +51,29 @@ object ProjectFlow {
     for {
       _ <- ZIO.logInfo(s"Handle project name from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      userId <- ZIO.fromOption(session.userId)
-        .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
+      session <- sessionService.get(context.chatId)    
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
-      projectId <- tarotApi.createProject(ProjectCreateRequest(projectName), token).map(_.id)
-      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, Some(projectId))
-      authResponse <- tarotApi.tokenAuth(authRequest)
-      _ <- sessionService.setProject(context.chatId, projectId, authResponse.token)
+      projectId <- tarotApi.createProject(ProjectCreateRequest(projectName), token).map(_.id)      
      
       _ <- telegramApi.sendText(context.chatId, s"Сущность $projectName создана")
+      _ <- selectProject(context, projectId)(telegramApi, tarotApi, sessionService)
+    } yield ()
+
+  def selectProject(context: TelegramContext, projectId: UUID)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Select project $projectId from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+      userId <- ZIO.fromOption(session.userId)
+        .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
+      
+      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, Some(projectId))
+      authResponse <- tarotApi.tokenAuth(authRequest)
+
+      _ <- sessionService.setProject(context.chatId, projectId, authResponse.token)
       _ <- SpreadFlow.getSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
     } yield ()
 }

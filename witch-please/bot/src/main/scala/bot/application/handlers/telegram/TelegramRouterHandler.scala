@@ -30,19 +30,19 @@ object TelegramRouterHandler {
       command <- ZIO.succeed(TelegramCommandParser.handle(command))
       _ <- command match {
         case BotCommand.Start =>
-          handleStart(context)(telegramApi, tarotApi, sessionService)
-        case BotCommand.GetProjects =>
-          ProjectFlow.getProjects(context)(telegramApi, tarotApi, sessionService)
+          handleStart(context)(telegramApi, tarotApi, sessionService)       
         case BotCommand.CreateProject =>
           ProjectFlow.createProject(context)(telegramApi, tarotApi, sessionService)
-        case BotCommand.GetSpreads(projectId: UUID) =>
-          SpreadFlow.getSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
+        case BotCommand.SelectProject(projectId: UUID) =>
+          ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)        
         case BotCommand.CreateSpread =>
           SpreadFlow.createSpread(context)(telegramApi, sessionService)
+        case BotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
+          SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
         case BotCommand.CreateCard(index: Int) =>
           CardFlow.createCard(context, index)(telegramApi, sessionService)
-        case BotCommand.GetCards(spreadId: UUID) =>
-          CardFlow.getCards(context, spreadId)(telegramApi, tarotApi, sessionService)
+        case BotCommand.SelectCard(cardId: UUID, index: Int) =>
+          CardFlow.selectCard(context, cardId, index)(telegramApi, tarotApi, sessionService)
         case BotCommand.PublishSpread(at) =>
           handlePublishSpread(context, at)(telegramApi, tarotApi, sessionService)
         case BotCommand.Help =>
