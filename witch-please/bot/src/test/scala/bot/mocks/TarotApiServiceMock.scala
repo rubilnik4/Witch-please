@@ -108,7 +108,7 @@ final class TarotApiServiceMock(
     for {
       now <- DateTimeService.getDateTimeNow
       cardId = UUID.randomUUID()
-      card = getCardResponse(cardId, request, spreadId, now)
+      card = getCardResponse(cardId, request, index, spreadId, now)
       idResponse <- cardMap.modifyZIO { cards =>
         val spreadCards = cards.getOrElse(spreadId, Map.empty)
         val updatedSpreadCards = spreadCards.updated(cardId, card)
@@ -155,9 +155,10 @@ final class TarotApiServiceMock(
       publishedAt = None
     )
 
-  private def getCardResponse(id: UUID, request: TelegramCardCreateRequest, spreadId: UUID, now: Instant) =
+  private def getCardResponse(id: UUID, request: TelegramCardCreateRequest, index: Int, spreadId: UUID, now: Instant) =
     CardResponse(
       id = id,
+      index = index,
       spreadId = spreadId,
       description = request.description,
       photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
