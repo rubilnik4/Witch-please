@@ -30,29 +30,18 @@ object CardFlow {
       buttons = (0 until cardsCount).map { index =>
         cards.find(_.index == index) match {
           case Some(card) =>
-            TelegramInlineKeyboardButton(s"${index + 1}. 🔮 ${card.description}", Some(s"${TelegramCommands.CardCreate}"))
+            TelegramInlineKeyboardButton(s"${index + 1}. ${card.description}", Some(TelegramCommands.cardCreateCommand(index)))
           case None =>
-            TelegramInlineKeyboardButton(s"${index + 1}. ➕ Создать карту", Some(s"${TelegramCommands.CardCreate}"))
+            TelegramInlineKeyboardButton(s"${index + 1}. ➕ Создать карту", Some(TelegramCommands.cardCreateCommand(index)))
         }
       }.toList
-      _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
+      _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()
-    
-  def createCard(context: TelegramContext)(
+
+  def createCard(context: TelegramContext, index: Int)(
     telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Create card for chat ${context.chatId}")
-
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardIndex)
-      _ <- telegramApi.sendText(context.chatId, s"Укажи порядковый номер карты")
-    } yield ()
-    
-  def setCardIndex(context: TelegramContext, index: Int)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle card index $index from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
+      _ <- ZIO.logInfo(s"Create card $index for chat ${context.chatId}")
 
       _ <- sessionService.setPending(context.chatId, BotPendingAction.CardDescription(index))
       _ <- telegramApi.sendReplyText(context.chatId, s"Напиши описание карты")

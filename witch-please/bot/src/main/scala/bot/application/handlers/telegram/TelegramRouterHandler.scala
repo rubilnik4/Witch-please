@@ -39,8 +39,8 @@ object TelegramRouterHandler {
           SpreadFlow.getSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
         case BotCommand.CreateSpread =>
           SpreadFlow.createSpread(context)(telegramApi, sessionService)
-        case BotCommand.CreateCard =>
-          CardFlow.createCard(context)(telegramApi, sessionService)
+        case BotCommand.CreateCard(index: Int) =>
+          CardFlow.createCard(context, index)(telegramApi, sessionService)
         case BotCommand.GetCards(spreadId: UUID) =>
           CardFlow.getCards(context, spreadId)(telegramApi, tarotApi, sessionService)
         case BotCommand.PublishSpread(at) =>

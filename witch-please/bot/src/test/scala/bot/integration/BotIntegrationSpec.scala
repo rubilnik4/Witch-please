@@ -131,9 +131,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         _ <- ZIO.foreachDiscard(1 to cardCount) { index =>
           for {
-            _ <- CardFlow.startCard(app, chatId)
-            _ <- CardFlow.cardIndex(app, chatId, index)
-            _ <- CardFlow.cardDescription(app, chatId, s"Test card $index")
+            _ <- CardFlow.startCard(app, chatId, index)
+            _ <- CardFlow.cardDescription(app, chatId, s"Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()

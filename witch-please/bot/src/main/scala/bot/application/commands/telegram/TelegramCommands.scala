@@ -20,6 +20,9 @@ object TelegramCommands {
 
   def cardsGetCommand(spreadId: UUID): String =
     s"${TelegramCommands.CardsGet} $spreadId"
+
+  def cardCreateCommand(index: Int): String =
+    s"${TelegramCommands.CardCreate} $index"  
     
   final val Commands: List[TelegramCommandRequest] = List(
     TelegramCommandRequest(stripSlash(Start), "Начать заново"),

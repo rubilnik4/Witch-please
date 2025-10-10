@@ -74,13 +74,13 @@ object TestTelegramWebhook {
     textRequest(chatId, s"${TelegramCommands.SpreadCreate}")
 
   def getSpreadsRequest(chatId: Long, projectId: UUID): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.SpreadsGet} $projectId")
+    textRequest(chatId, TelegramCommands.spreadsGetCommand(projectId))
 
-  def createCardRequest(chatId: Long): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.CardCreate}")
+  def createCardRequest(chatId: Long, index: Int): TelegramWebhookRequest =
+    textRequest(chatId, TelegramCommands.cardCreateCommand(index))
 
   def getCardsRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.CardsGet} $spreadId")
+    textRequest(chatId, TelegramCommands.cardsGetCommand(spreadId))
     
   def publishSpreadRequest(chatId: Long, scheduledAt: Instant): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.SpreadPublish} ${scheduledAt.getEpochSecond}")

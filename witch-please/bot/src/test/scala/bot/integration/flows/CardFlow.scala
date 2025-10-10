@@ -12,20 +12,12 @@ import java.util.UUID
 
 
 object CardFlow {
-  def startCard(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.createCardRequest(chatId)
+  def startCard(app: Routes[BotEnv, Response], chatId: Long, index: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.createCardRequest(chatId, index)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardIndex", chatId) { case BotPendingAction.CardIndex => () }
-    } yield ()
-
-  def cardIndex(app: Routes[BotEnv, Response], chatId: Long, index: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.textRequest(chatId, index.toString)
-    val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-    for {
-      _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardDescription", chatId) { case BotPendingAction.CardDescription(index) => index }
+      _ <- CommonFlow.expectPending("CardIndex", chatId) { case BotPendingAction.CardDescription(i) => i }
     } yield ()
 
   def cardDescription(app: Routes[BotEnv, Response], chatId: Long, desc: String): ZIO[Scope & BotEnv, Throwable, Unit] =

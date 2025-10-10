@@ -27,8 +27,13 @@ object TelegramCommandParser {
           case _ =>
             BotCommand.Unknown
         }
-      case List(TelegramCommands.CardCreate) =>
-        BotCommand.CreateCard
+      case TelegramCommands.CardCreate :: indexStr :: Nil =>
+        indexStr.toIntOption match {
+          case Some(index) =>
+            BotCommand.CreateCard(index)
+          case _ =>
+            BotCommand.Unknown
+        }
       case TelegramCommands.CardsGet :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>

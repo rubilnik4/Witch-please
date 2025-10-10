@@ -28,14 +28,6 @@ object TelegramTextHandler {
             case None =>
               telegramApi.sendText(context.chatId, "Введи число карт числом")
           }
-        case Some(BotPendingAction.CardIndex) =>
-          text.toIntOption match {
-            case Some(userCardIndex) =>
-              val cardIndex = userCardIndex - 1
-              CardFlow.setCardIndex(context, cardIndex)(telegramApi, tarotApi, sessionService)
-            case None =>
-              telegramApi.sendText(context.chatId, "Введи номер карты числом")
-          }
         case Some(BotPendingAction.CardDescription(index: Int)) =>
           CardFlow.setCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
         case None | Some(BotPendingAction.SpreadPhoto(_, _)) | Some(BotPendingAction.CardPhoto(_, _)) =>
