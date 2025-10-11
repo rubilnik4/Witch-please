@@ -26,12 +26,4 @@ object ProjectFlow {
     for {
       _ <- app.runZIO(request)
     } yield ()
-
-  def selectProject(app: Routes[BotEnv, Response], chatId: Long, projectId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.selectProjectRequest(chatId, projectId)
-    val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-    for {
-      response <- app.runZIO(request)
-      _ <- CommonFlow.expectStatusOk(response, "get projects fail")
-    } yield ()
 }

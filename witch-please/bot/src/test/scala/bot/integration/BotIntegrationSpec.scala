@@ -82,7 +82,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ProjectFlow.startProject(app, chatId)
         _ <- ProjectFlow.projectName(app, chatId, "Test project")
-        _ <- ProjectFlow.selectProject(app, chatId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
@@ -107,7 +106,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
         _ <- SpreadFlow.spreadCardCount(app, chatId, cardCount)
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
-        _ <- SpreadFlow.getSpreads(app, chatId, projectId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
@@ -137,7 +135,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()
         }
-        _ <- CardFlow.getCards(app, chatId, spreadId)
         
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))

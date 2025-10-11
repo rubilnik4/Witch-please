@@ -46,8 +46,7 @@ object BotSession {
   def withCard(session: BotSession, index: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
     for {
       progress <- ZIO.fromOption(session.spreadProgress)
-        .orElseFail(new IllegalStateException(
-          s"Cannot add card $index: spreadProgress is empty for userId=${session.userId}"))
+        .orElseFail(new IllegalStateException(s"Cannot add card $index: spreadProgress is empty for userId=${session.userId}"))
 
       _ <- ZIO.fail(new IllegalArgumentException(s"Card index $index is out of bounds [0, ${progress.cardsCount - 1}]"))
         .unless(index >= 0 && index < progress.cardsCount)

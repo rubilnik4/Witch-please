@@ -1,7 +1,6 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.TelegramCommands
-import bot.application.handlers.telegram.flows.ProjectFlow.selectProject
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService

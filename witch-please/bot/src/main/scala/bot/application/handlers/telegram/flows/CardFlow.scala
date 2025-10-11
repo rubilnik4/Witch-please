@@ -1,7 +1,6 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.TelegramCommands
-import bot.application.handlers.telegram.flows.SpreadFlow
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
@@ -75,9 +74,10 @@ object CardFlow {
 
       request = TelegramCardCreateRequest(description, fileId)
       _ <- tarotApi.createCard(request, spreadId, index, token)
+      _ <- sessionService.setCard(context.chatId, index)
 
       _ <- telegramApi.sendText(context.chatId, s"Карта $description создана")
-      _ <- SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
+      _ <- SpreadFlow.getSpreads(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def selectCard(context: TelegramContext, cardId: UUID, index: Int)(

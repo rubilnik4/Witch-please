@@ -35,7 +35,7 @@ object TelegramCommandParser {
       case TelegramCommands.CardCreate :: indexStr :: Nil =>
         indexStr.toIntOption match {
           case Some(index) =>
-            BotCommand.CreateCard(index)
+            BotCommand.CreateCard(index - 1)
           case _ =>
             BotCommand.Unknown
         }

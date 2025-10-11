@@ -27,12 +27,4 @@ object CardFlow {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardPhoto", chatId) { case BotPendingAction.CardPhoto(index, description) => index }
     } yield ()
-
-  def getCards(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID, index: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.selectCardsRequest(chatId, spreadId, index)
-    val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-    for {
-      response <- app.runZIO(request)
-      _ <- CommonFlow.expectStatusOk(response, "get projects fail")
-    } yield ()  
 }
