@@ -12,11 +12,15 @@ object TelegramCommandParser {
     command.trim match {
       case command if command.startsWith(SchedulerCommands.Prefix) =>
         TelegramSchedulerParser.handle(command)
+      case command if command.startsWith(TelegramCommands.StubCommand) =>
+        ZIO.succeed(BotCommand.Noop)
+      case command if command.startsWith(TelegramCommands.Help) =>
+        ZIO.succeed(BotCommand.Help)
       case command =>
         ZIO.succeed(handleTarotCommand(command))
       }
     }
-  
+
   private def handleTarotCommand(command: String): BotCommand =
     command.split("\\s+").toList match {
       case List(TelegramCommands.Start) =>
@@ -48,8 +52,6 @@ object TelegramCommandParser {
         }
       case List(TelegramCommands.SpreadPublish) =>
         TarotCommand.PublishSpread
-      case List(TelegramCommands.Help) =>
-        BotCommand.Help
       case List(_, _*) | Nil =>
         BotCommand.Unknown
 }

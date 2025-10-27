@@ -8,6 +8,7 @@ sealed trait TarotCommand extends BotCommand
 sealed trait ScheduleCommand extends BotCommand
 
 object BotCommand {
+  case object Noop extends BotCommand
   case object Help extends BotCommand
   case object Unknown extends BotCommand
 }

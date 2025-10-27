@@ -13,6 +13,7 @@ object TelegramCommands {
   final val SpreadSelect = "/spread_select"
   final val CardCreate = "/card_create"
   final val SpreadPublish = "/spread_publish"
+  final val StubCommand = "/noop"
 
   def projectSelectCommand(projectId: UUID): String =
     s"${TelegramCommands.ProjectSelect} $projectId"

@@ -1,43 +1,45 @@
 package bot.application.handlers.telegram.markup
 
-import bot.application.commands.telegram.SchedulerCommands
+import bot.application.commands.telegram.{SchedulerCommands, TelegramCommands}
+import bot.domain.models.calendar.Calendar
+import bot.infrastructure.services.calendar.CalendarService
 import shared.api.dto.telegram.*
-import zio.{UIO, ZIO}
+import shared.infrastructure.services.common.DateTimeService
+import zio.UIO
 
 import java.time.YearMonth
 
 object SchedulerMarkup {
   def monthKeyboard(month: YearMonth = YearMonth.now()): UIO[List[List[TelegramInlineKeyboardButton]]] =
     for {
-      header <- monthHeader(month)
-      days <- daysGrid(month)
-  } yield header :: days
+      today <- DateTimeService.currentLocalDate()
+      calendar = CalendarService.buildMonth(today, month)
+    } yield keyboardMonth(calendar)
 
-  private def monthHeader(month: YearMonth): UIO[List[TelegramInlineKeyboardButton]] = {
-    val prevMonth = month.minusMonths(1)
-    val nextMonth = month.plusMonths(1)
-    for {
-      allowPrev <- SchedulerGuard.canNavigatePrevMonth(prevMonth)
-    } yield {
-      val prevButton =
-        if (allowPrev) TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectMonth(prevMonth)))
-        else TelegramInlineKeyboardButton(" ", Some(TelegramKeyboard.StubCommand))
-
-      val nextButton = TelegramInlineKeyboardButton("▶️", Some(SchedulerCommands.selectMonth(nextMonth)))
-      val title = TelegramInlineKeyboardButton(s"${month.getMonth} ${month.getYear}", Some(TelegramKeyboard.StubCommand))
-
-      List(prevButton, title, nextButton)
-    }
+  private def keyboardMonth(calendar: Calendar): List[List[TelegramInlineKeyboardButton]] = {
+    val monthKeyboard = getMonthKeyboard(calendar)
+    val dayKeyboard = getDaysKeyboard(calendar)
+    monthKeyboard :: dayKeyboard
   }
 
-  private def daysGrid(month: YearMonth): UIO[List[List[TelegramInlineKeyboardButton]]] =
-    for {
-      buttons <- ZIO.foreach(1 to month.lengthOfMonth) { day =>
-        val date = month.atDay(day)
-        SchedulerGuard.canNavigatePrevDay(date).map { allowed =>
-          if (allowed) Some(TelegramInlineKeyboardButton(f"$day%2d", Some(SchedulerCommands.selectDate(date))))
-          else None
-        }
-      }.map(_.flatten)
-    } yield buttons.grouped(7).map(_.toList).toList
+  private def getMonthKeyboard(calendar: Calendar) = {
+    val prevButton =
+      if (calendar.month.prevEnabled)
+        TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectMonth(calendar.month.prevMonth)))
+      else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
+
+    val title = TelegramInlineKeyboardButton(calendar.month.title, Some(TelegramCommands.StubCommand))
+
+    val nextButton =
+      if (calendar.month.nextEnabled)
+        TelegramInlineKeyboardButton("▶️", Some(SchedulerCommands.selectMonth(calendar.month.nextMonth)))
+      else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
+
+    List(prevButton, title, nextButton)
+  }
+
+  private def getDaysKeyboard(calendar: Calendar) =
+    calendar.days.filter(_.enabled).map { day =>
+      TelegramInlineKeyboardButton(f"${day.day}%2d", Some(SchedulerCommands.selectDate(day.date)))
+    }.grouped(7).map(_.toList).toList
 }
