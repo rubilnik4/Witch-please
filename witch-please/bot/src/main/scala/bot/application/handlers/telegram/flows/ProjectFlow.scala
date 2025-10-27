@@ -16,7 +16,7 @@ import zio.ZIO
 import java.util.UUID
 
 object ProjectFlow {
-  def getProjects(context: TelegramContext)(
+  def showProjects(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get projects command for chat ${context.chatId}")
@@ -69,11 +69,14 @@ object ProjectFlow {
       session <- sessionService.get(context.chatId)
       userId <- ZIO.fromOption(session.userId)
         .orElseFail(new RuntimeException(s"UserId not found in session for chat ${context.chatId}"))
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, Some(projectId))
       authResponse <- tarotApi.tokenAuth(authRequest)
-
       _ <- sessionService.setProject(context.chatId, projectId, authResponse.token)
-      _ <- SpreadFlow.getSpreads(context, projectId)(telegramApi, tarotApi, sessionService)
+
+      spreads <- tarotApi.getSpreads(projectId, token)
+      _ <- SpreadFlow.showSpreads(context, projectId, spreads)(telegramApi, tarotApi, sessionService)
     } yield ()
 }

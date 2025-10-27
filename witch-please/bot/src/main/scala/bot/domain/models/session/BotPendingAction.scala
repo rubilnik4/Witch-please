@@ -7,3 +7,4 @@ enum BotPendingAction:
   case SpreadPhoto(title: String, cardCount: Int)
   case CardDescription(index: Int)
   case CardPhoto(index: Int, description: String)
+  case PublishSchedule

@@ -1,7 +1,6 @@
 package bot.application.handlers.telegram
 
 import bot.application.commands.*
-import bot.application.commands.telegram.TelegramCommands
 import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.*
 import bot.domain.models.telegram.*
@@ -9,14 +8,11 @@ import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
-import shared.api.dto.telegram.*
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.tarot.authorize.*
 import zio.ZIO
 
-import java.time.Instant
 import java.util.UUID
 
 object TelegramRouterHandler {
@@ -27,31 +23,41 @@ object TelegramRouterHandler {
       sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
 
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
-      command <- ZIO.succeed(TelegramCommandParser.handle(command))
+      command <- TelegramCommandParser.handle(command)
       _ <- command match {
-        case BotCommand.Start =>
-          handleStart(context)(telegramApi, tarotApi, sessionService)       
-        case BotCommand.CreateProject =>
-          ProjectFlow.createProject(context)(telegramApi, tarotApi, sessionService)
-        case BotCommand.SelectProject(projectId: UUID) =>
-          ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)        
-        case BotCommand.CreateSpread =>
-          SpreadFlow.createSpread(context)(telegramApi, sessionService)
-        case BotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
-          SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
-        case BotCommand.CreateCard(index: Int) =>
-          CardFlow.createCard(context, index)(telegramApi, sessionService)
-        case BotCommand.SelectCard(cardId: UUID, index: Int) =>
-          CardFlow.selectCard(context, cardId, index)(telegramApi, tarotApi, sessionService)
-        case BotCommand.PublishSpread(at) =>
-          handlePublishSpread(context, at)(telegramApi, tarotApi, sessionService)
+        case tarotCommand: TarotCommand =>
+          handleTarotCommand(context, tarotCommand)(telegramApi, tarotApi, sessionService)        
+        case scheduleCommand: ScheduleCommand =>
+          SchedulerFlow.handle(context, scheduleCommand)(telegramApi, tarotApi, sessionService)
         case BotCommand.Help =>
           telegramApi.sendText(context.chatId, helpText)
         case BotCommand.Unknown =>
-          telegramApi.sendText(context.chatId, "Неизвестная команда. Введите /help.")
+          telegramApi.sendText(context.chatId, "Неизвестная команда. Введите /help.")  
       }
     } yield ()
 
+  private def handleTarotCommand(context: TelegramContext, command: TarotCommand)
+    (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+      for {
+        _ <- command match {
+          case TarotCommand.Start =>
+            handleStart(context)(telegramApi, tarotApi, sessionService)       
+          case TarotCommand.CreateProject =>
+            ProjectFlow.createProject(context)(telegramApi, tarotApi, sessionService)
+          case TarotCommand.SelectProject(projectId: UUID) =>
+            ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)        
+          case TarotCommand.CreateSpread =>
+            SpreadFlow.createSpread(context)(telegramApi, sessionService)
+          case TarotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
+            SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
+          case TarotCommand.CreateCard(index: Int) =>
+            CardFlow.createCard(context, index)(telegramApi, sessionService)
+          case TarotCommand.PublishSpread =>
+            PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
+       
+        }
+      } yield ()  
+    
   private def handleStart(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
@@ -68,30 +74,8 @@ object TelegramRouterHandler {
       _ <- sessionService.setUser(context.chatId, userId, token)
 
       _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $userName хозяйка таро!")
-      _ <- ProjectFlow.getProjects(context)(telegramApi, tarotApi, sessionService)
+      _ <- ProjectFlow.showProjects(context)(telegramApi, tarotApi, sessionService)
     } yield () 
-
-  private def handlePublishSpread(context: TelegramContext, publishAt: Instant)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
-    for {
-      session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
-
-      _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
-
-      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdCount == p.cardsCount)) {
-        telegramApi.sendText(context.chatId, s"Нельзя опубликовать: не все карты загружены") *>
-          ZIO.logError("Can't publish. Not all cards uploaded") *>
-            ZIO.fail(new RuntimeException("Can't publish. Not all cards uploaded"))
-      }
-
-      _ <- tarotApi.publishSpread(SpreadPublishRequest(publishAt), spreadId, token)
-      _ <- telegramApi.sendText(context.chatId, s"Расклад $spreadId подтвержден")
-      _ <- sessionService.clearSpread(context.chatId)
-    } yield ()
 
   private val helpText: String =
     """Команды:

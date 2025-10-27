@@ -1,6 +1,6 @@
 package bot.infrastructure.services.sessions
 
-import bot.domain.models.session.{BotPendingAction, BotSession}
+import bot.domain.models.session.{BotPendingAction, BotSession, SpreadProgress}
 import bot.infrastructure.services.authorize.SecretService
 import bot.layers.BotEnv
 import shared.infrastructure.services.common.DateTimeService
@@ -83,13 +83,13 @@ final class BotSessionServiceLive extends BotSessionService {
       _ <- clearPending(chatId)
     } yield ()
 
-  def setSpread(chatId: Long, spreadId: UUID, cardCount: Int): ZIO[BotEnv, Throwable, Unit] =
+  def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
-      _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spreadId, cardCount, now))
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spreadId, spreadProgress, now))
       _ <- clearPending(chatId)
     } yield ()
 
@@ -100,6 +100,15 @@ final class BotSessionServiceLive extends BotSessionService {
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpread(session, now))
+    } yield ()
+
+  def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Clear spread progress for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
+      _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpreadProgress(session, now))
     } yield ()
 
   def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit] =

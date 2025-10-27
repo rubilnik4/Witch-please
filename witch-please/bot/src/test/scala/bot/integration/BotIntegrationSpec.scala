@@ -124,7 +124,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         chatId <- getChatId
         session <- botSessionService.get(chatId)
         spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
-        
+
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
 
         _ <- ZIO.foreachDiscard(1 to cardCount) { index =>
@@ -135,12 +135,37 @@ object BotIntegrationSpec extends ZIOSpecDefault {
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()
         }
-        
+
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(
         spreadProgress.cardsCount == cardCount,
-        spreadProgress.createdCount == cardCount,
+        spreadProgress.createdIndices.size == cardCount,
+        spreadProgress.createdIndices == (0 until cardCount).toSet,
+        session.pending.isEmpty
+      )
+    },
+
+    test("select card flow") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- getChatId
+        session <- botSessionService.get(chatId)
+        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        _ <- botSessionService.clearSpreadProgress(chatId)
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        _ <- SpreadFlow.selectSpread(app, chatId, spreadId, cardCount)
+
+        session <- botSessionService.get(chatId)
+        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+      } yield assertTrue(
+        spreadProgress.cardsCount == cardCount,
+        spreadProgress.createdIndices.size == cardCount,
         spreadProgress.createdIndices == (0 until cardCount).toSet,
         session.pending.isEmpty
       )

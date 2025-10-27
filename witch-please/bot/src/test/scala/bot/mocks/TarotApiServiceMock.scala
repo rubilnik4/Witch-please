@@ -16,6 +16,8 @@ import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.model.StatusCode
 import tarot.api.dto.tarot.authorize.TokenPayload
+import tarot.domain.models.TarotError.ValidationError
+import tarot.domain.models.TarotErrorMapper
 import zio.*
 import zio.json.*
 
@@ -82,7 +84,7 @@ final class TarotApiServiceMock(
   def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
     projectMap.get.map(_.get(userId)).flatMap {
       case Some(userProjects) => ZIO.succeed(userProjects.values.toList)
-      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"projects by userId $userId not found"))
+      case None => ZIO.succeed(List.empty)
     }
 
   def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
@@ -101,11 +103,13 @@ final class TarotApiServiceMock(
   def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     spreadMap.get.map(_.get(projectId)).flatMap {
       case Some(spreads) => ZIO.succeed(spreads.values.toList)
-      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"spreads by projectId $projectId not found"))
+      case None => ZIO.succeed(List.empty)
     }
 
   def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
+      _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"index must be positive")).when(index < 0)
+
       now <- DateTimeService.getDateTimeNow
       cardId = UUID.randomUUID()
       card = getCardResponse(cardId, request, index, spreadId, now)
@@ -120,7 +124,7 @@ final class TarotApiServiceMock(
   def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
     cardMap.get.map(_.get(spreadId)).flatMap {
       case Some(cards) => ZIO.succeed(cards.values.toList)
-      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"cards by spreadId $spreadId not found"))
+      case None => ZIO.succeed(List.empty)
     }
 
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =

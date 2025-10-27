@@ -29,16 +29,22 @@ object BotSession {
   def withProject(session: BotSession, projectId: UUID, token: String, now: Instant): BotSession =
     session.copy(projectId = Some(projectId), token = Some(token), updatedAt = now)
 
-  def withSpread(session: BotSession, spreadId: UUID, cardCount: Int, now: Instant): BotSession =
+  def withSpread(session: BotSession, spreadId: UUID, spreadProgress: SpreadProgress, now: Instant): BotSession =
     session.copy(
       spreadId = Some(spreadId),
-      spreadProgress = Some(SpreadProgress(cardCount, 0, Set.empty)),
+      spreadProgress = Some(spreadProgress),
       pending = None,
       updatedAt = now)
 
   def clearSpread(session: BotSession, now: Instant): BotSession =
     session.copy(
       spreadId = None,
+      spreadProgress = None,
+      pending = None,
+      updatedAt = now)
+
+  def clearSpreadProgress(session: BotSession, now: Instant): BotSession =
+    session.copy(
       spreadProgress = None,
       pending = None,
       updatedAt = now)
@@ -53,8 +59,7 @@ object BotSession {
 
       nextProgress = if (progress.createdIndices.contains(index)) progress
         else progress.copy(
-          createdIndices = progress.createdIndices + index,
-          createdCount = progress.createdCount + 1)
+          createdIndices = progress.createdIndices + index)
     } yield session.copy(spreadProgress = Some(nextProgress), pending = None, updatedAt = now)
 
   def touched(session: BotSession, now: Instant): BotSession =

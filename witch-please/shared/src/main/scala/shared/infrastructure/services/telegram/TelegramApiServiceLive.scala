@@ -51,15 +51,17 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   def sendInlineButton(chatId: Long, text: String, button: TelegramInlineKeyboardButton): ZIO[Any, ApiError, Long] =
     sendInlineButtons(chatId, text, List(button))
 
-  def sendInlineButtons(chatId: Long, text: String, buttons: List[TelegramInlineKeyboardButton]): ZIO[Any, ApiError, Long] = {
+  def sendInlineButtons(chatId: Long, text: String, buttons: List[TelegramInlineKeyboardButton]): ZIO[Any, ApiError, Long] = 
+    sendInlineGroupButtons(chatId, text, buttons.map(List(_)))
+
+  def sendInlineGroupButtons(chatId: Long, text: String, buttons: List[List[TelegramInlineKeyboardButton]]): ZIO[Any, ApiError, Long] =
     for {
       _ <- ZIO.logDebug(s"Sending inline button message to chat $chatId: $text")
-      markup = TelegramInlineKeyboardMarkup(buttons.map(List(_)))
+      markup = TelegramInlineKeyboardMarkup(buttons)
       request = getSendMarkupRequest(chatId, text, markup)
       response <- SttpClient.sendJson(client, request)
       textResponse <- TelegramApi.getTelegramResponse(response)
     } yield textResponse.messageId
-  }
 
   def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     for {

@@ -13,8 +13,9 @@ trait BotSessionService {
   def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit]
   def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setProject(chatId: Long, projectId: UUID, token: String): ZIO[BotEnv, Throwable, Unit]
-  def setSpread(chatId: Long, spreadId: UUID, cardCount: Int): ZIO[BotEnv, Throwable, Unit]
+  def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit]
   def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit]
+  def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit]
   def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit]
 }

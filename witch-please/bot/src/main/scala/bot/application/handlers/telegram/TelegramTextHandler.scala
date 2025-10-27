@@ -6,6 +6,8 @@ import bot.domain.models.telegram.*
 import bot.layers.BotEnv
 import zio.*
 
+import java.time.Instant
+
 object TelegramTextHandler {
   def handle(context: TelegramContext, text: String): ZIO[BotEnv, Throwable, Unit] =
     for {
@@ -30,6 +32,8 @@ object TelegramTextHandler {
           }
         case Some(BotPendingAction.CardDescription(index: Int)) =>
           CardFlow.setCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.PublishSchedule) =>
+          PublishFlow.setPublishDay(context, Instant.now())(telegramApi, tarotApi, sessionService)  
         case None | Some(BotPendingAction.SpreadPhoto(_, _)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")

@@ -1,30 +1,24 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.TelegramCommands
-import bot.domain.models.session.BotPendingAction
+import bot.domain.models.session.{BotPendingAction, SpreadProgress}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.spreads.TelegramSpreadCreateRequest
+import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 import java.util.UUID
 
-object SpreadFlow {
-  
-  def getSpreads(context: TelegramContext, projectId: UUID)(
+object SpreadFlow {  
+  def showSpreads(context: TelegramContext, projectId: UUID, spreads: List[SpreadResponse])(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get spreads command by project $projectId for chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-
-      spreads <- tarotApi.getSpreads(projectId, token)
+      
       spreadButtons = spreads.zipWithIndex.map { case (spread, index) =>
         TelegramInlineKeyboardButton(s"${index + 1}. ${spread.title}", 
           Some(TelegramCommands.spreadSelectCommand(spread.id, spread.cardCount)))
@@ -90,9 +84,12 @@ object SpreadFlow {
 
       session <- sessionService.get(context.chatId)     
       token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))      
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      cards <- tarotApi.getCards(spreadId, token)
       
-      _ <- sessionService.setSpread(context.chatId, spreadId, cardCount)
-      _ <- CardFlow.getCards(context, spreadId)(telegramApi, tarotApi, sessionService)
-    } yield ()  
+      createdIndexes = cards.map(_.index).toSet
+      progress = SpreadProgress(cardCount, createdIndexes)     
+      _ <- sessionService.setSpread(context.chatId, spreadId, progress)
+      _ <- CardFlow.showCards(context, spreadId, cards)(telegramApi, tarotApi, sessionService)
+    } yield ()
 }

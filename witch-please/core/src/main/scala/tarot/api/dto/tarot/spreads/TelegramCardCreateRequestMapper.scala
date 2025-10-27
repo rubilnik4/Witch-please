@@ -15,7 +15,7 @@ import java.util.UUID
 object TelegramCardCreateRequestMapper {
   def fromTelegram(request: TelegramCardCreateRequest, index: Int, spreadId: UUID): IO[TarotError, ExternalCard] = {
     for {
-      _ <- ZIO.fail(ValidationError("index must not be positive")).when(index < 0)
+      _ <- ZIO.fail(ValidationError("index must be positive")).when(index < 0)
       _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
       _ <- ZIO.fail(ValidationError("coverPhotoId must not be empty")).when(request.coverPhotoId.trim.isEmpty)
     } yield toDomain(request, index, spreadId)
