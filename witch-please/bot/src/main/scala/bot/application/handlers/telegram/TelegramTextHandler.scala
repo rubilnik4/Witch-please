@@ -32,8 +32,6 @@ object TelegramTextHandler {
           }
         case Some(BotPendingAction.CardDescription(index: Int)) =>
           CardFlow.setCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.PublishSchedule) =>
-          PublishFlow.setPublishDay(context, Instant.now())(telegramApi, tarotApi, sessionService)  
         case None | Some(BotPendingAction.SpreadPhoto(_, _)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")

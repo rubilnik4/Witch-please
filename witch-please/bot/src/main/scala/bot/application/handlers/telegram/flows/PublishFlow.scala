@@ -30,24 +30,7 @@ object PublishFlow {
           ZIO.fail(new RuntimeException("Can't publish. Not all cards uploaded"))
       }
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.PublishSchedule)
       dateButtons <- SchedulerMarkup.monthKeyboard()
       _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи дату публикации расклада", dateButtons)
     } yield ()
-
-  def setPublishDay(context: TelegramContext, publishAt: Instant)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
-
-      _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
-
-      _ <- tarotApi.publishSpread(SpreadPublishRequest(publishAt), spreadId, token)
-      _ <- telegramApi.sendText(context.chatId, s"Расклад $spreadId подтвержден")
-      _ <- sessionService.clearSpread(context.chatId)
-    } yield () 
 }

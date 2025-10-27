@@ -19,9 +19,8 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val currentDay = 15
       val today = LocalDate.of(2025, 10, currentDay)
       val calendar = CalendarService.buildMonth(today, YearMonth.of(today.getYear, today.getMonth))
-      val days = calendar.days.flatten
-      val pastDays = days.filter ( day => !day.enabled )
-      val availDays = days.filter ( day => day.enabled )
+      val pastDays = calendar.days.filter ( day => !day.enabled )
+      val availDays = calendar.days.filter ( day => day.enabled )
       assertTrue(pastDays.forall(_.day < currentDay), availDays.headOption.map(_.day).contains(currentDay))
     }
   )
