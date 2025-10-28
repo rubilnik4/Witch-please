@@ -8,16 +8,16 @@ import java.util.UUID
 import scala.util.Try
 
 object TelegramCommandParser {
-  def handle(command: String): ZIO[Any, Nothing, BotCommand] =
+  def handle(command: String): BotCommand =
     command.trim match {
       case command if command.startsWith(SchedulerCommands.Prefix) =>
         TelegramSchedulerParser.handle(command)
       case command if command.startsWith(TelegramCommands.StubCommand) =>
-        ZIO.succeed(BotCommand.Noop)
+        BotCommand.Noop
       case command if command.startsWith(TelegramCommands.Help) =>
-        ZIO.succeed(BotCommand.Help)
+        BotCommand.Help
       case command =>
-        ZIO.succeed(handleTarotCommand(command))
+        handleTarotCommand(command)
       }
     }
 

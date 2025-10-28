@@ -4,7 +4,7 @@ import bot.domain.models.session.*
 import bot.layers.BotEnv
 import zio.ZIO
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
 trait BotSessionService {
@@ -19,5 +19,6 @@ trait BotSessionService {
   def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit]
   def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit]
+  def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit]
   def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit]
 }

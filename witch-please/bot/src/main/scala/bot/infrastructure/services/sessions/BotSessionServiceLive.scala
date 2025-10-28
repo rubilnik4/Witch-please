@@ -6,7 +6,7 @@ import bot.layers.BotEnv
 import shared.infrastructure.services.common.DateTimeService
 import zio.ZIO
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
 final class BotSessionServiceLive extends BotSessionService {
@@ -129,5 +129,14 @@ final class BotSessionServiceLive extends BotSessionService {
       now <- DateTimeService.getDateTimeNow
       botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
       _ <- botSessionRepository.update(chatId)(session => BotSession.withDate(session, date, now))
-    } yield ()  
+    } yield ()
+
+  def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Set time $time for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      botSessionRepository <- ZIO.serviceWith[BotEnv](_.botRepository.botSessionRepository)
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withTime(session, time, now))
+    } yield ()
 }

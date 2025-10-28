@@ -5,10 +5,16 @@ import zio.{Clock, UIO}
 import java.time.*
 
 object DateTimeService {
-  private final val Zone = ZoneId.of("Europe/Moscow")
+  final val Zone = ZoneId.of("Europe/Moscow")
   
   def getDateTimeNow: UIO[Instant] = 
     Clock.instant
+
+  def getOffset: UIO[ZoneOffset] =
+    getDateTimeNow.map(Zone.getRules.getOffset)   
+
+  def currentLocalDateTime(zone: ZoneId = Zone): UIO[LocalDateTime] =
+    getDateTimeNow.map(i => ZonedDateTime.ofInstant(i, zone).toLocalDateTime)  
     
   def currentLocalDate(zone: ZoneId = Zone): UIO[LocalDate] =
     getDateTimeNow.map(i => ZonedDateTime.ofInstant(i, zone).toLocalDate)

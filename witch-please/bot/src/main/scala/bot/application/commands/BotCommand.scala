@@ -26,7 +26,8 @@ object TarotCommand {
 object ScheduleCommand {
   final case class SelectMonth(month: YearMonth) extends ScheduleCommand
   final case class SelectDate(date: LocalDate) extends ScheduleCommand
+  final case class SelectTimePage(page: Int) extends ScheduleCommand
   final case class SelectTime(time: LocalTime) extends ScheduleCommand
-  case object Confirm extends ScheduleCommand
+  final case class Confirm(dateTime: LocalDateTime) extends ScheduleCommand
 }
 

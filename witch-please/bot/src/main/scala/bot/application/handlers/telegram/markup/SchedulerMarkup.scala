@@ -1,45 +1,89 @@
 package bot.application.handlers.telegram.markup
 
 import bot.application.commands.telegram.{SchedulerCommands, TelegramCommands}
-import bot.domain.models.calendar.Calendar
+import bot.domain.models.calendar.{Calendar, CalendarDay, CalendarMonth, CalendarTime, CalendarTimeGrid, CalendarTimeSlot}
 import bot.infrastructure.services.calendar.CalendarService
 import shared.api.dto.telegram.*
 import shared.infrastructure.services.common.DateTimeService
 import zio.UIO
 
-import java.time.YearMonth
+import java.time.{LocalDate, YearMonth}
 
 object SchedulerMarkup {
-  def monthKeyboard(month: YearMonth = YearMonth.now()): UIO[List[List[TelegramInlineKeyboardButton]]] =
+  def monthKeyboard(month: YearMonth): UIO[List[List[TelegramInlineKeyboardButton]]] =
     for {
       today <- DateTimeService.currentLocalDate()
       calendar = CalendarService.buildMonth(today, month)
-    } yield keyboardMonth(calendar)
+    } yield keyboardDate(calendar)
 
-  private def keyboardMonth(calendar: Calendar): List[List[TelegramInlineKeyboardButton]] = {
-    val monthKeyboard = getMonthKeyboard(calendar)
-    val dayKeyboard = getDaysKeyboard(calendar)
+  def timeKeyboard(date: LocalDate, page: Int): UIO[List[List[TelegramInlineKeyboardButton]]] =
+    for {
+      today <- DateTimeService.currentLocalDateTime()
+      calendarTime = CalendarService.buildTime(today, date, page = page)
+    } yield keyboardTime(calendarTime)
+
+  private def keyboardDate(calendar: Calendar): List[List[TelegramInlineKeyboardButton]] = {
+    val monthKeyboard = getMonthKeyboard(calendar.month)
+    val dayKeyboard = getDaysKeyboard(calendar.days)
     monthKeyboard :: dayKeyboard
   }
 
-  private def getMonthKeyboard(calendar: Calendar) = {
+  private def getMonthKeyboard(calendarMonth: CalendarMonth) = {
     val prevButton =
-      if (calendar.month.prevEnabled)
-        TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectMonth(calendar.month.prevMonth)))
+      if (calendarMonth.prevEnabled)
+        TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectMonth(calendarMonth.prevMonth)))
       else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
 
-    val title = TelegramInlineKeyboardButton(calendar.month.title, Some(TelegramCommands.StubCommand))
+    val title = TelegramInlineKeyboardButton(calendarMonth.title, Some(TelegramCommands.StubCommand))
 
     val nextButton =
-      if (calendar.month.nextEnabled)
-        TelegramInlineKeyboardButton("▶️", Some(SchedulerCommands.selectMonth(calendar.month.nextMonth)))
+      if (calendarMonth.nextEnabled)
+        TelegramInlineKeyboardButton("▶️", Some(SchedulerCommands.selectMonth(calendarMonth.nextMonth)))
       else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
 
     List(prevButton, title, nextButton)
   }
 
-  private def getDaysKeyboard(calendar: Calendar) =
-    calendar.days.filter(_.enabled).map { day =>
-      TelegramInlineKeyboardButton(f"${day.day}%2d", Some(SchedulerCommands.selectDate(day.date)))
-    }.grouped(7).map(_.toList).toList
+  private def getDaysKeyboard(calendarDays: List[CalendarDay]) =
+    calendarDays
+      .filter(_.enabled)
+      .map { day =>
+        TelegramInlineKeyboardButton(f"${day.day}%2d", Some(SchedulerCommands.selectDate(day.date)))
+      }
+      .grouped(7).map(_.toList).toList
+
+  private def keyboardTime(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
+    val timeKeyboard = getTimeKeyboard(timeGrid.time)
+    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots)
+    timeKeyboard :: slotKeyboard
+  }
+
+  private def getTimeKeyboard(calendarTime: CalendarTime) = {
+    val pagePrevButton =
+      if (calendarTime.page > 0)
+        TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectTimePage(calendarTime.page - 1)))
+      else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
+
+    val pageLabel = s"${calendarTime.page + 1}/${calendarTime.totalPages}"
+    val pageButton = TelegramInlineKeyboardButton(pageLabel, Some(TelegramCommands.StubCommand))
+
+    val pageNextButton =
+      if (calendarTime.page < calendarTime.totalPages - 1)
+        TelegramInlineKeyboardButton("▶️", Some(SchedulerCommands.selectTimePage(calendarTime.page + 1)))
+      else TelegramInlineKeyboardButton(" ", Some(TelegramCommands.StubCommand))
+    val pageButtons = List(pagePrevButton, pageButton, pageNextButton)
+    
+    val month = YearMonth.of(calendarTime.date.getYear, calendarTime.date.getMonth)
+    val returnButton = TelegramInlineKeyboardButton("⬅ Дата", Some(SchedulerCommands.selectMonth(month)))
+    returnButton :: pageButtons
+  }
+
+  private def getTimeSlotKeyboard(calendarSlots: List[CalendarTimeSlot]) =
+    calendarSlots
+      .filter(_.enabled)
+      .map { slot =>
+        val label = f"${slot.time.getHour}%02d:${slot.time.getMinute}%02d"
+        TelegramInlineKeyboardButton(label, Some(SchedulerCommands.selectTime(slot.time)))
+      }
+      .grouped(5).map(_.toList).toList
 }

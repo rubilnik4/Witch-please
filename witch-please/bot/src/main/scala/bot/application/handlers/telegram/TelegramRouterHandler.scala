@@ -23,8 +23,7 @@ object TelegramRouterHandler {
       sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
 
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
-      command <- TelegramCommandParser.handle(command)
-      _ <- command match {
+      _ <- TelegramCommandParser.handle(command) match {
         case tarotCommand: TarotCommand =>
           handleTarotCommand(context, tarotCommand)(telegramApi, tarotApi, sessionService)        
         case scheduleCommand: ScheduleCommand =>
