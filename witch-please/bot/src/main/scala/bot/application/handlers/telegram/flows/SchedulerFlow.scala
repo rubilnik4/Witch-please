@@ -5,6 +5,7 @@ import bot.application.commands.telegram.SchedulerCommands
 import bot.application.handlers.telegram.markup.SchedulerMarkup
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.calendar.CalendarService
+import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
@@ -23,7 +24,7 @@ object SchedulerFlow {
         case ScheduleCommand.SelectMonth(month) =>
           for {
             _ <- ZIO.logInfo(s"Select month $month from chat ${context.chatId}")
-            
+
             today <- DateTimeService.currentLocalDate()
             _ <- ZIO.unless(CalendarService.isPrevMonthEnable(today, month)) {
               ZIO.logError(s"Can't select month: $month before current ${today.getMonth}") *>
@@ -42,7 +43,7 @@ object SchedulerFlow {
               ZIO.logError(s"Can't select date: $date before current $today") *>
                 ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
             }
-            
+
             _ <- sessionService.setDate(context.chatId, date)
             _ <- showTimeKeyboard(context, date, 0)(telegramApi)
           } yield ()
@@ -71,19 +72,20 @@ object SchedulerFlow {
       date <- ZIO.fromOption(session.date)
         .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
       dateTime = LocalDateTime.of(date, time)
-      
+
       today <- DateTimeService.currentLocalDateTime()
       _ <- ZIO.unless(CalendarService.isPrevTimeEnable(today, dateTime)) {
         ZIO.logError(s"Can't select datetime: $dateTime before current $today") *>
           ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
-      }      
-      
+      }
+
       month = YearMonth.of(date.getYear, date.getMonth)
       buttons = List(
         TelegramInlineKeyboardButton("Назад к дате", Some(SchedulerCommands.selectMonth(month))),
         TelegramInlineKeyboardButton("Подтвердить", Some(SchedulerCommands.confirm(dateTime)))
       )
-      text = s"""Время публикации: ${date.toString} f"${time.getHour}%02d:${time.getMinute}%02d". Подтвердить?"""
+
+      text = s"""Время публикации: ${DateFormatter.getDate(date)} ${DateFormatter.getTime(time)}. Подтвердить?"""
       _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
     } yield ()
 
@@ -103,7 +105,7 @@ object SchedulerFlow {
       request = SpreadPublishRequest(scheduledAt)
       _ <- tarotApi.publishSpread(request, spreadId, token)
 
-      _ <- telegramApi.sendText(context.chatId, s"Расклад будет опубликован $dateTime")
+      _ <- telegramApi.sendText(context.chatId, s"Расклад будет опубликован ${DateFormatter.getDateTime(dateTime)}")
       _ <- sessionService.reset(context.chatId)
     } yield ()
 

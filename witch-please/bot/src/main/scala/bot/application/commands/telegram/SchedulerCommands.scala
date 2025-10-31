@@ -14,5 +14,5 @@ object SchedulerCommands {
   def selectDate(date: LocalDate) = s"$SelectDate $date"
   def selectTimePage(page: Int) = s"$SelectTimePage $page"
   def selectTime(time: LocalTime) = s"$SelectTime $time"
-  def confirm(dateTime: LocalDateTime) = s"$SelectTime $dateTime"
+  def confirm(dateTime: LocalDateTime) = s"$Confirm $dateTime"
 }

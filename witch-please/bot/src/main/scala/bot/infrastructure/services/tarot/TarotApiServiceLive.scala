@@ -106,7 +106,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
     for {
       _ <- ZIO.logDebug(s"Sending publish request for spread $spreadId")
       uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadPublishPath(baseUrl, spreadId))
-      publishRequest = SttpClient.putRequest(uri, request)
+      publishRequest = SttpClient.putAuthRequest(uri, request, token)
         .response(SttpClient.asJsonNoContent[TarotErrorResponse])
       _ <- SttpClient.sendNoContent(client, publishRequest)
     } yield()
