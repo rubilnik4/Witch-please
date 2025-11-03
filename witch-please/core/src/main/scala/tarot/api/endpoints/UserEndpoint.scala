@@ -13,8 +13,6 @@ import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.application.commands.*
-import tarot.application.commands.users.UserCreateCommand
-import tarot.application.queries.users.UserByClientIdQuery
 import tarot.layers.TarotEnv
 import zio.ZIO
 
@@ -33,9 +31,8 @@ object UserEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to get user by clientId $clientId")
           
-          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userByClientIdQueryHandler)
-          userQuery = UserByClientIdQuery(clientId)
-          user <- userQueryHandler.handle(userQuery)
+          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userQueryHandler)
+          user <- userQueryHandler.getUserByClientId(clientId)
         } yield UserResponseMapper.toResponse(user)).mapResponseErrors
       }
 
@@ -51,9 +48,8 @@ object UserEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")
           externalUser <- UserCreateRequestMapper.fromRequest(request, ClientType.Telegram)
-          userCreateCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCreateCommandHandler)
-          userCreateCommand = UserCreateCommand(externalUser)
-          userId <- userCreateCommandHandler.handle(userCreateCommand)
+          userCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
+          userId <- userCommandHandler.createUser(externalUser)
         } yield IdResponse(userId.id)).mapResponseErrors
       }
 

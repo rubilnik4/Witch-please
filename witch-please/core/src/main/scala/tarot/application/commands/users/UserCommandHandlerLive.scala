@@ -1,17 +1,15 @@
 package tarot.application.commands.users
 
-import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{User, UserId}
+import tarot.domain.models.authorize.{ExternalUser, User, UserId}
 import tarot.infrastructure.services.users.UserService
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-final class UserCreateCommandHandlerLive extends UserCreateCommandHandler {
-  def handle(command: UserCreateCommand): ZIO[TarotEnv, TarotError, UserId] = {
-    val externalUser = command.externalUser
+final class UserCommandHandlerLive extends UserCreateCommandHandler {
+  def createUser(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId] = {   
     for {
-      _ <- ZIO.logInfo(s"Executing create user command for ${externalUser}")
+      _ <- ZIO.logInfo(s"Executing create user command for $externalUser")
 
       userRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.userRepository)
 

@@ -19,8 +19,10 @@ object TarotCommand {
   final case class SelectProject(projectId: UUID) extends TarotCommand
   case object CreateSpread extends TarotCommand
   final case class SelectSpread(spreadId: UUID, cardCount: Int) extends TarotCommand
+  final case class SelectSpreadCards(spreadId: UUID) extends TarotCommand
+  final case class PublishSpread(spreadId: UUID) extends TarotCommand
+  final case class DeleteSpread(spreadId: UUID) extends TarotCommand
   final case class CreateCard(index: Int) extends TarotCommand
-  case object PublishSpread extends TarotCommand
 }
 
 object ScheduleCommand {

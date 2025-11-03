@@ -2,7 +2,6 @@ package bot.application.handlers.telegram
 
 import bot.application.commands.telegram.{SchedulerCommands, TelegramCommands}
 import bot.application.commands.{BotCommand, TarotCommand}
-import zio.ZIO
 
 import java.util.UUID
 import scala.util.Try
@@ -43,6 +42,27 @@ object TelegramCommandParser {
           case _ =>
             BotCommand.Unknown
         }
+      case TelegramCommands.SpreadCardsSelect :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            TarotCommand.SelectSpreadCards(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }
+      case TelegramCommands.SpreadPublish :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            TarotCommand.PublishSpread(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }
+      case TelegramCommands.SpreadDelete :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            TarotCommand.DeleteSpread(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case TelegramCommands.CardCreate :: indexStr :: Nil =>
         indexStr.toIntOption match {
           case Some(index) =>
@@ -50,8 +70,6 @@ object TelegramCommandParser {
           case _ =>
             BotCommand.Unknown
         }
-      case List(TelegramCommands.SpreadPublish) =>
-        TarotCommand.PublishSpread
       case List(_, _*) | Nil =>
         BotCommand.Unknown
 }

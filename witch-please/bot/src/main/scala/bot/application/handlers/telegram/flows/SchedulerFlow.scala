@@ -85,7 +85,7 @@ object SchedulerFlow {
         TelegramInlineKeyboardButton("Подтвердить", Some(SchedulerCommands.confirm(dateTime)))
       )
 
-      text = s"""Время публикации: ${DateFormatter.getDate(date)} ${DateFormatter.getTime(time)}. Подтвердить?"""
+      text = s"""Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)}. Подтвердить?"""
       _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
     } yield ()
 
@@ -105,7 +105,7 @@ object SchedulerFlow {
       request = SpreadPublishRequest(scheduledAt)
       _ <- tarotApi.publishSpread(request, spreadId, token)
 
-      _ <- telegramApi.sendText(context.chatId, s"Расклад будет опубликован ${DateFormatter.getDateTime(dateTime)}")
+      _ <- telegramApi.sendText(context.chatId, s"Расклад будет опубликован ${DateFormatter.fromLocalDateTime(dateTime)}")
       _ <- sessionService.reset(context.chatId)
     } yield ()
 

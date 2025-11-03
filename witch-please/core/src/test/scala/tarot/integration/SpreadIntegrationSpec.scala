@@ -11,15 +11,12 @@ import shared.models.tarot.spreads.SpreadStatus
 import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
-import tarot.application.commands.projects.ProjectCreateCommand
-import tarot.application.commands.users.UserCreateCommand
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
 import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
-import tarot.layers.TestTarotEnvLayer
 import tarot.models.TestSpreadState
 import zio.*
 import zio.http.*
@@ -66,7 +63,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(spreadId.toString.nonEmpty)
     },
 
-    test("should get spread") {
+    test("should get spreads") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
@@ -81,6 +78,21 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
           spreads.nonEmpty,
           spreads.head.id == spreadId)
+    },
+
+    test("should get spread") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.spreadGetPath("", spreadId), token)
+        response <- app.runZIO(request)
+        spread <- ZIOHttpClient.getResponse[SpreadResponse](response)
+      } yield assertTrue(
+        spread.id == spreadId)
     },
 
     test("should send card to current spread") {
@@ -118,7 +130,22 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         cards.nonEmpty,
         cards.length == cardCount)
     },
-    
+
+    test("should get cards count") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardsCountGetPath("", spreadId), token)
+        response <- app.runZIO(request)
+        createdCardsCount <- ZIOHttpClient.getResponse[Int](response)
+      } yield assertTrue(
+        createdCardsCount == cardCount)
+    },
+
     test("should publish spread") {
       for {
         _ <- TestClock.adjust(10.minute)
@@ -187,7 +214,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     val user = ExternalUser(clientId, clientType, clientSecret, "test user")
     val userCommand = UserCreateCommand(user)
     for {
-      userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCreateCommandHandler)
+      userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
       userId <- userHandler.handle(userCommand)
     } yield userId
 
@@ -195,7 +222,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     val project = ExternalProject("test project")
     val projectCommand = ProjectCreateCommand(project, userId)
     for {
-      projectHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCreateCommandHandler)
+      projectHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)
       projectId <- projectHandler.handle(projectCommand)
     } yield projectId
 

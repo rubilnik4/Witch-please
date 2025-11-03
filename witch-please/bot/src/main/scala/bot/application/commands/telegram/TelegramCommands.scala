@@ -11,8 +11,10 @@ object TelegramCommands {
   final val ProjectSelect = "/project_select"
   final val SpreadCreate = "/spread_create"
   final val SpreadSelect = "/spread_select"
-  final val CardCreate = "/card_create"
+  final val SpreadCardsSelect = "/spread_cards_select"
   final val SpreadPublish = "/spread_publish"
+  final val SpreadDelete = "/spread_delete"
+  final val CardCreate = "/card_create"
   final val StubCommand = "/noop"
 
   def projectSelectCommand(projectId: UUID): String =
@@ -21,6 +23,15 @@ object TelegramCommands {
   def spreadSelectCommand(spreadId: UUID, cardCount: Int): String =
     s"${TelegramCommands.SpreadSelect} $spreadId $cardCount"
 
+  def spreadCardsSelectCommand(spreadId: UUID): String =
+    s"${TelegramCommands.SpreadCardsSelect} $spreadId"
+
+  def spreadPublishCommand(spreadId: UUID): String =    
+    s"${TelegramCommands.SpreadPublish} $spreadId"
+
+  def spreadDeleteCommand(spreadId: UUID): String =
+    s"${TelegramCommands.SpreadDelete} $spreadId"  
+    
   def cardCreateCommand(index: Int): String =
     s"${TelegramCommands.CardCreate} $index"
 

@@ -74,10 +74,19 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, spreadRequest)
     } yield response
-
+    
+  def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get spread request by spreadId: $spreadId")
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadGetPath(baseUrl, spreadId))
+      spreadRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, SpreadResponse])
+      response <- SttpClient.sendJson(client, spreadRequest)
+    } yield response
+    
   def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     for {
-      _ <- ZIO.logDebug(s"Sending get spread request by projectId: $projectId")
+      _ <- ZIO.logDebug(s"Sending get spreads request by projectId: $projectId")
       uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadsGetPath(baseUrl, projectId))
       spreadsRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, List[SpreadResponse]])
@@ -101,7 +110,16 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
         .response(asJsonEither[TarotErrorResponse, List[CardResponse]])
       response <- SttpClient.sendJson(client, cardsRequest)
     } yield response
-    
+
+  def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get card count request by spreadId: $spreadId")
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsCountGetPath(baseUrl, spreadId))
+      cardsRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, Int])
+      response <- SttpClient.sendJson(client, cardsRequest)
+
+    } yield response
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Sending publish request for spread $spreadId")

@@ -51,10 +51,14 @@ object TelegramRouterHandler {
             SpreadFlow.createSpread(context)(telegramApi, sessionService)
           case TarotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
             SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
+          case TarotCommand.SelectSpreadCards(spreadId: UUID) =>
+            CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
+          case TarotCommand.PublishSpread(spreadId: UUID) =>
+            PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
+          case TarotCommand.DeleteSpread(spreadId: UUID) =>
+            SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
           case TarotCommand.CreateCard(index: Int) =>
             CardFlow.createCard(context, index)(telegramApi, sessionService)
-          case TarotCommand.PublishSpread =>
-            PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
        
         }
       } yield ()  

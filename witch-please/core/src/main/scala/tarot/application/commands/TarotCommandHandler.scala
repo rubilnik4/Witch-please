@@ -5,9 +5,8 @@ import tarot.application.commands.spreads.*
 import tarot.application.commands.users.*
 
 trait TarotCommandHandler {
-  def userCreateCommandHandler: UserCreateCommandHandler
-  def projectCreateCommandHandler: ProjectCreateCommandHandler
-  def spreadCreateCommandHandler: SpreadCreateCommandHandler
-  def spreadPublishCommandHandler: SpreadPublishCommandHandler
-  def cardCreateCommandHandler: CardCreateCommandHandler
+  def userCommandHandler: UserCreateCommandHandler
+  def projectCommandHandler: ProjectCommandHandler
+  def spreadCommandHandler: SpreadCommandHandler
+  def cardCommandHandler: CardCommandHandler
 }

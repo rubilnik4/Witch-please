@@ -9,7 +9,7 @@ import zio.{ULayer, ZLayer}
 object TarotQueryHandlerLayer {
   val tarotQueryHandlerLive: ULayer[TarotQueryHandlerLive] =
     (
-      ZLayer.succeed(new UserByClientIdQueryHandlerLive) ++
+      ZLayer.succeed(new UserQueryHandlerLive) ++
       ZLayer.succeed(new ProjectsQueryHandlerLive) ++
       ZLayer.succeed(new SpreadsQueryHandlerLive) ++
       ZLayer.succeed(new CardsQueryHandlerLive)

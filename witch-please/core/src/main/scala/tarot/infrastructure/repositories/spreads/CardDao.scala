@@ -24,6 +24,14 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (card, photo) => CardPhotoEntity(card, photo) }
       })
 
+  def getCardsCount(spreadId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardTable
+          .filter { card => card.spreadId == lift(spreadId) }
+          .size
+      })
+
   def insertCard(card: CardEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {

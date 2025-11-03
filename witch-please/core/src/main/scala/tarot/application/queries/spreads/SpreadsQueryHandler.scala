@@ -1,8 +1,13 @@
 package tarot.application.queries.spreads
 
-import tarot.application.queries.QueryHandler
+import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.User
-import tarot.domain.models.projects.Project
-import tarot.domain.models.spreads.Spread
+import tarot.domain.models.projects.{Project, ProjectId}
+import tarot.domain.models.spreads.{Spread, SpreadId}
+import tarot.layers.TarotEnv
+import zio.ZIO
 
-trait SpreadsQueryHandler extends QueryHandler[SpreadsQuery, List[Spread]]
+trait SpreadsQueryHandler {
+  def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread]
+  def getSpreads(projectId: ProjectId): ZIO[TarotEnv, TarotError, List[Spread]]
+}

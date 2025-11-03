@@ -95,7 +95,16 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           }
         )
     }
-    
+
+  def deleteSpread(spreadId: UUID): ZIO[Any, SQLException, UUID] =
+    run(
+      quote {
+        spreadTable
+          .filter(_.id == lift(spreadId))
+          .delete
+          .returning(_.id)
+      })
+
   private inline def spreadTable =
     quote(querySchema[SpreadEntity](TarotTableNames.spreads))
 

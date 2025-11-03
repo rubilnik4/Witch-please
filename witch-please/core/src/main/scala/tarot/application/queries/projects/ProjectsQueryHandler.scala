@@ -1,7 +1,12 @@
 package tarot.application.queries.projects
 
-import tarot.application.queries.QueryHandler
-import tarot.domain.models.authorize.User
+import tarot.domain.models.TarotError
+import tarot.domain.models.authorize.{User, UserId}
 import tarot.domain.models.projects.Project
+import tarot.layers.TarotEnv
+import zio.ZIO
 
-trait ProjectsQueryHandler extends QueryHandler[ProjectsQuery, List[Project]]
+trait ProjectsQueryHandler {
+  def getProjects(userId: UserId): ZIO[TarotEnv, TarotError, List[Project]]
+}
+  

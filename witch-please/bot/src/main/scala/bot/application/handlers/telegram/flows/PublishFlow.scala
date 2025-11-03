@@ -6,14 +6,15 @@ import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.spreads.SpreadPublishRequest
+import shared.api.dto.tarot.spreads.{SpreadPublishRequest, SpreadResponse}
 import shared.infrastructure.services.common.DateTimeService
 import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 import java.time.{Instant, YearMonth}
+import java.util.UUID
 
-object PublishFlow {
+object PublishFlow {    
   def publishSpread(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {

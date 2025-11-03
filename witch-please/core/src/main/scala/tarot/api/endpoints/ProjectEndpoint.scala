@@ -12,8 +12,6 @@ import tarot.api.dto.tarot.projects.{ProjectCreateRequestMapper, ProjectResponse
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
-import tarot.application.commands.projects.ProjectCreateCommand
-import tarot.application.queries.projects.ProjectsQuery
 import tarot.domain.models.authorize.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -40,8 +38,7 @@ object ProjectEndpoint {
             _ <- ZIO.logInfo(s"Received request to get projects by userId $userId")
 
             handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.projectsQueryHandler)
-            query = ProjectsQuery(UserId(userId))
-            projects <- handler.handle(query)
+            projects <- handler.getProjects(UserId(userId))
           } yield projects.map(ProjectResponseMapper.toResponse)).mapResponseErrors
       }
 
@@ -60,9 +57,8 @@ object ProjectEndpoint {
           _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create project: ${request.name}")
 
           externalProject <- ProjectCreateRequestMapper.fromRequest(request)
-          handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCreateCommandHandler)
-          command = ProjectCreateCommand(externalProject, UserId(tokenPayload.userId))
-          projectId <- handler.handle(command)
+          handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)
+          projectId <- handler.createProject(externalProject, UserId(tokenPayload.userId))
         } yield IdResponse(projectId.id)).mapResponseErrors
       }
 

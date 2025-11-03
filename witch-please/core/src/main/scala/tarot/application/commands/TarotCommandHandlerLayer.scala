@@ -8,10 +8,9 @@ import zio.{ULayer, ZLayer}
 object TarotCommandHandlerLayer {
   val tarotCommandHandlerLive: ULayer[TarotCommandHandlerLive] =
     (
-      ZLayer.succeed(new UserCreateCommandHandlerLive) ++
-      ZLayer.succeed(new ProjectCreateCommandHandlerLive) ++
-      ZLayer.succeed(new SpreadCreateCommandHandlerLive) ++
-      ZLayer.succeed(new SpreadPublishCommandHandlerLive) ++
-      ZLayer.succeed(new CardCreateCommandHandlerLive)
+      ZLayer.succeed(new UserCommandHandlerLive) ++
+      ZLayer.succeed(new ProjectCommandHandlerLive) ++
+      ZLayer.succeed(new SpreadCommandHandlerLive) ++
+      ZLayer.succeed(new CardCommandHandlerLive)
     ) >>> ZLayer.fromFunction(TarotCommandHandlerLive.apply)
 }

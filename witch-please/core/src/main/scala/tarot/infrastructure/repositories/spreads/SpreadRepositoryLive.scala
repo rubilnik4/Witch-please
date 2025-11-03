@@ -44,6 +44,17 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully update spread status $spreadStatusUpdate")
       )
 
+  def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
+    spreadDao
+      .deleteSpread(spreadId.id)
+      .mapBoth(
+        e => DatabaseError(s"Failed to delete spread $spreadId", e),
+        _ => ())
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to delete spread $spreadId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully delete spread $spreadId")
+      )
+
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
     spreadDao
       .getSpread(spreadId.id)
@@ -91,6 +102,15 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         e => ZIO.logErrorCause(s"Failed to get cards by spreadId $spreadId", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully get cards by spreadId $spreadId")
       ).flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
+
+  def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
+    cardDao
+      .getCardsCount(spreadId.id)
+      .mapError(e => DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to get cards count by spreadId $spreadId", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get cards count by spreadId $spreadId")
+      )
   
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
     quill.transaction {

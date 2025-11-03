@@ -1,7 +1,10 @@
 package tarot.application.commands.users
 
-import tarot.application.commands.CommandHandler
-import tarot.application.commands.users.UserCreateCommand
-import tarot.domain.models.authorize.UserId
+import tarot.domain.models.TarotError
+import tarot.domain.models.authorize.{ExternalUser, UserId}
+import tarot.layers.TarotEnv
+import zio.ZIO
 
-trait UserCreateCommandHandler extends CommandHandler[UserCreateCommand, UserId]
+trait UserCreateCommandHandler {
+  def createUser(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId]
+}
