@@ -10,7 +10,6 @@ import bot.layers.BotEnv
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
-import tarot.domain.models.spreads.Spread
 import zio.ZIO
 
 import java.util.UUID
@@ -20,11 +19,15 @@ object SpreadFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get spreads command by project $projectId for chat ${context.chatId}")
-      
-      spreadButtons = spreads.zipWithIndex.map { case (spread, index) =>
-        TelegramInlineKeyboardButton(s"${index + 1}. ${spread.title}", 
-          Some(TelegramCommands.spreadSelectCommand(spread.id, spread.cardCount)))
-      }
+
+      spreadButtons = spreads
+        .sortBy(_.scheduledAt.fold(Long.MaxValue)(_.toEpochMilli))
+        .zipWithIndex
+        .map { case (spread, index) =>
+          val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
+          val command = TelegramCommands.spreadSelectCommand(spread.id, spread.cardCount)
+          TelegramInlineKeyboardButton(label, Some(command))
+        }
       createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.SpreadCreate))
       buttons = spreadButtons :+ createButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
@@ -122,14 +125,9 @@ object SpreadFlow {
     
   private def showSpread(context: TelegramContext, spread: SpreadResponse, createdCardIndexes: Set[Int])
       (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
-    val scheduledText = spread.scheduledAt match {
-      case Some(scheduledAt) => DateFormatter.fromInstant(scheduledAt)
-      case None => "—"
-    }
-
     val summaryText =
       s""" Расклад: “${spread.title}”
-         | Публикация: $scheduledText
+         | Публикация: ${getScheduledText(spread)}
          | Карт по плану: ${spread.cardCount}
          | Создано карт: ${createdCardIndexes.size}
          |
@@ -144,4 +142,10 @@ object SpreadFlow {
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
+
+  private def getScheduledText(spread: SpreadResponse) =
+    spread.scheduledAt match {
+      case Some(scheduledAt) => DateFormatter.fromInstant(scheduledAt)
+      case None => "—"
+  }
 }
