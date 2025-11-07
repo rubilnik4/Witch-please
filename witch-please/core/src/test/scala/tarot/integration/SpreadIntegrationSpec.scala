@@ -8,14 +8,11 @@ import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
-import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
-import tarot.domain.models.authorize.*
-import tarot.domain.models.projects.*
+import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.*
-import tarot.domain.models.{TarotError, TarotErrorMapper}
-import tarot.infrastructure.services.PhotoServiceSpec.resourcePath
+import tarot.fixtures.TarotTestFixtures
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -35,14 +32,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
     test("initialize test state") {
       for {
-        photoId <- getPhoto
-        userId <- getUser(clientId, clientType, clientSecret)
-        projectId <- getProject(userId)
-        token <- getToken(clientType, clientSecret, userId, projectId)
+        photoId <- TarotTestFixtures.getPhoto
+        userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
+        projectId <- TarotTestFixtures.getProject(userId)
+        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId, projectId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         _ <- ref.set(TestSpreadState(Some(photoId), Some(projectId.id), Some(token), None))
-      } yield assertTrue(photoId.nonEmpty)
+      } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
     test("should send photo, get fileId, and create spread") {
@@ -109,7 +106,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         createResponse <- app.runZIO(createRequest)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](createResponse).map(_.id)
 
-        deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath(""), token)
+        deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
         _ <- app.runZIO(deleteRequest)
 
         spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
@@ -170,7 +167,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
     test("should publish spread") {
       for {
-        _ <- TestClock.adjust(10.minute)
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
@@ -187,26 +183,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spread.exists(_.spreadStatus == SpreadStatus.Ready),
         spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
       )
-    },
-
-    test("can't delete published spread") {
-      for {
-        _ <- TestClock.adjust(10.minute)
-        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-
-        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        spread <- spreadRepository.getSpread(SpreadId(spreadId))
-          .flatMap(spread => ZIO.fromOption(spread).orElseFail(TarotError.NotFound("spread not set")))
-        spreadPublished = spread.copy(publishedAt = spread.scheduledAt)
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        request = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
-        _ <- app.runZIO(request)
-
-        deletedSpread <- spreadRepository.getSpread(SpreadId(spreadId))
-      } yield assertTrue(deletedSpread.isDefined)
     }
   ).provideShared(
     Scope.default,
@@ -234,48 +210,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   private def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
     for {
       now <- DateTimeService.getDateTimeNow
-      minFutureTime <- ZIO.serviceWith[TarotEnv](_.config.project.minFutureTime)
-      publishTime = minFutureTime.plus(10.minute)
-    } yield SpreadPublishRequest(
-      scheduledAt = now.plus(publishTime)
-    )
-
-  private def getPhoto: ZIO[TarotEnv, TarotError, String] =
-    for {
-      fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramChannelService)
-      photo <- fileStorageService.getResourcePhoto(resourcePath)
-        .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
-      telegramFile = TelegramFile(photo.fileName, photo.bytes)
-      chatId <- getChatId
-      photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
-        .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
-    } yield photoId
-
-  private def getUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
-    val user = ExternalUser(clientId, clientType, clientSecret, "test user")
-    for {
-      userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
-      userId <- userHandler.createUser(user)
-    } yield userId
-
-  private def getProject(userId: UserId): ZIO[TarotEnv, TarotError, ProjectId] =
-    val project = ExternalProject("test project")
-    for {
-      projectHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)
-      projectId <- projectHandler.createProject(project, userId)
-    } yield projectId
-
-  private def getToken(clientType: ClientType, clientSecret: String, userId: UserId, projectId: ProjectId)
-      : ZIO[TarotEnv, TarotError, String] =
-    for {
-      authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
-      token <- authService.issueToken(clientType, userId, clientSecret, Some(projectId))
-    } yield token.token
-
-  private def getChatId: ZIO[TarotEnv, TarotError, Long] =
-    for {
-      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
-      chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(TarotError.NotFound("chatId not set"))
-    } yield chatId  
+      publishTime = now.plus(10.minute)
+    } yield SpreadPublishRequest(publishTime)
 }

@@ -16,6 +16,6 @@ object SpreadStatusUpdate {
   case class Ready(spreadId: SpreadId,spreadStatus: SpreadStatus, scheduledAt: Instant)
     extends SpreadStatusUpdate(spreadId, spreadStatus)
 
-  case class Published(spreadId: SpreadId,spreadStatus: SpreadStatus, publishedAt: Instant)
+  case class Published(spreadId: SpreadId, spreadStatus: SpreadStatus, publishedAt: Instant)
     extends SpreadStatusUpdate(spreadId, spreadStatus)
 }

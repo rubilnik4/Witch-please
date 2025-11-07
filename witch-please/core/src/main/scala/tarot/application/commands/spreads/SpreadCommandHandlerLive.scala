@@ -11,7 +11,6 @@ import zio.ZIO
 
 import java.time.Instant
 
-
 final class SpreadCommandHandlerLive extends SpreadCommandHandler {
   def createSpread(externalSpread: ExternalSpread) : ZIO[TarotEnv, TarotError, SpreadId] =
     for {
@@ -69,11 +68,11 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       projectConfig <- ZIO.serviceWith[TarotEnv](_.config.project)
 
       now <- DateTimeService.getDateTimeNow
-      minTime = now.plus(projectConfig.minFutureTime)
+      hardPastTime = now.minus(projectConfig.hardPastTime)
       maxTime = now.plus(projectConfig.maxFutureTime)
-      _ <- ZIO.when(scheduledAt.isBefore(minTime) || scheduledAt.isAfter(maxTime)) {
-        ZIO.logError(s"scheduledAt must be after $minTime and before $maxTime")
-          *> ZIO.fail(ValidationError(s"scheduledAt must be after $minTime and before $maxTime"))
+      _ <- ZIO.when(scheduledAt.isBefore(hardPastTime) || scheduledAt.isAfter(maxTime)) {
+        ZIO.logError(s"scheduledAt must be after $hardPastTime and before $maxTime")
+          *> ZIO.fail(ValidationError(s"scheduledAt must be after $hardPastTime and before $maxTime"))
       }
       _ <- ZIO.when(scheduledAt.isBefore(spread.createdAt)) {
         ZIO.logError(s"scheduledAt must be after creation time ${spread.createdAt}")
