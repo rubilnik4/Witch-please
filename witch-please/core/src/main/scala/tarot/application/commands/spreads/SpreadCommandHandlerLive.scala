@@ -52,10 +52,11 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       cardCount <- spreadRepository.countCards(spread.id)
 
-      _ <- ZIO.when(spread.spreadStatus != SpreadStatus.Draft) {
+      _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Ready).contains(spread.spreadStatus)) {
         ZIO.logError(s"Spread $spread.id is not in Draft status") *>
           ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft status"))
       }
+
       _ <- ZIO.when(cardCount < spread.cardCount) {
         ZIO.logError(s"Spread ${spread.id} has only $cardCount out of ${spread.cardCount} cards") *>
           ZIO.fail(TarotError.Conflict(s"Spread $spread.id has only $cardCount out of ${spread.cardCount} cards"))

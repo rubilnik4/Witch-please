@@ -101,20 +101,23 @@ object SpreadFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       session <- sessionService.get(context.chatId)
+      projectId <- ZIO.fromOption(session.projectId)
+        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
       spreadId <- ZIO.fromOption(session.spreadId)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      
       _ <- ZIO.logInfo(s"Delete spread $spreadId for chat ${context.chatId}")
-
-      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdIndices.size == p.cardsCount)) {
-        telegramApi.sendText(context.chatId, s"Нельзя опубликовать: не все карты загружены") *>
-          ZIO.logError("Can't publish. Not all cards uploaded") *>
-          ZIO.fail(new RuntimeException("Can't publish. Not all cards uploaded"))
+      
+      spread <- tarotApi.getSpread(spreadId, token)
+      _ <- ZIO.unless(spread.publishedAt.isDefined) {
+        telegramApi.sendText(context.chatId, s"Нельзя удалить опубликованный расклад") *>
+          ZIO.logError(s"Can't delete published spread $spreadId") *>
+          ZIO.fail(new RuntimeException("Can't delete published spread $spreadId"))
       }
 
-      today <- DateTimeService.currentLocalDate()
-      dateButtons <- SchedulerMarkup.monthKeyboard(YearMonth.of(today.getYear, today.getMonth))
-      _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи дату публикации расклада", dateButtons)
+      _ <- ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)
     } yield ()
     
   private def showSpread(context: TelegramContext, spread: SpreadResponse, createdCardIndexes: Set[Int])

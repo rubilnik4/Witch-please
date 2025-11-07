@@ -10,14 +10,12 @@ import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.api.ApiError
-import shared.models.tarot.authorize.{ClientType, Role}
 import shared.models.tarot.authorize.Role.PreProject
+import shared.models.tarot.authorize.{ClientType, Role}
 import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.model.StatusCode
 import tarot.api.dto.tarot.authorize.TokenPayload
-import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.TarotErrorMapper
 import zio.*
 import zio.json.*
 
@@ -100,6 +98,12 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
+  def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
+    spreadMap.get.flatMap { spreads =>
+      val spread = spreads.valuesIterator.flatMap(_.get(spreadId)).nextOption()
+      ZIO.fromOption(spread).orElseFail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found"))
+    }
+
   def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     spreadMap.get.map(_.get(projectId)).flatMap {
       case Some(spreads) => ZIO.succeed(spreads.values.toList)
@@ -125,6 +129,12 @@ final class TarotApiServiceMock(
     cardMap.get.map(_.get(spreadId)).flatMap {
       case Some(cards) => ZIO.succeed(cards.values.toList)
       case None => ZIO.succeed(List.empty)
+    }
+
+  def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, RuntimeFlags] =
+    cardMap.get.map(_.get(spreadId)).flatMap {
+      case Some(cards) => ZIO.succeed(cards.size)
+      case None => ZIO.succeed(0)
     }
 
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =

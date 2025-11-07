@@ -44,6 +44,19 @@ object ZIOHttpClient {
       .setHeaders(Headers(headers))
   }
 
+  def deleteRequest(url: URL): http.Request =
+    deleteRequestInternal(url, None)
+
+  def deleteAuthRequest(url: URL, token: String): http.Request =
+    deleteRequestInternal(url, Some(token))
+
+  private def deleteRequestInternal(url: URL, token: Option[String]) = {
+    val headers = getAuthHeaders(token)
+    Request
+      .delete(url)
+      .setHeaders(Headers(headers))
+  }
+  
   private def getAuthHeaders(token: Option[String]) =
     val baseHeaders = List(Header.ContentType(MediaType.application.json))
     val headers = token match {

@@ -1,32 +1,34 @@
 package bot.infrastructure.services.calendar
 
 import bot.domain.models.calendar.*
+import shared.infrastructure.services.common.DateTimeService
 
 import java.time.*
 
 object CalendarService {
-  def buildMonth(today: LocalDate, month: YearMonth): Calendar = {
+  def buildMonth(today: LocalDate, month: YearMonth, maxFuture: Duration): Calendar = {
     val prevMonth = month.minusMonths(1)
+    val nextMonth = month.plusMonths(1)
     val prevEnabled = isPrevMonthEnable(today, prevMonth)
+    val nextEnabled  = isNextMonthEnable(today, nextMonth, maxFuture)
     val title = s"${month.getMonth.toString.toLowerCase.capitalize} ${month.getYear}"
-    val calendarMonth = CalendarMonth(title, prevEnabled, true, prevMonth, month.plusMonths(1))
+    val calendarMonth = CalendarMonth(title, prevEnabled, nextEnabled, prevMonth, nextMonth)
 
     val calendarDays =
       (1 to month.lengthOfMonth).toList.map { day =>
         val date = month.atDay(day)
-        CalendarDay(day, date, isPrevDayEnable(today, date))
+        CalendarDay(day, date, isDayEnable(today, date, maxFuture))
       }
     Calendar(calendarMonth, calendarDays)
   }
 
-  def buildTime(today: LocalDateTime, date: LocalDate, stepMinutes: Int = 30,
+  def buildTime(today: LocalDateTime, date: LocalDate, maxFuture: Duration,
+      stepMinutes: CalendarTimeStep = CalendarTimeStep.M30,
       start: LocalTime = LocalTime.of(8, 0), end: LocalTime = LocalTime.of(2, 0),
       page: Int = 0, pageSize: Int = 20): CalendarTimeGrid = {
 
-    val slots = getCalendarTimes(date: LocalDate, stepMinutes, start, end).map { time =>
-      val isEnabled = isPrevTimeEnable(today, LocalDateTime.of(date, time))
-      CalendarTimeSlot(time, isEnabled)
-    }
+    val slots = getCalendarTimes(today, date, maxFuture, stepMinutes, start, end).map (time =>
+      CalendarTimeSlot(time))
 
     val totalPages = math.max(1, Math.ceil(slots.size.toDouble / pageSize).toInt)
     val safePage = math.max(0, math.min(page, totalPages - 1))
@@ -41,26 +43,66 @@ object CalendarService {
   def isPrevMonthEnable(today: LocalDate, month: YearMonth): Boolean =
     !month.isBefore(YearMonth.from(today))
 
-  def isPrevDayEnable(today: LocalDate, date: LocalDate): Boolean =
-    !date.isBefore(today)
+  def isNextMonthEnable(today: LocalDate, month: YearMonth, maxFuture: Duration): Boolean = {
+    val maxDate = getMaxDate(today, maxFuture)
+    val monthStart = month.atDay(1)
+    val monthEnd = month.atEndOfMonth()
+    !monthStart.isAfter(maxDate) && !monthEnd.isBefore(today)
+  }
 
-  def isPrevTimeEnable(today: LocalDateTime, time: LocalDateTime): Boolean =
-    !time.isBefore(today)
+  def isDayEnable(today: LocalDate, date: LocalDate, maxFuture: Duration): Boolean = {
+    val maxDate = getMaxDate(today, maxFuture)
+    !date.isBefore(today) && !date.isAfter(maxDate)
+  }
 
-  private def getCalendarTimes(date: LocalDate, stepMinutes: Int, start: LocalTime, end: LocalTime) =
-    if (end.isBefore(start)) {      
-      val startDatetime = date.atTime(start)
-      val endDateTime = date.plusDays(1).atTime(end)
-      slotsInRange(stepMinutes, startDatetime, endDateTime)
-    } else {
-      val startDatetime = date.atTime(start)
-      val endDateTime = date.atTime(end)
-      slotsInRange(stepMinutes, startDatetime, endDateTime)
-    }
+  def isTimeEnable(today: LocalDateTime, time: LocalDateTime, maxFuture: Duration): Boolean = {
+    val maxDateTime = getMaxDateTime(today, maxFuture)
+    !time.isBefore(today) && !time.isAfter(maxDateTime)
+  }
 
-  private def slotsInRange(stepMinutes: Int, start: LocalDateTime, end: LocalDateTime): List[LocalTime] =
-    Iterator.iterate(start)(_.plusMinutes(stepMinutes.toLong))
-      .takeWhile(!_.isAfter(end))
-      .map(_.toLocalTime)
+  def getMaxDate(today: LocalDate, maxFuture: Duration): LocalDate = {
+    val start = today.atStartOfDay(DateTimeService.Zone).toInstant
+    val max = start.plus(maxFuture)
+    LocalDateTime.ofInstant(max, DateTimeService.Zone).toLocalDate
+  }
+
+  def getMaxDateTime(today: LocalDateTime, maxFuture: Duration): LocalDateTime = {
+    val start = today.atZone(DateTimeService.Zone)
+    start.plus(maxFuture).toLocalDateTime
+  }
+
+  private def getCalendarTimes(today: LocalDateTime, date: LocalDate, maxFuture: Duration,
+                               stepMinutes: CalendarTimeStep, start: LocalTime, end: LocalTime) =
+    val dayStart = date.atStartOfDay()
+    val dayEnd = date.plusDays(1).atStartOfDay()
+
+    val segments =
+      if (end.isBefore(start)) List((dayStart, date.atTime(end)), (date.atTime(start), dayEnd))
+      else List((date.atTime(start), date.atTime(end)))
+
+    val maxDateTime = getMaxDateTime(today, maxFuture)
+
+    segments.flatMap { case (rawStart, rawEnd) =>
+      getCalendarSlots(today, maxDateTime, maxFuture, stepMinutes, rawStart, rawEnd)
+    }.distinct.sortBy(time => time)
+
+  private def getCalendarSlots(today: LocalDateTime, maxDateTime: LocalDateTime,maxFuture: Duration,
+      step: CalendarTimeStep, rawStart: LocalDateTime, rawEnd: LocalDateTime): List[LocalTime] = {
+    val segStartClamped = if (rawStart.isBefore(today)) today else rawStart
+    val segEndClamped = if (rawEnd.isAfter(maxDateTime)) maxDateTime else rawEnd
+
+    val segStart = CalendarTimeStep.alignUp(segStartClamped, step)
+    val segEnd = CalendarTimeStep.alignDown(segEndClamped, step)
+
+    if (!segStart.isBefore(segEnd)) Nil
+    else
+      slotsInRange(step, segStart, segEnd)
+        .filter(dt => isTimeEnable(today, dt, maxFuture))
+        .map(_.toLocalTime)
+  }
+
+  private def slotsInRange(stepMinutes: CalendarTimeStep, start: LocalDateTime, end: LocalDateTime): List[LocalDateTime] =
+    Iterator.iterate(start)(_.plusMinutes(stepMinutes.minutes.toLong))
+      .takeWhile(_.isBefore(end))
       .toList
 }

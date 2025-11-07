@@ -3,23 +3,28 @@ package bot.application.handlers.telegram.markup
 import bot.application.commands.telegram.{SchedulerCommands, TelegramCommands}
 import bot.domain.models.calendar.{Calendar, CalendarDay, CalendarMonth, CalendarTime, CalendarTimeGrid, CalendarTimeSlot}
 import bot.infrastructure.services.calendar.CalendarService
+import bot.layers.BotEnv
 import shared.api.dto.telegram.*
 import shared.infrastructure.services.common.DateTimeService
-import zio.UIO
+import zio.{UIO, ZIO}
 
 import java.time.{LocalDate, YearMonth}
 
 object SchedulerMarkup {
-  def monthKeyboard(month: YearMonth): UIO[List[List[TelegramInlineKeyboardButton]]] =
+  def monthKeyboard(month: YearMonth): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
     for {
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+
       today <- DateTimeService.currentLocalDate()
-      calendar = CalendarService.buildMonth(today, month)
+      calendar = CalendarService.buildMonth(today, month, projectConfig.maxFutureTime)
     } yield keyboardDate(calendar)
 
-  def timeKeyboard(date: LocalDate, page: Int): UIO[List[List[TelegramInlineKeyboardButton]]] =
+  def timeKeyboard(date: LocalDate, page: Int): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
     for {
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+
       today <- DateTimeService.currentLocalDateTime()
-      calendarTime = CalendarService.buildTime(today, date, page = page)
+      calendarTime = CalendarService.buildTime(today, date, projectConfig.maxFutureTime, page = page)
     } yield keyboardTime(calendarTime)
 
   private def keyboardDate(calendar: Calendar): List[List[TelegramInlineKeyboardButton]] = {
@@ -80,7 +85,6 @@ object SchedulerMarkup {
 
   private def getTimeSlotKeyboard(calendarSlots: List[CalendarTimeSlot]) =
     calendarSlots
-      .filter(_.enabled)
       .map { slot =>
         val label = f"${slot.time.getHour}%02d:${slot.time.getMinute}%02d"
         TelegramInlineKeyboardButton(label, Some(SchedulerCommands.selectTime(slot.time)))

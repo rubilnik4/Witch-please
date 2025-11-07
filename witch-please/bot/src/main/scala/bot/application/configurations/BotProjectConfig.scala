@@ -1,13 +1,15 @@
 package bot.application.configurations
 
-import zio.Config
+import zio.{Config, Duration}
 import zio.config.magnolia.deriveConfig
 
 final case class BotProjectConfig(
   host: String,                            
   port: Int,
   tarotUrl: String,
-  userSecretPepper: String
+  userSecretPepper: String,
+  minFutureTime: Duration,
+  maxFutureTime: Duration
 )
 
 object BotProjectConfig {

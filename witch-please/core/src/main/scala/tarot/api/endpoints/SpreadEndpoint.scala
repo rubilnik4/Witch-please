@@ -14,7 +14,6 @@ import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.*
-import tarot.application.commands.spreads.*
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
@@ -86,7 +85,7 @@ object SpreadEndpoint {
 
   private val deleteSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.delete
-      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "spread" / path[UUID]("spreadId"))
+      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId"))
       .out(emptyOutput)
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
