@@ -3,13 +3,12 @@ package tarot.application.configurations
 import zio.{Config, Duration}
 import zio.config.magnolia.deriveConfig
 
-final case class TarotProjectConfig(
-  host: String,
-  port: Int,
-  hardPastTime: Duration,
-  maxFutureTime: Duration                            
+final case class TarotPublishConfig(
+  tick: Duration,
+  lookAhead: Duration,
+  batchLimit: Int
 )
 
-object TarotProjectConfig {
+object TarotPublishConfig {
   implicit val config: Config[TarotPublishConfig] = deriveConfig[TarotPublishConfig]
 }

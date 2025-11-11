@@ -71,25 +71,32 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
 
   def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, SQLException, Long] =
     spreadStatusUpdate match {
-      case SpreadStatusUpdate.Ready(spreadId, spreadStatus, scheduledAt) =>
+      case SpreadStatusUpdate.Ready(spreadId, scheduledAt, expectedAt) =>
         run(
           quote {
             spreadTable
-              .filter(_.id == lift(spreadId.id))
+              .filter(spread =>
+                spread.id == lift(spreadId.id) && (
+                  spread.spreadStatus == lift(SpreadStatus.Draft) ||
+                  (spread.spreadStatus == lift(SpreadStatus.Ready) && 
+                    lift(expectedAt).forall(exp => spread.scheduledAt.contains(exp)))))
               .update(
-                _.spreadStatus -> lift(spreadStatus),
+                _.spreadStatus -> lift(SpreadStatus.Ready),
                 _.scheduledAt -> lift(Option(scheduledAt))
               )
           }
         )
 
-      case SpreadStatusUpdate.Published(spreadId, spreadStatus, publishedAt) =>
+      case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
         run(
           quote {
             spreadTable
-              .filter(_.id == lift(spreadId.id))
+              .filter(spread =>
+                spread.id == lift(spreadId.id) &&
+                spread.spreadStatus == lift(SpreadStatus.Ready) &&
+                spread.publishedAt.isEmpty)
               .update(
-                _.spreadStatus -> lift(spreadStatus),
+                _.spreadStatus -> lift(SpreadStatus.Published),
                 _.publishedAt -> lift(Option(publishedAt))
               )
           }

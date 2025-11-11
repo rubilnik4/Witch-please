@@ -7,8 +7,8 @@ import zio.config.magnolia.deriveConfig
 
 final case class TarotConfig(
   project: TarotProjectConfig,
+  publish: TarotPublishConfig,
   jwt: JwtConfig,
-  cache: CacheConfig,
   telegram: TarotTelegramConfig,
   localStorage: Option[LocalStorageConfig],
   postgres: Option[PostgresConfig],

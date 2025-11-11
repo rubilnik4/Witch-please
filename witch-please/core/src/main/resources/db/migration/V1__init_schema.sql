@@ -17,6 +17,12 @@ CREATE TABLE spreads (
 );
 
 CREATE INDEX idx_spreads_project_id ON spreads(project_id);
+CREATE INDEX idx_spreads_ready_scheduled_at
+    ON spreads(scheduled_at)
+    WHERE spread_status = 'Ready';
+CREATE INDEX idx_spreads_published_at
+    ON spreads(published_at)
+    WHERE spread_status = 'Published';
 
 CREATE TABLE photos (
     id UUID PRIMARY KEY,

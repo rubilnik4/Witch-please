@@ -80,7 +80,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       }
 
       _ <- ZIO.logInfo(s"Publishing spread for ${spread.id}")
-      spreadStatusUpdate = SpreadStatusUpdate.Ready(spread.id, SpreadStatus.Ready, scheduledAt)
+      spreadStatusUpdate = SpreadStatusUpdate.Ready(spread.id, scheduledAt, spread.scheduledAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
       _ <- ZIO.logInfo(s"Successfully spread published: ${spread.id}")
     } yield ()
