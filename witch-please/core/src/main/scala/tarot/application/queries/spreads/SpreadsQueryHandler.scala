@@ -7,7 +7,10 @@ import tarot.domain.models.spreads.{Spread, SpreadId}
 import tarot.layers.TarotEnv
 import zio.ZIO
 
+import java.time.Instant
+
 trait SpreadsQueryHandler {
   def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread]
   def getSpreads(projectId: ProjectId): ZIO[TarotEnv, TarotError, List[Spread]]
+  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]
 }

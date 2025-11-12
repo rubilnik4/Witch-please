@@ -34,17 +34,35 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       spread <- Spread.toDomain(externalSpread, storedPhoto)
     } yield spread
 
-  def publishSpread(spreadId: SpreadId, scheduledAt: Instant) : ZIO[TarotEnv, TarotError, Unit] =
+  def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant) : ZIO[TarotEnv, TarotError, Unit] =
     for {
       spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
 
-      _ <- checkingSpread(spread)
-      _ <- publishScheduledSpread(spread, scheduledAt)
+      _ <- checkingPublish(spread)
+      _ <- schedulePublish(spread, scheduledAt)
     } yield ()
-  
-  private def checkingSpread(spread: Spread) =
+
+  def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing delete spread command for $spreadId")
+
+      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      spread <- spreadRepository.getSpread(spreadId)
+        .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
+
+      _ <- ZIO.when(spread.publishedAt.isDefined) {
+        ZIO.logError(s"Spread ${spread.id} already published, couldn't be deleted") *>
+          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already published, couldn't be deleted"))
+      }
+
+      _ <- spreadRepository.deleteSpread(spreadId)
+
+      _ <- ZIO.logInfo(s"Successfully spread deleted: $spreadId")
+    } yield ()
+
+  private def checkingPublish(spread: Spread) =
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
@@ -62,7 +80,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
       }
     } yield ()
 
-  private def publishScheduledSpread(spread: Spread, scheduledAt: Instant) =
+  private def schedulePublish(spread: Spread, scheduledAt: Instant) =
     for {
       spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       projectConfig <- ZIO.serviceWith[TarotEnv](_.config.project)
@@ -79,27 +97,9 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
           *> ZIO.fail(ValidationError(s"scheduledAt must be after creation time ${spread.createdAt}"))
       }
 
-      _ <- ZIO.logInfo(s"Publishing spread for ${spread.id}")
+      _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")
       spreadStatusUpdate = SpreadStatusUpdate.Ready(spread.id, scheduledAt, spread.scheduledAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
       _ <- ZIO.logInfo(s"Successfully spread published: ${spread.id}")
     } yield ()
-
-  def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Executing delete spread command for $spreadId")
-
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-      spread <- spreadRepository.getSpread(spreadId)
-        .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
-      
-      _ <- ZIO.when(spread.publishedAt.isDefined) {
-        ZIO.logError(s"Spread ${spread.id} already published, couldn't be deleted") *>
-          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already published, couldn't be deleted"))
-      }
-      
-      _ <- spreadRepository.deleteSpread(spreadId)
-
-      _ <- ZIO.logInfo(s"Successfully spread deleted: $spreadId")
-    } yield ()  
 }

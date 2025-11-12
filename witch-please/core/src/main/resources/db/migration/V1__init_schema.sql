@@ -14,6 +14,13 @@ CREATE TABLE spreads (
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
     published_at TIMESTAMPTZ
+
+    CONSTRAINT chk_spread_status_times CHECK (
+        (spread_status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
+        (spread_status = 'Ready' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+        (spread_status = 'Published' AND scheduled_at IS NULL AND published_at IS NOT NULL) OR
+        (spread_status = 'Archived')
+    )
 );
 
 CREATE INDEX idx_spreads_project_id ON spreads(project_id);

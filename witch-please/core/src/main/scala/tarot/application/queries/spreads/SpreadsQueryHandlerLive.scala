@@ -6,6 +6,8 @@ import tarot.domain.models.spreads.{Spread, SpreadId}
 import tarot.layers.TarotEnv
 import zio.ZIO
 
+import java.time.Instant
+
 final class SpreadsQueryHandlerLive extends SpreadsQueryHandler {
   def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread] =
     for {
@@ -22,5 +24,13 @@ final class SpreadsQueryHandlerLive extends SpreadsQueryHandler {
 
       repository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
       spreads <- repository.getSpreads(projectId)
+    } yield spreads
+
+  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
+    for {
+      _ <- ZIO.logInfo(s"Executing ready spreads query by deadline $deadline")
+
+      repository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      spreads <- repository.getReadySpreads(deadline, from, limit)
     } yield spreads
 }

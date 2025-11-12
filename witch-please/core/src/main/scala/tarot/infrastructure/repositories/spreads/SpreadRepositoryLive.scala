@@ -11,6 +11,7 @@ import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
 import zio.*
 
 import java.sql.SQLException
+import java.time.Instant
 import java.util.UUID
 
 final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends SpreadRepository {
@@ -46,7 +47,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
             ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(ex))
           case TarotError.Conflict(message) =>
             ZIO.logError(s"Spread status update failed $spreadStatusUpdate: $message")
-          case other =>
+          case other: TarotError =>
             ZIO.logWarning(s"Unexpected database error $spreadStatusUpdate: $other")
         },
         _ => ZIO.logDebug(s"Successfully updated spread status $spreadStatusUpdate")
@@ -82,6 +83,15 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to get spreads by projectId $projectId", Cause.fail(e.ex)),
         _ => ZIO.logDebug(s"Successfully get spread by projectId $projectId")
+      ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+
+  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, TarotError, List[Spread]] =
+    spreadDao
+      .getReadySpreads(deadline, from, limit)
+      .mapError(e => TarotError.DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
+      .tapBoth(
+        e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e.ex)),
+        _ => ZIO.logDebug(s"Successfully get ready spread by deadline $deadline")
       ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
       
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =

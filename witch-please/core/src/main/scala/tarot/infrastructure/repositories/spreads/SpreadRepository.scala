@@ -6,10 +6,13 @@ import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
 import zio.ZIO
 
+import java.time.Instant
+
 
 trait SpreadRepository {
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]]
   def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]]
+  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, TarotError, List[Spread]]
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId]

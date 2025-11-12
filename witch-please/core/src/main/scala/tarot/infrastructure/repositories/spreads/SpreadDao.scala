@@ -1,10 +1,12 @@
 package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
+import io.getquill.extras.InstantOps
 import io.getquill.jdbczio.*
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.spreads.SpreadStatusUpdate
+import tarot.domain.models.TarotError
+import tarot.domain.models.spreads.{Spread, SpreadStatusUpdate}
 import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
@@ -35,6 +37,22 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
           .filter { case (spread, _) => spread.projectId == lift(projectId) }
+          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
+      })
+
+  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
+    run(
+      quote {
+        spreadTable
+          .join(photoTable)
+          .on((spread, photo) => spread.photoId == photo.id)
+          .filter { case (spread, _) =>
+            spread.spreadStatus == lift(SpreadStatus.Ready) &&
+            spread.scheduledAt.exists(_ <= lift(deadline)) &&
+            lift(from).forall(f => spread.scheduledAt.exists(_ >= f))
+          }
+          .sortBy { case (spread, _) => spread.scheduledAt }(Ord.asc)
+          .take(lift(limit))
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
       })
 
@@ -78,7 +96,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
               .filter(spread =>
                 spread.id == lift(spreadId.id) && (
                   spread.spreadStatus == lift(SpreadStatus.Draft) ||
-                  (spread.spreadStatus == lift(SpreadStatus.Ready) && 
+                  (spread.spreadStatus == lift(SpreadStatus.Ready) &&
                     lift(expectedAt).forall(exp => spread.scheduledAt.contains(exp)))))
               .update(
                 _.spreadStatus -> lift(SpreadStatus.Ready),

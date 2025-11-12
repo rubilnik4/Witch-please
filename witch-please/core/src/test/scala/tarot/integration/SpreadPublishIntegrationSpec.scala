@@ -142,7 +142,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
         spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
         now <- DateTimeService.getDateTimeNow.map(time => time.plus(20.minute))
-        spreadStatusUpdate = SpreadStatusUpdate.Published(SpreadId(spreadId), SpreadStatus.Published, now)
+        spreadStatusUpdate = SpreadStatusUpdate.Published(SpreadId(spreadId), now)
         _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)

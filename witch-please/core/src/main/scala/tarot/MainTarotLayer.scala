@@ -1,6 +1,5 @@
 package tarot
 
-import shared.application.configurations.*
 import shared.infrastructure.telemetry.TelemetryLayer
 import shared.infrastructure.telemetry.metrics.TelemetryMeterLayer
 import shared.infrastructure.telemetry.tracing.TelemetryTracingLayer
@@ -8,14 +7,15 @@ import tarot.api.routes.{TarotRoutesLayer, TarotServerLayer}
 import tarot.application.commands.TarotCommandHandlerLayer
 import tarot.application.configurations.TarotConfig
 import tarot.application.queries.TarotQueryHandlerLayer
+import tarot.infrastructure.jobs.TarotJobLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
 import tarot.infrastructure.telemetry.TarotTelemetryLayer
 import tarot.layers.{TarotConfigLayer, TarotEnv, TarotEnvLayer}
+import zio.*
 import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.*
 
 object MainTarotLayer {
   private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
@@ -23,7 +23,7 @@ object MainTarotLayer {
     val combinedLayers =
       TelemetryMeterLayer.telemetryMeterLive ++
         TelemetryTracingLayer.telemetryTracingLive ++
-        repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++
+        repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++ TarotJobLayer.tarotJobLive ++
         TarotCommandHandlerLayer.tarotCommandHandlerLive ++ TarotQueryHandlerLayer.tarotQueryHandlerLive
     combinedLayers >>> TarotEnvLayer.envLive
   }

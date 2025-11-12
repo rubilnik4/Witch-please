@@ -1,0 +1,17 @@
+package tarot.infrastructure.jobs.spreads
+
+import tarot.layers.TarotEnv
+import zio.{ZIO, ZLayer}
+
+object SpreadJobLayer {
+  val spreadJobLive: ZLayer[Any, Nothing, SpreadJob] =
+    ZLayer.succeed(new SpreadJobLive)
+
+  val runner: ZLayer[TarotEnv, Nothing, Unit] =
+    ZLayer.scoped {
+      for {
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+        _ <- spreadJob.run.forkScoped
+      } yield ()
+    }
+}

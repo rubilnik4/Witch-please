@@ -175,7 +175,7 @@ object SpreadEndpoint {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")
             _ <- SpreadPublishRequestMapper.validate(request)
             handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
-            _ <- handler.publishSpread(SpreadId(spreadId), request.scheduledAt)
+            _ <- handler.scheduleSpread(SpreadId(spreadId), request.scheduledAt)
           } yield ()).mapResponseErrors
         }
       }
