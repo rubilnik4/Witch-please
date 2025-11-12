@@ -180,7 +180,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spread <- spreadRepository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Ready),
+        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
         spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
       )
     }

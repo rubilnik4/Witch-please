@@ -34,24 +34,27 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
     )
 
   def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
-    spreadDao
-      .updateSpreadStatus(spreadStatusUpdate)
-      .mapError(e => TarotError.DatabaseError("Failed to update spread status", e))
-      .flatMap {
-        case 0L => ZIO.fail(TarotError.Conflict(s"Spread state conflict: $spreadStatusUpdate"))
-        case _ => ZIO.unit
-      }
-      .tapBoth(
-        {
-          case TarotError.DatabaseError(message, ex) =>
-            ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(ex))
-          case TarotError.Conflict(message) =>
-            ZIO.logError(s"Spread status update failed $spreadStatusUpdate: $message")
-          case other: TarotError =>
-            ZIO.logWarning(s"Unexpected database error $spreadStatusUpdate: $other")
-        },
-        _ => ZIO.logDebug(s"Successfully updated spread status $spreadStatusUpdate")
-      )
+    (spreadStatusUpdate match {
+      case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, expectedAt) =>
+        spreadDao.updateToSchedule(spreadId.id, scheduledAt, expectedAt)
+      case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
+        spreadDao.updateToPublish(spreadId.id, publishedAt)
+    })
+    .mapError(e => TarotError.DatabaseError("Failed to update spread status", e))
+    .flatMap {
+      case 0L => ZIO.fail(TarotError.Conflict(s"Spread state conflict: $spreadStatusUpdate"))
+      case _ => ZIO.unit
+    }.tapBoth(
+      {
+        case TarotError.DatabaseError(message, ex) =>
+          ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(ex))
+        case TarotError.Conflict(message) =>
+          ZIO.logError(s"Spread status update failed $spreadStatusUpdate: $message")
+        case other: TarotError =>
+          ZIO.logError(s"Unexpected database error $spreadStatusUpdate: $other")
+      },
+      _ => ZIO.logDebug(s"Successfully updated spread status $spreadStatusUpdate")
+    )
 
   def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
     spreadDao
@@ -85,7 +88,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully get spread by projectId $projectId")
       ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
 
-  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, TarotError, List[Spread]] =
+  def getScheduleSpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, TarotError, List[Spread]] =
     spreadDao
       .getReadySpreads(deadline, from, limit)
       .mapError(e => TarotError.DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))

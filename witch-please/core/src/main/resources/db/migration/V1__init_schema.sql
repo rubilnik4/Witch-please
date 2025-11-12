@@ -9,7 +9,7 @@ CREATE TABLE spreads (
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     card_count INT NOT NULL,
-    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Ready', 'Published', 'Archived')),
+    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
@@ -17,8 +17,8 @@ CREATE TABLE spreads (
 
     CONSTRAINT chk_spread_status_times CHECK (
         (spread_status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
-        (spread_status = 'Ready' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
-        (spread_status = 'Published' AND scheduled_at IS NULL AND published_at IS NOT NULL) OR
+        (spread_status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+        (spread_status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
         (spread_status = 'Archived')
     )
 );

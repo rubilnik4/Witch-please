@@ -113,7 +113,6 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
     test("should publish spread") {
       for {
-        _ <- TestClock.adjust(10.minute)
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
@@ -128,7 +127,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spread <- spreadRepository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Ready),
+        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
         spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
       )
     },

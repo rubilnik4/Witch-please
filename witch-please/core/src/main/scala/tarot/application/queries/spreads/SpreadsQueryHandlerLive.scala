@@ -26,11 +26,11 @@ final class SpreadsQueryHandlerLive extends SpreadsQueryHandler {
       spreads <- repository.getSpreads(projectId)
     } yield spreads
 
-  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
+  def getScheduleSpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
     for {
       _ <- ZIO.logInfo(s"Executing ready spreads query by deadline $deadline")
 
       repository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-      spreads <- repository.getReadySpreads(deadline, from, limit)
+      spreads <- repository.getScheduleSpreads(deadline, from, limit)
     } yield spreads
 }
