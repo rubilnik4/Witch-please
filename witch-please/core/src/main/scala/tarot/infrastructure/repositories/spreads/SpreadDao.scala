@@ -40,7 +40,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
       })
 
-  def getReadySpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
+  def getReadySpreads(deadline: Instant, limit: Int): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
     run(
       quote {
         spreadTable
@@ -48,8 +48,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .on((spread, photo) => spread.photoId == photo.id)
           .filter { case (spread, _) =>
             spread.spreadStatus == lift(SpreadStatus.Scheduled) &&
-            spread.scheduledAt.exists(_ <= lift(deadline)) &&
-            lift(from).forall(f => spread.scheduledAt.exists(_ >= f))
+            spread.scheduledAt.exists(_ <= lift(deadline))
           }
           .sortBy { case (spread, _) => spread.scheduledAt }(Ord.asc)
           .take(lift(limit))

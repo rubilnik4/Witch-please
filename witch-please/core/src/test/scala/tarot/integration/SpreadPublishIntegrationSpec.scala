@@ -7,11 +7,10 @@ import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
-import shared.models.tarot.spreads.SpreadStatus.Published
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.spreads.{SpreadId, SpreadStatusUpdate}
+import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.TarotTestFixtures
 import tarot.integration.SpreadPublishIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
@@ -111,14 +110,17 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("should publish spread") {
+    test("should schedule after deadline spread") {
       for {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
+        config <- ZIO.serviceWith[TarotEnv](_.config.publish)
+        deadline = config.lookAhead.plus(5.second)
+        publishTime <- DateTimeService.getDateTimeNow.map(_.plus(deadline))
+
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(10.minute))
         publishRequest = spreadPublishRequest(publishTime)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
@@ -132,26 +134,62 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("can't delete published spread") {
+    test("shouldn't take spreads after deadline") {
       for {
-        _ <- TestClock.adjust(10.minute)
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+
+        spreadIds <- spreadJob.publishSpreads().map(_.map(_.id))
+      } yield assertTrue(
+        spreadIds.isEmpty
+      )
+    },
+
+    test("should reschedule lookahead spread") {
+      for {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
+        publishTime <- DateTimeService.getDateTimeNow
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        publishRequest = spreadPublishRequest(publishTime)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
+        _ <- app.runZIO(request)
+
         spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        now <- DateTimeService.getDateTimeNow.map(time => time.plus(20.minute))
-        spreadStatusUpdate = SpreadStatusUpdate.Published(SpreadId(spreadId), now)
-        _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
+        spread <- spreadRepository.getSpread(SpreadId(spreadId))
+      } yield assertTrue(
+        spread.isDefined,
+        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
+        spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
+      )
+    },
+
+    test("should take lookahead spreads") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+
+        spreadIds <- spreadJob.publishSpreads().map(_.map(_.id))
+      } yield assertTrue(
+        spreadIds.map(_.id).contains(spreadId)
+      )
+    },
+
+    test("can't delete published spread") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         request = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
         response <- app.runZIO(request)
-
-        deletedSpread <- spreadRepository.getSpread(SpreadId(spreadId))
       } yield assertTrue(
-        response.status == Status.Conflict,
-        deletedSpread.isDefined
+        response.status == Status.Conflict
       )
     }
   ).provideShared(

@@ -6,8 +6,8 @@ import shared.infrastructure.telemetry.tracing.TelemetryTracingLayer
 import tarot.api.routes.{TarotRoutesLayer, TarotServerLayer}
 import tarot.application.commands.TarotCommandHandlerLayer
 import tarot.application.configurations.TarotConfig
+import tarot.application.jobs.TarotJobLayer
 import tarot.application.queries.TarotQueryHandlerLayer
-import tarot.infrastructure.jobs.TarotJobLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.services.TarotServiceLayer
 import tarot.infrastructure.telemetry.TarotTelemetryLayer

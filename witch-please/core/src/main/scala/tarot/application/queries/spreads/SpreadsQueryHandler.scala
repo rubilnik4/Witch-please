@@ -12,5 +12,5 @@ import java.time.Instant
 trait SpreadsQueryHandler {
   def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread]
   def getSpreads(projectId: ProjectId): ZIO[TarotEnv, TarotError, List[Spread]]
-  def getScheduleSpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]
+  def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]
 }

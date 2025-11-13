@@ -88,9 +88,9 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         _ => ZIO.logDebug(s"Successfully get spread by projectId $projectId")
       ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
 
-  def getScheduleSpreads(deadline: Instant, from: Option[Instant], limit: Int): ZIO[Any, TarotError, List[Spread]] =
+  def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
     spreadDao
-      .getReadySpreads(deadline, from, limit)
+      .getReadySpreads(deadline, limit)
       .mapError(e => TarotError.DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
       .tapBoth(
         e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e.ex)),

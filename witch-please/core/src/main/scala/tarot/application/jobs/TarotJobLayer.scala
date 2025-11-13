@@ -1,6 +1,6 @@
-package tarot.infrastructure.jobs
+package tarot.application.jobs
 
-import tarot.infrastructure.jobs.spreads.*
+import tarot.application.jobs.spreads.SpreadJobLayer
 import zio.ZLayer
 
 object TarotJobLayer {
