@@ -19,7 +19,7 @@ object TestTarotEnvLayer {
     val repositoryLayer = TestTarotRepositoryLayer.postgresTarotRepositoryLive
     val combinedLayers =
       TelemetryMeterLayer.telemetryMeterLive ++ TelemetryTracingLayer.telemetryTracingLive ++
-        repositoryLayer ++ TarotServiceLayer.tarotServiceLive ++ TarotJobLayer.tarotJobLive ++
+        repositoryLayer ++ TestTarotServiceLayer.tarotServiceLive ++ TarotJobLayer.tarotJobLive ++
         TarotCommandHandlerLayer.tarotCommandHandlerLive ++ TarotQueryHandlerLayer.tarotQueryHandlerLive
     combinedLayers >>> TarotEnvLayer.envLive
   }

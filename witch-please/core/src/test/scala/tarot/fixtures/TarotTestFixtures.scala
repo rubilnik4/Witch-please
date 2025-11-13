@@ -7,16 +7,17 @@ import tarot.domain.models.authorize.*
 import tarot.domain.models.photo.ExternalPhoto
 import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
-import tarot.infrastructure.services.PhotoServiceSpec
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 object TarotTestFixtures {
+  final val resourcePath = "photos/test.png"
+  
   def getPhoto: ZIO[TarotEnv, TarotError, String] =
     for {
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.tarotService.fileStorageService)
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.tarotService.telegramChannelService)
-      photo <- fileStorageService.getResourcePhoto(PhotoServiceSpec.resourcePath)
+      photo <- fileStorageService.getResourcePhoto(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       chatId <- getChatId

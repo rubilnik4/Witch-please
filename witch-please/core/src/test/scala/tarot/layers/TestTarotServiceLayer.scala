@@ -1,4 +1,4 @@
-package tarot.infrastructure.services
+package tarot.layers
 
 import shared.infrastructure.services.storage.*
 import shared.infrastructure.services.telegram.*
@@ -6,14 +6,13 @@ import tarot.application.configurations.*
 import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*
 import tarot.infrastructure.services.storage.LocalFileStorageLayer
+import tarot.infrastructure.services.{TarotService, TarotServiceLive}
+import tarot.mocks.TelegramApiServiceMock
 import zio.ZLayer
 
-object TarotServiceLayer {    
-  private val telegramTokenLayer: ZLayer[TarotConfig, Nothing, String] =
-    ZLayer.fromFunction((config: TarotConfig) => config.telegram.token)
-    
+object TestTarotServiceLayer {
   private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramApiService] =
-    telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive
+    TelegramApiServiceMock.telegramApiServiceLive
 
   private val storageLayer: ZLayer[TarotConfig, Throwable, FileStorageService] =
     LocalFileStorageLayer.storageLayer >>> FileStorageServiceLayer.localFileStorageServiceLive

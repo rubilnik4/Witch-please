@@ -1,6 +1,6 @@
 package tarot.infrastructure.services.photo
 
-import shared.infrastructure.services.files.FileStorageService
+import shared.infrastructure.services.storage.FileStorageService
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.{FileSource, StoredFile}
 import tarot.domain.models.{TarotError, TarotErrorMapper}

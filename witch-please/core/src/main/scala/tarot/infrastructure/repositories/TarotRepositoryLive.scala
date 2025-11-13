@@ -1,6 +1,6 @@
 package tarot.infrastructure.repositories
 
-import shared.infrastructure.services.files.FileStorageService
+import shared.infrastructure.services.storage.FileStorageService
 import tarot.infrastructure.repositories.projects.ProjectRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.repositories.users.{UserProjectRepository, UserRepository}

@@ -28,7 +28,7 @@ final class TarotApiServiceMock(
     spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
     cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
   ) extends TarotApiService {
-  def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
+  override def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
       idResponse <- userMap.modifyZIO { users =>
@@ -41,20 +41,20 @@ final class TarotApiServiceMock(
         }
       }
     } yield idResponse
-  
-  def getUserByClientId(clientId: String): ZIO[Any, ApiError, UserResponse] =
+
+  override def getUserByClientId(clientId: String): ZIO[Any, ApiError, UserResponse] =
     userMap.get.map(_.get(clientId)).flatMap {
       case Some(user) => ZIO.succeed(user)
       case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"user $clientId not found"))
-    }  
-  
-  def getOrCreateUserId(request: UserCreateRequest): ZIO[Any, ApiError, UUID] =
+    }
+
+  override def getOrCreateUserId(request: UserCreateRequest): ZIO[Any, ApiError, UUID] =
     getUserByClientId(request.clientId).map(_.id).catchSome {
       case ApiError.HttpCode(code, _) if code == StatusCode.NotFound.code =>
         createUser(request).map(_.id)
-    }  
-  
-  def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse] =
+    }
+
+  override def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse] =
     val role = if (request.projectId.isDefined) Role.Admin else Role.PreProject
     val tokenPayload = TokenPayload(
       clientType = request.clientType,
@@ -64,8 +64,8 @@ final class TarotApiServiceMock(
     )
     val token = tokenPayload.toJson
     ZIO.succeed(AuthResponse(token = token, role = role))
-  
-  def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
+
+  override def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
       payload <- validateToken(token)
@@ -79,13 +79,13 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
+  override def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
     projectMap.get.map(_.get(userId)).flatMap {
       case Some(userProjects) => ZIO.succeed(userProjects.values.toList)
       case None => ZIO.succeed(List.empty)
     }
 
-  def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
+  override def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
       spreadId = UUID.randomUUID()
@@ -98,19 +98,19 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
+  override def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
     spreadMap.get.flatMap { spreads =>
       val spread = spreads.valuesIterator.flatMap(_.get(spreadId)).nextOption()
       ZIO.fromOption(spread).orElseFail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found"))
     }
 
-  def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
+  override def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     spreadMap.get.map(_.get(projectId)).flatMap {
       case Some(spreads) => ZIO.succeed(spreads.values.toList)
       case None => ZIO.succeed(List.empty)
     }
 
-  def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
+  override def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"index must be positive")).when(index < 0)
 
@@ -125,19 +125,19 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+  override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
     cardMap.get.map(_.get(spreadId)).flatMap {
       case Some(cards) => ZIO.succeed(cards.values.toList)
       case None => ZIO.succeed(List.empty)
     }
 
-  def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, RuntimeFlags] =
+  override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, RuntimeFlags] =
     cardMap.get.map(_.get(spreadId)).flatMap {
       case Some(cards) => ZIO.succeed(cards.size)
       case None => ZIO.succeed(0)
     }
 
-  def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+  override def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     ZIO.unit     
   
   private def getUserResponse(id: UUID, request: UserCreateRequest, now: Instant) =

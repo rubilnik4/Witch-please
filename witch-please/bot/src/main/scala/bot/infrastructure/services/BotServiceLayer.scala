@@ -5,7 +5,7 @@ import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServic
 import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer}
 import shared.application.configurations.TelegramConfig
 import shared.infrastructure.services.*
-import shared.infrastructure.services.files.{FileStorageService, FileStorageServiceLayer}
+import shared.infrastructure.services.storage.{FileStorageService, FileStorageServiceLayer}
 import shared.infrastructure.services.telegram.*
 import zio.{ZIO, ZLayer}
 

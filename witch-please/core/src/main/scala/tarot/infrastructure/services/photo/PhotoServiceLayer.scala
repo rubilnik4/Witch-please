@@ -1,6 +1,6 @@
 package tarot.infrastructure.services.photo
 
-import shared.infrastructure.services.files.{FileStorageService, FileStorageServiceLayer}
+import shared.infrastructure.services.storage.{FileStorageService, FileStorageServiceLayer}
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer}
 import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.services.TarotServiceLayer

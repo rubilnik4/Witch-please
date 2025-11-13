@@ -1,6 +1,6 @@
 package tarot.application.jobs
 
-import shared.infrastructure.services.files.FileStorageService
+import shared.infrastructure.services.storage.FileStorageService
 import shared.infrastructure.services.telegram.TelegramApiService
 import tarot.application.jobs.spreads.SpreadJob
 import tarot.infrastructure.services.authorize.AuthService

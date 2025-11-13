@@ -1,4 +1,4 @@
-package shared.infrastructure.services.files
+package shared.infrastructure.services.storage
 
 import shared.models.files.*
 import zio.nio.file.{Files, Path}

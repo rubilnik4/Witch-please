@@ -1,4 +1,4 @@
-package shared.infrastructure.services.files
+package shared.infrastructure.services.storage
 
 import zio.nio.file.Path
 import zio.{ZIO, ZLayer}
