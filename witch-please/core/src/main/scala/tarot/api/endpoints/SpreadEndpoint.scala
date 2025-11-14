@@ -40,7 +40,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get spreads by projectId $projectId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadsQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
             spreads <- handler.getSpreads(ProjectId(projectId))
           } yield spreads.map(SpreadResponseMapper.toResponse)).mapResponseErrors
       }
@@ -59,7 +59,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get spread by spreadId $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadsQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
             spread <- handler.getSpread(SpreadId(spreadId))
           } yield SpreadResponseMapper.toResponse(spread)).mapResponseErrors
       }
@@ -115,7 +115,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get cards by spreadId $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardsQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardQueryHandler)
             cards <- handler.getCards(SpreadId(spreadId))
           } yield cards.map(CardResponseMapper.toResponse)).mapResponseErrors
       }
@@ -134,7 +134,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get cards count by spreadId $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardsQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardQueryHandler)
             cardsCount <- handler.getCardsCount(SpreadId(spreadId))
           } yield cardsCount).mapResponseErrors
       }

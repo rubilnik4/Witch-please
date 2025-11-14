@@ -9,7 +9,7 @@ import zio.ZIO
 
 import java.time.Instant
 
-trait SpreadsQueryHandler {
+trait SpreadQueryHandler {
   def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread]
   def getSpreads(projectId: ProjectId): ZIO[TarotEnv, TarotError, List[Spread]]
   def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]

@@ -109,9 +109,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
         _ <- app.runZIO(deleteRequest)
 
-        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        spread <- spreadRepository.getSpread(SpreadId(spreadId))
-      } yield assertTrue(spread.isEmpty)
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spreadError <- spreadQueryHandler.getSpread(SpreadId(spreadId)).flip
+      } yield assertTrue(
+        spreadError match {
+          case TarotError.NotFound(_) => true
+          case _ => false
+        }
+      )
     },
 
     test("should send card to current spread") {
@@ -176,12 +181,11 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        spread <- spreadRepository.getSpread(SpreadId(spreadId))
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(
-        spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
-        spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
+        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.scheduledAt.contains(publishRequest.scheduledAt)
       )
     }
   ).provideShared(

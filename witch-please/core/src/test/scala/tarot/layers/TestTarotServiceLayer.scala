@@ -3,6 +3,7 @@ package tarot.layers
 import shared.infrastructure.services.storage.*
 import shared.infrastructure.services.telegram.*
 import tarot.application.configurations.*
+import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*
 import tarot.infrastructure.services.storage.LocalFileStorageLayer
@@ -17,9 +18,10 @@ object TestTarotServiceLayer {
   private val storageLayer: ZLayer[TarotConfig, Throwable, FileStorageService] =
     LocalFileStorageLayer.storageLayer >>> FileStorageServiceLayer.localFileStorageServiceLive
 
-  val tarotServiceLive: ZLayer[TarotConfig, Throwable, TarotService] =
+  val live: ZLayer[TarotConfig, Throwable, TarotService] =
     (
       ((telegramLayer ++ storageLayer) >>> PhotoServiceLayer.photoServiceLive) ++
-      AuthServiceLayer.authServiceLive ++ storageLayer ++ telegramLayer
+        (TarotRepositoryLayer.live >>> AuthServiceLayer.live) ++ 
+        storageLayer ++ telegramLayer
     ) >>> ZLayer.fromFunction(TarotServiceLive.apply)
 }

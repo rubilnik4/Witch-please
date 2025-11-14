@@ -5,14 +5,17 @@ import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.database.Migration
-import tarot.infrastructure.repositories.projects.ProjectRepositoryLayer
-import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
-import tarot.infrastructure.repositories.users.{UserProjectRepositoryLayer, UserRepositoryLayer}
+import tarot.infrastructure.repositories.projects.*
+import tarot.infrastructure.repositories.spreads.*
+import tarot.infrastructure.repositories.users.*
 import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource
 
 object TarotRepositoryLayer {
+  type Repositories =
+    UserRepository & UserProjectRepository & ProjectRepository & SpreadRepository
+
   private val dataSourceLayer: ZLayer[TarotConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
       for {
@@ -30,33 +33,28 @@ object TarotRepositoryLayer {
       } yield new HikariDataSource(hikariConfig)
     }
 
-  val migrationLayer: ZLayer[DataSource, Nothing, Unit] =
-    ZLayer.fromZIO {
-      ZIO.serviceWithZIO[DataSource](dataSource =>
-        Migration.applyMigrations(dataSource).orDie
-      )
-    }
-
-  val quillLayer: ZLayer[DataSource, Nothing, Quill.Postgres[SnakeCase]] =
+  private val quillLayer: ZLayer[DataSource, Nothing, Quill.Postgres[SnakeCase]] =
     ZLayer.fromZIO {
       ZIO.serviceWith[DataSource](dataSource =>
         new Quill.Postgres(SnakeCase, dataSource)
       )
     }
 
-  val tarotRepositoryLayer: ZLayer[DataSource, Nothing, TarotRepository] =
-    quillLayer >>>
-      (SpreadRepositoryLayer.spreadRepositoryLayer ++
-       ProjectRepositoryLayer.projectRepositoryLayer ++
-       UserRepositoryLayer.userRepositoryLayer ++ UserProjectRepositoryLayer.userProjectRepositoryLayer) >>>
-      ZLayer.fromFunction(TarotRepositoryLive.apply)
-      
-  val tarotRepositoryLive: ZLayer[TarotConfig, Throwable, TarotRepository] =
-    dataSourceLayer >>> ZLayer.scoped {
+  private val migrationLayer: ZLayer[DataSource, Throwable, Unit] =
+    ZLayer.scoped {
       for {
         dataSource <- ZIO.service[DataSource]
-        _ <- Migration.applyMigrations(dataSource)        
-        repository <- tarotRepositoryLayer.build.map(_.get[TarotRepository])
-      } yield repository
+        _ <- Migration.applyMigrations(dataSource)
+      } yield ()
     }
+    
+  val repositoryLayer: ZLayer[DataSource, Throwable, Repositories] =
+    migrationLayer ++ quillLayer >>>
+      SpreadRepositoryLayer.spreadRepositoryLayer ++
+      ProjectRepositoryLayer.projectRepositoryLayer ++
+      UserRepositoryLayer.userRepositoryLayer ++
+      UserProjectRepositoryLayer.userProjectRepositoryLayer
+    
+  val live: ZLayer[TarotConfig, Throwable, Repositories] =
+    dataSourceLayer >>> (repositoryLayer)
 }

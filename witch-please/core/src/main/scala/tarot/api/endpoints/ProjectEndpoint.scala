@@ -37,7 +37,7 @@ object ProjectEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get projects by userId $userId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.projectsQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.projectQueryHandler)
             projects <- handler.getProjects(UserId(userId))
           } yield projects.map(ProjectResponseMapper.toResponse)).mapResponseErrors
       }

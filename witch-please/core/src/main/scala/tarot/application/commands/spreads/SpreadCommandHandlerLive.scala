@@ -6,27 +6,25 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.photo.ExternalPhoto
 import tarot.domain.models.spreads.*
+import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 import java.time.Instant
 
-final class SpreadCommandHandlerLive extends SpreadCommandHandler {
+final class SpreadCommandHandlerLive(spreadRepository: SpreadRepository) extends SpreadCommandHandler {
   def createSpread(externalSpread: ExternalSpread) : ZIO[TarotEnv, TarotError, SpreadId] =
     for {
       _ <- ZIO.logInfo(s"Executing create spread command for $externalSpread")
 
-      spread <- fetchAndStorePhoto(externalSpread)
-
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      spread <- fetchAndStorePhoto(externalSpread)      
       spreadId <- spreadRepository.createSpread(spread)
 
       _ <- ZIO.logInfo(s"Successfully spread created: $spreadId")
     } yield spreadId  
 
   def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant) : ZIO[TarotEnv, TarotError, Unit] =
-    for {
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+    for {      
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
 
@@ -35,9 +33,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
     } yield ()
 
   def publishSpread(spread: Spread, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
-    for {
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)      
-
+    for {  
       _ <- ZIO.logInfo(s"Publish spread ${spread.id}")
       spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
@@ -46,8 +42,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
   def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
     for {
       _ <- ZIO.logInfo(s"Executing delete spread command for $spreadId")
-
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
 
@@ -74,8 +69,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
   private def checkingPublish(spread: Spread) =
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
-
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      
       cardCount <- spreadRepository.countCards(spread.id)
 
       _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.spreadStatus)) {
@@ -90,8 +84,7 @@ final class SpreadCommandHandlerLive extends SpreadCommandHandler {
     } yield ()
 
   private def schedulePublish(spread: Spread, scheduledAt: Instant) =
-    for {
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+    for {      
       projectConfig <- ZIO.serviceWith[TarotEnv](_.config.project)
 
       now <- DateTimeService.getDateTimeNow

@@ -10,7 +10,6 @@ import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
-import tarot.infrastructure.repositories.TarotRepository
 import tarot.layers.TarotEnv
 import zio.*
 

@@ -22,7 +22,7 @@ final class SpreadJobLive extends SpreadJob {
   def publishSpreads(): ZIO[TarotEnv, TarotError, List[SpreadPublishResult]] =
     for {
       config <- ZIO.serviceWith[TarotEnv](_.config.publish)
-      queryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadsQueryHandler)
+      queryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
       commandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
 
       now <- DateTimeService.getDateTimeNow

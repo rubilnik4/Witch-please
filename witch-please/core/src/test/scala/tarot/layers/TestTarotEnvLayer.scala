@@ -8,21 +8,20 @@ import tarot.application.commands.TarotCommandHandlerLayer
 import tarot.application.configurations.TarotConfig
 import tarot.application.jobs.TarotJobLayer
 import tarot.application.queries.TarotQueryHandlerLayer
-import tarot.infrastructure.services.TarotServiceLayer
+import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.telemetry.TarotTelemetryLayer
 import zio.ZLayer
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object TestTarotEnvLayer {
-  private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] = {
-    val repositoryLayer = TestTarotRepositoryLayer.postgresTarotRepositoryLive
-    val combinedLayers =
-      TelemetryMeterLayer.telemetryMeterLive ++ TelemetryTracingLayer.telemetryTracingLive ++
-        repositoryLayer ++ TestTarotServiceLayer.tarotServiceLive ++ TarotJobLayer.tarotJobLive ++
-        TarotCommandHandlerLayer.tarotCommandHandlerLive ++ TarotQueryHandlerLayer.tarotQueryHandlerLive
-    combinedLayers >>> TarotEnvLayer.envLive
-  }
+  private val repositoryLayers =
+    (TestTarotRepositoryLayer.live ++ ZLayer.environment[TarotConfig]) >>>
+      (TestTarotServiceLayer.live ++ TarotCommandHandlerLayer.live ++ TarotQueryHandlerLayer.live)
+
+  private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] =
+    (TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++  TarotJobLayer.live ++ repositoryLayers) >>>
+      TarotEnvLayer.envLive
 
   val testEnvLive: ZLayer[Any, Throwable, TarotEnv] =
     TestTarotConfigLayer.testTarotConfigLive >>>

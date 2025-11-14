@@ -1,16 +1,20 @@
 package tarot.application.commands
 
+import tarot.application.commands.cards.CardCommandHandlerLayer
 import tarot.application.commands.projects.*
 import tarot.application.commands.spreads.*
 import tarot.application.commands.users.*
-import zio.{ULayer, ZLayer}
+import tarot.application.configurations.TarotConfig
+import tarot.infrastructure.repositories.TarotRepositoryLayer
+import tarot.infrastructure.repositories.TarotRepositoryLayer.Repositories
+import zio.ZLayer
 
 object TarotCommandHandlerLayer {
-  val tarotCommandHandlerLive: ULayer[TarotCommandHandlerLive] =
+  val live: ZLayer[Repositories, Throwable, TarotCommandHandler] =
     (
-      ZLayer.succeed(new UserCommandHandlerLive) ++
-      ZLayer.succeed(new ProjectCommandHandlerLive) ++
-      ZLayer.succeed(new SpreadCommandHandlerLive) ++
-      ZLayer.succeed(new CardCommandHandlerLive)
+      UserCommandHandlerLayer.live ++
+      ProjectCommandHandlerLayer.live ++
+      SpreadCommandHandlerLayer.live ++
+      CardCommandHandlerLayer.live
     ) >>> ZLayer.fromFunction(TarotCommandHandlerLive.apply)
 }

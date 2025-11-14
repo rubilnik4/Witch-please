@@ -5,6 +5,6 @@ import tarot.domain.models.authorize.{ExternalUser, UserId}
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-trait UserCreateCommandHandler {
+trait UserCommandHandler {
   def createUser(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId]
 }

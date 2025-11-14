@@ -125,12 +125,11 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        spread <- spreadRepository.getSpread(SpreadId(spreadId))
-      } yield assertTrue(
-        spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
-        spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
+      } yield assertTrue(        
+        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.scheduledAt.contains(publishRequest.scheduledAt)
       )
     },
 
@@ -157,12 +156,11 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
-        spread <- spreadRepository.getSpread(SpreadId(spreadId))
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(
-        spread.isDefined,
-        spread.exists(_.spreadStatus == SpreadStatus.Scheduled),
-        spread.exists(_.scheduledAt.contains(publishRequest.scheduledAt))
+        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.scheduledAt.contains(publishRequest.scheduledAt)
       )
     },
 

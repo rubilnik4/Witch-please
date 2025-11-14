@@ -8,8 +8,12 @@ import com.github.roundrop.bcrypt.*
 import shared.models.tarot.authorize.{ClientType, Role}
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.domain.models.projects.ProjectId
+import tarot.infrastructure.repositories.users.*
 
-final case class AuthServiceLive() extends AuthService { 
+final case class AuthServiceLive(
+  userRepository: UserRepository,
+  userProjectRepository: UserProjectRepository
+) extends AuthService {
   def issueToken(clientType: ClientType, userId: UserId, clientSecret: String, projectId: Option[ProjectId])
       : ZIO[TarotEnv, TarotError, Token] = {
     for {
@@ -48,8 +52,7 @@ final case class AuthServiceLive() extends AuthService {
   }
 
   private def getUser(userId: UserId): ZIO[TarotEnv, TarotError, User] =
-    for {
-      userRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.userRepository)
+    for {      
       user <- userRepository.getUser(userId).flatMap {
         case Some(user) =>
           ZIO.succeed(user)
@@ -64,9 +67,8 @@ final case class AuthServiceLive() extends AuthService {
       case None =>
         ZIO.succeed(Role.PreProject)
       case Some(projectId) =>
-        for {
-          userAccessRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.userProjectRepository)
-          userProject <- userAccessRepository.getUserRole(userId, projectId)
+        for {         
+          userProject <- userProjectRepository.getUserRole(userId, projectId)
           role <- userProject match {
             case Some(userProject) =>
               ZIO.succeed(userProject.role)

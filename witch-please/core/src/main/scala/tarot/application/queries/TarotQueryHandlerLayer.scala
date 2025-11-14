@@ -1,17 +1,20 @@
 package tarot.application.queries
 
-import tarot.application.queries.cards.{CardsQueryHandler, CardsQueryHandlerLive}
-import tarot.application.queries.projects.ProjectsQueryHandlerLive
-import tarot.application.queries.spreads.{SpreadsQueryHandler, SpreadsQueryHandlerLive}
+import tarot.application.configurations.TarotConfig
+import tarot.application.queries.cards.*
+import tarot.application.queries.projects.*
+import tarot.application.queries.spreads.*
 import tarot.application.queries.users.*
-import zio.{ULayer, ZLayer}
+import tarot.infrastructure.repositories.TarotRepositoryLayer
+import tarot.infrastructure.repositories.TarotRepositoryLayer.Repositories
+import zio.ZLayer
 
 object TarotQueryHandlerLayer {
-  val tarotQueryHandlerLive: ULayer[TarotQueryHandlerLive] =
+  val live: ZLayer[Repositories, Throwable, TarotQueryHandler] =
     (
-      ZLayer.succeed(new UserQueryHandlerLive) ++
-      ZLayer.succeed(new ProjectsQueryHandlerLive) ++
-      ZLayer.succeed(new SpreadsQueryHandlerLive) ++
-      ZLayer.succeed(new CardsQueryHandlerLive)
+      UserQueryHandlerLayer.live ++
+      ProjectQueryHandlerLayer.live ++
+      SpreadQueryHandlerLayer.live ++
+      CardQueryHandlerLayer.live
     ) >>> ZLayer.fromFunction(TarotQueryHandlerLive.apply)
 }

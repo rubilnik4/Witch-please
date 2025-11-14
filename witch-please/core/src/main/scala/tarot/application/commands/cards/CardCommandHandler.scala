@@ -1,4 +1,4 @@
-package tarot.application.commands.spreads
+package tarot.application.commands.cards
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.{CardId, ExternalCard}

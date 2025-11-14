@@ -8,7 +8,7 @@ import tarot.domain.models.spreads.{Spread, SpreadId}
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-trait CardsQueryHandler {
+trait CardQueryHandler {
   def getCardsCount(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Int]
   def getCards(spreadId: SpreadId): ZIO[TarotEnv, TarotError, List[Card]]   
 }

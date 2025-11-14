@@ -20,8 +20,8 @@ import zio.{ZIO, ZLayer}
 object MainBotLayer {
   private val envLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] = {
     val combinedLayers =
-      TelemetryMeterLayer.telemetryMeterLive ++
-        TelemetryTracingLayer.telemetryTracingLive ++
+      TelemetryMeterLayer.live ++
+        TelemetryTracingLayer.live ++
         BotRepositoryLayer.botRepositoryLive ++ BotServiceLayer.botServiceLive ++
         BotCommandHandlerLayer.botCommandHandlerLive
     combinedLayers >>> BotEnvLayer.envLive

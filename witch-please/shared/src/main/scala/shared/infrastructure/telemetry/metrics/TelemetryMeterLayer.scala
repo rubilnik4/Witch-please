@@ -4,7 +4,7 @@ import zio.telemetry.opentelemetry.metrics.*
 import zio.{Ref, ZIO, ZLayer}
 
 object TelemetryMeterLayer {
-  val telemetryMeterLive: ZLayer[Meter, Nothing, TelemetryMeter] =
+  val live: ZLayer[Meter, Nothing, TelemetryMeter] =
     ZLayer.fromZIO {
       for {
         meter <- ZIO.service[Meter]

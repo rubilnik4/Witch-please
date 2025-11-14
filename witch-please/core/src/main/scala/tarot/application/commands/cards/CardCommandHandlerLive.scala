@@ -1,18 +1,17 @@
-package tarot.application.commands.spreads
+package tarot.application.commands.cards
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.ExternalPhoto
+import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 
-final class CardCommandHandlerLive extends CardCommandHandler {
+final class CardCommandHandlerLive(spreadRepository: SpreadRepository) extends CardCommandHandler {
   def createCard (externalCard: ExternalCard): ZIO[TarotEnv, TarotError, CardId] = {
     for {
-      _ <- ZIO.logInfo(s"Executing create card command for $externalCard")
-
-      spreadRepository <- ZIO.serviceWith[TarotEnv](_.tarotRepository.spreadRepository)
+      _ <- ZIO.logInfo(s"Executing create card command for $externalCard")     
 
       exists <- spreadRepository.existsSpread(externalCard.spreadId)
       _ <- ZIO.unless(exists) {

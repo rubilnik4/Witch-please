@@ -6,7 +6,7 @@ import tarot.domain.models.projects.Project
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-trait ProjectsQueryHandler {
+trait ProjectQueryHandler {
   def getProjects(userId: UserId): ZIO[TarotEnv, TarotError, List[Project]]
 }
   
