@@ -5,22 +5,23 @@ import tarot.domain.models.authorize.User
 import tarot.domain.models.cards.Card
 import tarot.domain.models.projects.Project
 import tarot.domain.models.spreads.{Spread, SpreadId}
+import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-final class CardQueryHandlerLive(spreadRepository: SpreadRepository) extends CardQueryHandler {
+final class CardQueryHandlerLive(cardRepository: CardRepository) extends CardQueryHandler {
   def getCardsCount(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Int] =
     for {
       _ <- ZIO.logInfo(s"Executing cards query by spreadId $spreadId")
       
-      cardsCount <- spreadRepository.getCardsCount(spreadId)
+      cardsCount <- cardRepository.getCardsCount(spreadId)
     } yield cardsCount.toInt
 
   def getCards(spreadId: SpreadId): ZIO[TarotEnv, TarotError, List[Card]] =
     for {
       _ <- ZIO.logInfo(s"Executing cards count query by spreadId $spreadId")
       
-      cards <- spreadRepository.getCards(spreadId)
+      cards <- cardRepository.getCards(spreadId)
     } yield cards  
 }

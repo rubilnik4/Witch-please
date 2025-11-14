@@ -6,13 +6,17 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.photo.ExternalPhoto
 import tarot.domain.models.spreads.*
+import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 import java.time.Instant
 
-final class SpreadCommandHandlerLive(spreadRepository: SpreadRepository) extends SpreadCommandHandler {
+final class SpreadCommandHandlerLive(
+  spreadRepository: SpreadRepository, 
+  cardRepository: CardRepository
+) extends SpreadCommandHandler {
   def createSpread(externalSpread: ExternalSpread) : ZIO[TarotEnv, TarotError, SpreadId] =
     for {
       _ <- ZIO.logInfo(s"Executing create spread command for $externalSpread")
@@ -70,7 +74,7 @@ final class SpreadCommandHandlerLive(spreadRepository: SpreadRepository) extends
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
       
-      cardCount <- spreadRepository.getCardsCount(spread.id)
+      cardCount <- cardRepository.getCardsCount(spread.id)
 
       _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.spreadStatus)) {
         ZIO.logError(s"Spread $spread.id is not in Draft status") *>

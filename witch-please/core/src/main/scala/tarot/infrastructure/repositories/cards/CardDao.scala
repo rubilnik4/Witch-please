@@ -1,9 +1,10 @@
-package tarot.infrastructure.repositories.spreads
+package tarot.infrastructure.repositories.cards
 
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, CardPhotoEntity, PhotoEntity}
 import tarot.infrastructure.repositories.TarotTableNames
+import tarot.infrastructure.repositories.spreads.SpreadQuillMappings
 import zio.ZIO
 
 import java.sql.SQLException

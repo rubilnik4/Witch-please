@@ -1,15 +1,10 @@
 package tarot.infrastructure.repositories.users
 
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
-import tarot.application.configurations.TarotConfig
-import tarot.infrastructure.database.Migration
-import zio.{ZIO, ZLayer}
-
-import javax.sql.DataSource
+import zio.ZLayer
 
 object UserRepositoryLayer {
-  val userRepositoryLayer: ZLayer[Quill.Postgres[SnakeCase], Nothing, UserRepository] =
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, UserRepository] =
     ZLayer.fromFunction(quill => new UserRepositoryLive(quill))
 }

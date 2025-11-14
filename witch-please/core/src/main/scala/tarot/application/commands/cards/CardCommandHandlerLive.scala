@@ -3,12 +3,16 @@ package tarot.application.commands.cards
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.ExternalPhoto
+import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 
-final class CardCommandHandlerLive(spreadRepository: SpreadRepository) extends CardCommandHandler {
+final class CardCommandHandlerLive(
+  spreadRepository: SpreadRepository, 
+  cardRepository: CardRepository
+) extends CardCommandHandler {
   def createCard (externalCard: ExternalCard): ZIO[TarotEnv, TarotError, CardId] = {
     for {
       _ <- ZIO.logInfo(s"Executing create card command for $externalCard")     
@@ -20,7 +24,7 @@ final class CardCommandHandlerLive(spreadRepository: SpreadRepository) extends C
       }
 
       card <- fetchAndStorePhoto(externalCard)
-      cardId <- spreadRepository.createCard(card)
+      cardId <- cardRepository.createCard(card)
 
       _ <- ZIO.logInfo(s"Successfully card created: $cardId")
     } yield cardId

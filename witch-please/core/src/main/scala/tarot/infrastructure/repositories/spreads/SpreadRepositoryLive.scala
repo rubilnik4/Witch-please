@@ -9,6 +9,7 @@ import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
+import tarot.infrastructure.repositories.cards.CardDao
 import zio.{ZIO, *}
 
 import java.sql.SQLException
@@ -26,7 +27,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
 
       spreadId <- quill.transaction {
         for {
-          photoId <- createPhoto(spread.photo)
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))
           spreadEntity = SpreadEntity.toEntity(spread, photoId)
           spreadId <- spreadDao.insertSpread(spreadEntity)
         } yield spreadId
@@ -111,41 +112,4 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .tapError(e => ZIO.logErrorCause(s"Failed to validate spread $spreadId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to validate spread $spreadId", e))
     } yield exists
-
-  def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting cards by spreadId $spreadId")
-
-      cards <- cardDao.getCards(spreadId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get cards by spreadId $spreadId", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get cards by spreadId $spreadId", e))
-        .flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
-    } yield cards
-
-  def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
-    for {
-      _ <- ZIO.logDebug(s"Getting cards count by spreadId $spreadId")
-
-      cardsCount <- cardDao.getCardsCount(spreadId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get cards count by spreadId $spreadId", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
-    } yield cardsCount
-  
-  def createCard(card: Card): ZIO[Any, TarotError, CardId] =
-    for {
-      _ <- ZIO.logDebug(s"Creating card $card")
-
-      cardId <- quill.transaction {
-        for {
-          photoId <- createPhoto(card.photo)
-          cardEntity = CardEntity.toEntity(card, photoId)
-          cardId <- cardDao.insertCard(cardEntity)
-        } yield cardId
-      }
-        .tapError(e => ZIO.logErrorCause(s"Failed to create card $card", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
-    } yield CardId(cardId)
-
-  private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] =
-    photoDao.insertPhoto(PhotoEntity.toEntity(photo))
 }
