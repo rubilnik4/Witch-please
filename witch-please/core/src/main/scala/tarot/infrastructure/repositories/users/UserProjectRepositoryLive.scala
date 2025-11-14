@@ -16,60 +16,53 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
   private val userProjectDao = UserProjectDao(quill)
 
   def createUserProject(userProject: UserProject): ZIO[Any, TarotError, UserProject] =
-    userProjectDao
-      .insertUserProject(UserProjectEntity.toEntity(userProject))
-      .mapBoth(
-        e => DatabaseError(s"Failed to create user project $userProject", e),
-        entity => UserProjectEntity.toDomain(entity))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to create user project $userProject", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully create user project $userProject")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Creating user project $userProject")
+
+      userProject <- userProjectDao.insertUserProject(UserProjectEntity.toEntity(userProject))
+        .tapError(e => ZIO.logErrorCause(s"Failed to create user project $userProject", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create user project $userProject", e))
+    } yield UserProjectEntity.toDomain(userProject)
 
   def createProjectWithRole(project: Project, userId: UserId, role: Role): ZIO[Any, TarotError, UserProject] =
-    quill.transaction {
-      val projectEntity = ProjectEntity.toEntity(project)
-      for {
-        projectId <- projectDao.insertProject(projectEntity)
-        userProjectEntity = UserProjectEntity(userId.id, project.id.id, role)
-        userProject <- userProjectDao.insertUserProject(userProjectEntity)
-      } yield UserProjectEntity.toDomain(userProject)
-    }
-    .mapError(e => DatabaseError(s"Failed to create project $project for user $userId", e.getCause))
-    .tapBoth(
-      e => ZIO.logErrorCause(s"Failed to create project $project for user $userId", Cause.fail(e.ex)),
-      _ => ZIO.logDebug(s"Successfully create project $project for user $userId")
-    )
+    for {
+      _ <- ZIO.logDebug(s"Creating project $project for user $userId")
+
+      userProject <- quill.transaction {
+        for {
+          projectId <- projectDao.insertProject(ProjectEntity.toEntity(project))
+          userProjectEntity = UserProjectEntity(userId.id, project.id.id, role)
+          userProject <- userProjectDao.insertUserProject(userProjectEntity)
+        } yield userProject
+      }
+        .tapError(e => ZIO.logErrorCause(s"Failed to create project $project for user $userId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create project $project for user $userId", e.getCause))
+    } yield UserProjectEntity.toDomain(userProject)
 
   def getUserProject(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserProject]] =
-    userProjectDao
-      .getUserProject(userId.id, projectId.id)
-      .mapError(e => DatabaseError(s"Failed to get userProject $userId for project $projectId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get userProject $userId for project $projectId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get userProject $userId for project $projectId")
-      ).flatMap {
-        case Some(userProject) =>
-          ZIO.some(UserProjectEntity.toDomain(userProject))
-        case None =>
-          ZIO.none
-      }
+    for {
+      _ <- ZIO.logDebug(s"Getting userProject $userId for project $projectId")
+
+      userProject <- userProjectDao.getUserProject(userId.id, projectId.id)
+        .tapError(e =>  ZIO.logErrorCause(s"Failed to get userProject $userId for project $projectId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get userProject $userId for project $projectId", e))
+    } yield userProject.map(UserProjectEntity.toDomain)
 
   def getProjects(userId: UserId): ZIO[Any, TarotError, List[Project]] =
-    userProjectDao
-      .getProjects(userId.id)
-      .mapError(e => DatabaseError(s"Failed to get projects by userId $userId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get userProject projects by userId $userId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get userProject projects by userId $userId")
-      ).map(_.map(ProjectEntity.toDomain))
+    for {
+      _ <- ZIO.logDebug(s"Getting userProject projects by userId $userId")
+
+      projects <- userProjectDao.getProjects(userId.id)
+        .tapError(e =>  ZIO.logErrorCause(s"Failed to get userProject projects by userId $userId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get projects by userId $userId", e))
+    } yield projects.map(ProjectEntity.toDomain)
   
   def getUserRole(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserRole]] =
-    userProjectDao
-      .getUserRole(userId.id, projectId.id)
-      .mapError(e => DatabaseError(s"Failed to get userRole $userId for project $projectId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get userRole $userId for project $projectId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get userRole $userId for project $projectId")
-      ).map(_.map(UserRoleEntity.toDomain))
+    for {
+      _ <- ZIO.logDebug(s"Getting userRole $userId for project $projectId")
+
+      userRole <-  userProjectDao.getUserRole(userId.id, projectId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get userRole $userId for project $projectId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get userRole $userId for project $projectId", e))
+    } yield userRole.map(UserRoleEntity.toDomain)
 }

@@ -4,11 +4,12 @@ import io.getquill.*
 import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
+import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
-import zio.*
+import zio.{ZIO, *}
 
 import java.sql.SQLException
 import java.time.Instant
@@ -20,142 +21,130 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
   private val photoDao = PhotoDao(quill)
 
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
-    quill.transaction {
-      for {
-        photoId <- createPhoto(spread.photo)
-        spreadEntity = SpreadEntity.toEntity(spread, photoId)
-        spreadId <- spreadDao.insertSpread(spreadEntity)
-      } yield SpreadId(spreadId)
-    }
-    .mapError(e => TarotError.DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
-    .tapBoth(
-      e => ZIO.logErrorCause(s"Failed to create spread $spread", Cause.fail(e.ex)),
-      _ => ZIO.logDebug(s"Successfully create spread $spread")
-    )
+    for {
+      _ <- ZIO.logDebug(s"Creating spread $spread")
+
+      spreadId <- quill.transaction {
+        for {
+          photoId <- createPhoto(spread.photo)
+          spreadEntity = SpreadEntity.toEntity(spread, photoId)
+          spreadId <- spreadDao.insertSpread(spreadEntity)
+        } yield spreadId
+      }
+        .tapError(e => ZIO.logErrorCause(s"Failed to create spread $spread", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
+    } yield SpreadId(spreadId)
 
   def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
-    (spreadStatusUpdate match {
-      case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, expectedAt) =>
-        spreadDao.updateToSchedule(spreadId.id, scheduledAt, expectedAt)
-      case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
-        spreadDao.updateToPublish(spreadId.id, publishedAt)
-    })
-    .mapError(e => TarotError.DatabaseError("Failed to update spread status", e))
-    .flatMap {
-      case 0L => ZIO.fail(TarotError.Conflict(s"Spread state conflict: $spreadStatusUpdate"))
-      case _ => ZIO.unit
-    }.tapBoth(
-      {
-        case TarotError.DatabaseError(message, ex) =>
-          ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(ex))
-        case TarotError.Conflict(message) =>
-          ZIO.logError(s"Spread status update failed $spreadStatusUpdate: $message")
-        case other: TarotError =>
-          ZIO.logError(s"Unexpected database error $spreadStatusUpdate: $other")
-      },
-      _ => ZIO.logDebug(s"Successfully updated spread status $spreadStatusUpdate")
-    )
+    for {
+      _ <- ZIO.logDebug(s"Updating spread status $spreadStatusUpdate")
+
+      result <- (spreadStatusUpdate match {
+        case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, expectedAt) =>
+          spreadDao.updateToSchedule(spreadId.id, scheduledAt, expectedAt)
+        case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
+          spreadDao.updateToPublish(spreadId.id, publishedAt)
+      })
+        .tapError(e => ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(e)))
+        .mapError(e => DatabaseError("Failed to update spread status", e))
+
+      _ <- result match {
+        case 0L => ZIO.fail(TarotError.Conflict(s"Spread state conflict: $spreadStatusUpdate")) *>
+          ZIO.logError(s"Spread state conflict: $spreadStatusUpdate")
+        case _ => ZIO.unit
+      }
+    } yield ()
 
   def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
-    spreadDao
-      .deleteSpread(spreadId.id)
-      .mapBoth(
-        e => TarotError.DatabaseError(s"Failed to delete spread $spreadId", e),
-        _ => ())
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to delete spread $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully delete spread $spreadId")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Deleting spread $spreadId")
+
+      _ <-  spreadDao.deleteSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to delete spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to delete spread $spreadId", e))
+    } yield ()
 
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
-    spreadDao
-      .getSpread(spreadId.id)
-      .mapError(e => TarotError.DatabaseError("Failed to get spread", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get spread $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get spread $spreadId")
-      ).flatMap {
-        case Some(entity) => SpreadPhotoEntity.toDomain(entity).map(Some(_))
-        case None => ZIO.none
-      }
+    for {
+      _ <- ZIO.logDebug(s"Getting spread $spreadId")
+
+      spread <- spreadDao.getSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError("Failed to get spread", e))
+        .flatMap(spreadMaybe => ZIO.foreach(spreadMaybe)(SpreadPhotoEntity.toDomain))
+    } yield spread
 
   def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]] =
-    spreadDao
-      .getSpreads(projectId.id)
-      .mapError(e => TarotError.DatabaseError(s"Failed to get spreads by projectId $projectId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get spreads by projectId $projectId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get spread by projectId $projectId")
-      ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    for {
+      _ <- ZIO.logDebug(s"Getting spread by projectId $projectId")
+
+      spreads <- spreadDao.getSpreads(projectId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get spreads by projectId $projectId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get spreads by projectId $projectId", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
 
   def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
-    spreadDao
-      .getReadySpreads(deadline, limit)
-      .mapError(e => TarotError.DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get ready spread by deadline $deadline")
-      ).flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    for {
+      _ <- ZIO.logDebug(s"Getting ready spread by deadline $deadline")
+
+      spreads <- spreadDao.getReadySpreads(deadline, limit)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
       
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
-    spreadDao
-      .existsSpread(spreadId.id)
-      .mapError(e => TarotError.DatabaseError(s"Failed to check spread $spreadId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to check spread $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully check spread $spreadId")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Checking spread $spreadId")
+
+      exists <- spreadDao.existsSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to check spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to check spread $spreadId", e))
+    } yield exists
 
   def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
-    spreadDao
-      .validateSpread(spreadId.id)
-      .mapError(e => TarotError.DatabaseError(s"Failed to validate spread $spreadId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to validate spread $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully validate spread $spreadId")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Validating spread $spreadId")
+
+      exists <- spreadDao.validateSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to validate spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to validate spread $spreadId", e))
+    } yield exists
 
   def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
-    cardDao
-      .getCards(spreadId.id)
-      .mapError(e => TarotError.DatabaseError(s"Failed to get cards by spreadId $spreadId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get cards by spreadId $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get cards by spreadId $spreadId")
-      ).flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
+    for {
+      _ <- ZIO.logDebug(s"Getting cards by spreadId $spreadId")
+
+      cards <- cardDao.getCards(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get cards by spreadId $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get cards by spreadId $spreadId", e))
+        .flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
+    } yield cards
 
   def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
-    cardDao
-      .getCardsCount(spreadId.id)
-      .mapError(e => TarotError.DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to get cards count by spreadId $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully get cards count by spreadId $spreadId")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Getting cards count by spreadId $spreadId")
+
+      cardsCount <- cardDao.getCardsCount(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get cards count by spreadId $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
+    } yield cardsCount
   
   def createCard(card: Card): ZIO[Any, TarotError, CardId] =
-    quill.transaction {
-      for {
-        photoId <- createPhoto(card.photo)
+    for {
+      _ <- ZIO.logDebug(s"Creating card $card")
 
-        cardEntity = CardEntity.toEntity(card, photoId)
-        cardId <- cardDao.insertCard(cardEntity)
-      } yield CardId(cardId)
-    }
-    .mapError(e => TarotError.DatabaseError(s"Failed to create card ${card.id}", e.getCause))
-    .tapBoth(
-      e => ZIO.logErrorCause(s"Failed to create card $card", Cause.fail(e.ex)),
-      _ => ZIO.logDebug(s"Successfully create card $card")
-    )
-
-  def countCards(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
-    cardDao
-      .countCards(spreadId.id)
-      .mapError(e => TarotError.DatabaseError("Failed to count cards", e))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to count cards for spread $spreadId", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully count cards for spread $spreadId")
-      )
+      cardId <- quill.transaction {
+        for {
+          photoId <- createPhoto(card.photo)
+          cardEntity = CardEntity.toEntity(card, photoId)
+          cardId <- cardDao.insertCard(cardEntity)
+        } yield cardId
+      }
+        .tapError(e => ZIO.logErrorCause(s"Failed to create card $card", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
+    } yield CardId(cardId)
 
   private def createPhoto(photo: Photo): ZIO[Any, SQLException, UUID] =
     photoDao.insertPhoto(PhotoEntity.toEntity(photo))

@@ -14,13 +14,11 @@ final class ProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Proj
   private val projectDao = ProjectDao(quill)
       
   def createProject(project: Project): ZIO[Any, TarotError, ProjectId] =
-    projectDao
-      .insertProject(ProjectEntity.toEntity(project))
-      .mapBoth(
-        e => DatabaseError(s"Failed to create project $project", e),
-        ProjectId(_))
-      .tapBoth(
-        e => ZIO.logErrorCause(s"Failed to create project $project", Cause.fail(e.ex)),
-        _ => ZIO.logDebug(s"Successfully create project $project")
-      )
+    for {
+      _ <- ZIO.logDebug(s"Creating project $project")
+
+      projectId <- projectDao.insertProject(ProjectEntity.toEntity(project))
+        .tapError(e => ZIO.logErrorCause(s"Failed to create project $project", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create project $project", e))
+    } yield ProjectId(projectId)
 }

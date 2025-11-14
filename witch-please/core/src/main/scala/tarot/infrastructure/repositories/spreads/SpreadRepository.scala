@@ -21,5 +21,4 @@ trait SpreadRepository {
   def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]]
   def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long]
   def createCard(card: Card): ZIO[Any, TarotError, CardId]
-  def countCards(spreadId: SpreadId): ZIO[Any, TarotError, Long]
 }

@@ -39,15 +39,6 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .insertValue(lift(card))
           .returning(_.id)
       })
-  
-  def countCards(spreadId: UUID): ZIO[Any, SQLException, Long] =
-    run(
-      quote {
-        cardTable
-          .filter(_.spreadId == lift(spreadId))
-          .size
-      }
-    )
 
   private inline def cardTable =
     quote(querySchema[CardEntity](TarotTableNames.cards))

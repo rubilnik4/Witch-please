@@ -70,7 +70,7 @@ final class SpreadCommandHandlerLive(spreadRepository: SpreadRepository) extends
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
       
-      cardCount <- spreadRepository.countCards(spread.id)
+      cardCount <- spreadRepository.getCardsCount(spread.id)
 
       _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.spreadStatus)) {
         ZIO.logError(s"Spread $spread.id is not in Draft status") *>
