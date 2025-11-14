@@ -1,7 +1,10 @@
 package bot.infrastructure.services
 
 import bot.application.configurations.BotConfig
+import bot.infrastructure.repositories.BotRepositoryLayer
+import bot.infrastructure.repositories.sessions.BotSessionRepositoryLayer
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
+import bot.infrastructure.services.storage.LocalFileStorageLayer
 import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer}
 import shared.application.configurations.TelegramConfig
 import shared.infrastructure.services.*
@@ -10,17 +13,8 @@ import shared.infrastructure.services.telegram.*
 import zio.{ZIO, ZLayer}
 
 object BotServiceLayer {
-  private val storedLayer: ZLayer[BotConfig, Throwable, String] =
-    ZLayer.fromZIO {
-      for {
-        config <- ZIO.service[BotConfig]
-        localStorage <- ZIO.fromOption(config.localStorage)
-          .orElseFail(new RuntimeException("Local storage config is missing"))
-      } yield localStorage.path
-    }
-    
   val storageLayer: ZLayer[BotConfig, Throwable, FileStorageService] =
-    storedLayer >>> FileStorageServiceLayer.localFileStorageServiceLive
+    LocalFileStorageLayer.storageLayer >>> FileStorageServiceLayer.localFileStorageServiceLive
 
   val telegramConfigLayer: ZLayer[BotConfig, Throwable, TelegramConfig] =
     ZLayer.fromFunction((config: BotConfig) => config.telegram)
@@ -37,6 +31,6 @@ object BotServiceLayer {
       (telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       (tarotUrlLayer >>> TarotApiServiceLayer.tarotApiServiceLive) ++
       storageLayer ++
-      BotSessionServiceLayer.botSessionServiceLive
-      ) >>> ZLayer.fromFunction(BotServiceLive.apply)
+      (BotRepositoryLayer.live >>> BotSessionServiceLayer.live)
+    ) >>> ZLayer.fromFunction(BotServiceLive.apply)
 }

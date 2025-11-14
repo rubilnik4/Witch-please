@@ -22,7 +22,7 @@ object MainBotLayer {
     val combinedLayers =
       TelemetryMeterLayer.live ++
         TelemetryTracingLayer.live ++
-        BotRepositoryLayer.botRepositoryLive ++ BotServiceLayer.botServiceLive ++
+        BotServiceLayer.botServiceLive ++
         BotCommandHandlerLayer.botCommandHandlerLive
     combinedLayers >>> BotEnvLayer.envLive
   }

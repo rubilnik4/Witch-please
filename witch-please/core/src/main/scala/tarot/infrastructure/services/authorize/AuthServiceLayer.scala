@@ -1,11 +1,9 @@
 package tarot.infrastructure.services.authorize
 
-import tarot.application.configurations.TarotConfig
-import tarot.infrastructure.repositories.TarotRepositoryLayer
-import tarot.infrastructure.repositories.users.{UserProjectRepository, UserRepository}
-import zio.{Task, ZLayer}
+import tarot.infrastructure.repositories.users.*
+import zio.ZLayer
 
 object AuthServiceLayer {
-  val live: ZLayer[UserRepository & UserProjectRepository, Throwable, AuthService] =    
+  val live: ZLayer[UserRepository & UserProjectRepository, Nothing, AuthService] =    
     ZLayer.fromFunction(AuthServiceLive(_, _))
 }

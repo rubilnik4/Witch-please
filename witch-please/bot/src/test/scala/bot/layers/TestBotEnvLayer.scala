@@ -2,7 +2,6 @@ package bot.layers
 
 import bot.application.configurations.BotConfig
 import bot.application.handlers.BotCommandHandlerLayer
-import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.telemetry.BotTelemetryLayer
 import shared.infrastructure.telemetry.StubTelemetryLayer
 import shared.infrastructure.telemetry.logging.LoggerLayer
@@ -13,13 +12,12 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object TestBotEnvLayer {
-  private val envLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] = {
-    val combinedLayers =
+  private val envLive: ZLayer[BotConfig & Meter & Tracing, Throwable, BotEnv] =
+    (
       TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++
-        TestBotServiceLayer.botServiceLive ++
-        BotRepositoryLayer.botRepositoryLive ++ BotCommandHandlerLayer.botCommandHandlerLive
-    combinedLayers >>> BotEnvLayer.envLive
-  }
+      TestBotServiceLayer.botServiceLive ++
+      BotCommandHandlerLayer.botCommandHandlerLive
+    ) >>> BotEnvLayer.envLive
 
   val testEnvLive: ZLayer[Any, Throwable, BotEnv] =
     TestBotConfigLayer.testBotConfigLive >>>

@@ -56,5 +56,5 @@ object TarotRepositoryLayer {
       UserProjectRepositoryLayer.userProjectRepositoryLayer
     
   val live: ZLayer[TarotConfig, Throwable, Repositories] =
-    dataSourceLayer >>> (repositoryLayer)
+    dataSourceLayer >>> repositoryLayer
 }

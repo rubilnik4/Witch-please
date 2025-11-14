@@ -1,6 +1,7 @@
 package bot.layers
 
 import bot.application.configurations.BotConfig
+import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.*
 import bot.infrastructure.services.BotServiceLayer.telegramConfigLayer
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
@@ -17,6 +18,6 @@ object TestBotServiceLayer {
       (BotServiceLayer.telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       BotServiceLayer.storageLayer ++
       TarotApiServiceMock.tarotApiServiceLive ++
-      BotSessionServiceLayer.botSessionServiceLive
-      ) >>> ZLayer.fromFunction(BotServiceLive.apply)
+      (BotRepositoryLayer.live >>> BotSessionServiceLayer.live)
+    ) >>> ZLayer.fromFunction(BotServiceLive.apply)
 }

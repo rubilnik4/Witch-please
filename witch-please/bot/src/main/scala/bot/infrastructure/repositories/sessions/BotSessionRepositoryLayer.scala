@@ -5,7 +5,7 @@ import bot.infrastructure.repositories.*
 import zio.{Ref, ULayer, ZLayer}
 
 object BotSessionRepositoryLayer {
-  val botSessionRepositoryLive: ULayer[BotSessionRepository] =
+  val live: ULayer[BotSessionRepository] =
     ZLayer.fromZIO(
       Ref.Synchronized.make(Map.empty[Long, BotSession]).map(new BotSessionRepositoryLive(_))
     )

@@ -13,7 +13,6 @@ object BotEnvLayer {
   val envLive: ZLayer[
     BotConfig
       & BotService
-      & BotRepository
       & BotCommandHandler
       & TelemetryMeter & TelemetryTracing,
     Nothing,
