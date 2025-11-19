@@ -14,7 +14,7 @@ object ClientFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get authors command for chat ${context.chatId}")
-    
+
       authors <- tarotApi.getAuthors
       authorsButtons = authors.zipWithIndex.map { case (author, idx) =>
         TelegramInlineKeyboardButton(s"${idx + 1}. ${author.name}. ${author.spreadsCount} раскладов", Some(TelegramCommands.projectSelectCommand(author.id)))

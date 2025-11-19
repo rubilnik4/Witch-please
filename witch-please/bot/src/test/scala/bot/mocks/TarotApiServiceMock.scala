@@ -23,11 +23,11 @@ import java.time.Instant
 import java.util.UUID
 
 final class TarotApiServiceMock(
-    userMap: Ref.Synchronized[Map[String, UserResponse]],
-    projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]],
-    spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
-    cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
-  ) extends TarotApiService {
+  userMap: Ref.Synchronized[Map[String, UserResponse]],
+  projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]],
+  spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
+  cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
+) extends TarotApiService {
   override def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
@@ -52,6 +52,31 @@ final class TarotApiServiceMock(
     getUserByClientId(request.clientId).map(_.id).catchSome {
       case ApiError.HttpCode(code, _) if code == StatusCode.NotFound.code =>
         createUser(request).map(_.id)
+    }
+
+  override def getAuthors: ZIO[Any, ApiError, List[AuthorResponse]] =
+    for {
+      users <- userMap.get
+      projects <- projectMap.get
+      spreads <- spreadMap.get
+    } yield {
+      val projectByUser: Map[UUID, UUID] =
+        projects.toList.flatMap { case (userId, projects) =>
+          projects.keys.map(projectId => projectId -> userId)
+        }.toMap
+
+      val spreadsCountByUser: Map[UUID, Int] =
+        spreads.toList.flatMap { case (projectId, spreadsForProject) =>
+          projectByUser.get(projectId).toList.map(userId => userId -> spreadsForProject.size)
+        }.groupMapReduce(_._1)(_._2)(_ + _)
+
+      val usersById: Map[UUID, UserResponse] =
+        users.values.map(user => user.id -> user).toMap
+
+      spreadsCountByUser.toList.collect {
+        case (userId, spreadsCount) if spreadsCount >= 1 =>
+          usersById.get(userId).map(user => AuthorResponse( userId, user.name, spreadsCount))
+      }.flatten
     }
 
   override def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse] =
