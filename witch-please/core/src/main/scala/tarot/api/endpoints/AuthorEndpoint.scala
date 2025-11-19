@@ -1,0 +1,43 @@
+package tarot.api.endpoints
+
+import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.common.IdResponse
+import shared.api.dto.tarot.users.*
+import shared.models.tarot.authorize.{ClientType, Role}
+import shared.models.tarot.contracts.TarotChannelType
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.zio.jsonBody
+import sttp.tapir.ztapir.*
+import tarot.api.dto.tarot.*
+import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
+import tarot.api.dto.tarot.users.*
+import tarot.api.endpoints.errors.TapirError
+import tarot.api.infrastructure.AuthValidator
+import tarot.application.commands.*
+import tarot.layers.TarotEnv
+import zio.ZIO
+
+object AuthorEndpoint {
+  import TapirError.*
+  
+  private final val tag = "authors"
+
+  private val getAuthorsEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint
+      .get
+      .in(TarotApiRoutes.apiPath / "author")
+      .out(jsonBody[List[AuthorResponse]])
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)    
+      .zServerLogic { request =>
+        (for {
+          _ <- ZIO.logInfo(s"Received request to get authors")
+
+          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userQueryHandler)
+          authors <- userQueryHandler.getAuthors
+        } yield authors.map(AuthorResponseMapper.toResponse)).mapResponseErrors
+      }
+
+  val endpoints: List[ZServerEndpoint[TarotEnv, Any]] = 
+    List(getAuthorsEndpoint)
+}

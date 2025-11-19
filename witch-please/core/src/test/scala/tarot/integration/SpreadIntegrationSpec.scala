@@ -4,6 +4,7 @@ import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.spreads.*
+import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
@@ -77,6 +78,21 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
           spreads.head.id == spreadId)
     },
 
+    test("should get authors") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        app = ZioHttpInterpreter().toHttp(AuthorEndpoint.endpoints)
+        request = ZIOHttpClient.getRequest(TarotApiRoutes.authorsGetPath(""))
+        response <- app.runZIO(request)
+        authors <- ZIOHttpClient.getResponse[List[AuthorResponse]](response)
+      } yield assertTrue(
+        authors.nonEmpty,
+        authors.head.id == spreadId)      
+    },
+    
     test("should get spread") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]

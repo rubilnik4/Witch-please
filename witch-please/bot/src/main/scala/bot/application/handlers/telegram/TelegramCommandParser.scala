@@ -24,6 +24,10 @@ object TelegramCommandParser {
     command.split("\\s+").toList match {
       case List(TelegramCommands.Start) =>
         TarotCommand.Start
+      case List(TelegramCommands.AdminStart) =>
+        TarotCommand.AdminStart
+      case List(TelegramCommands.UserStart) =>
+        TarotCommand.UserStart
       case List(TelegramCommands.ProjectCreate) =>
         TarotCommand.CreateProject
       case TelegramCommands.ProjectSelect :: projectIdStr :: Nil =>

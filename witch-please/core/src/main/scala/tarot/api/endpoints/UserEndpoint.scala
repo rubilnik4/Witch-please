@@ -22,7 +22,8 @@ object UserEndpoint {
   private final val tag = "users"
 
   private val getUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint.get
+    endpoint
+      .get
       .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "user" / "by-client" / path[String]("clientId"))
       .out(jsonBody[UserResponse])
       .errorOut(TapirError.tapirErrorOut)
@@ -47,6 +48,7 @@ object UserEndpoint {
       .zServerLogic { request =>
         (for {
           _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")
+          
           externalUser <- UserCreateRequestMapper.fromRequest(request, ClientType.Telegram)
           userCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
           userId <- userCommandHandler.createUser(externalUser)

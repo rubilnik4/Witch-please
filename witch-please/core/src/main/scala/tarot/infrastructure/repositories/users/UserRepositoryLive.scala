@@ -5,13 +5,13 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.authorize.{User, UserId}
+import tarot.domain.models.authorize.{Author, User, UserId}
 import zio.*
 
 final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRepository {
   private val userDao = UserDao(quill)
 
-  def createUser(user: User): ZIO[Any, TarotError, UserId] =
+  override def createUser(user: User): ZIO[Any, TarotError, UserId] =
     for {
       _ <- ZIO.logDebug(s"Creating user $user")
 
@@ -20,7 +20,7 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
         .mapError(e => DatabaseError(s"Failed to create user $user", e))
     } yield UserId(userId)
 
-  def getUser(userId: UserId): ZIO[Any, TarotError, Option[User]] =
+  override def getUser(userId: UserId): ZIO[Any, TarotError, Option[User]] =
     for {
       _ <- ZIO.logDebug(s"Getting user $userId")
 
@@ -29,16 +29,16 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
         .mapError(e => DatabaseError(s"Failed to get user $userId", e))
     } yield userId.map(UserEntity.toDomain)
 
-  def getUserByClientId(clientId: String): ZIO[Any, TarotError, Option[User]] =
+  override def getUserByClientId(clientId: String): ZIO[Any, TarotError, Option[User]] =
     for {
       _ <- ZIO.logDebug(s"Getting user by clientId $clientId")
 
       userId <- userDao.getUserByClientId(clientId)
         .tapError(e => ZIO.logErrorCause(s"Failed to get user by clientId $clientId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get user by clientId $clientId", e))
-    } yield userId.map(UserEntity.toDomain)
+    } yield userId.map(UserEntity.toDomain)  
 
-  def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean] =
+  override def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean] =
     for {
       _ <- ZIO.logDebug(s"Checking user $userId")
 
@@ -47,7 +47,7 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
         .mapError(e => DatabaseError(s"Failed to check user $userId", e))
     } yield exists
 
-  def existsUserByClientId(clientId: String): ZIO[Any, TarotError, Boolean] =
+  override def existsUserByClientId(clientId: String): ZIO[Any, TarotError, Boolean] =
     for {
       _ <- ZIO.logDebug(s"Checking user by clientId $clientId")
 

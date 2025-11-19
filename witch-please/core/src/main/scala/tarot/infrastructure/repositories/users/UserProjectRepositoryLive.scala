@@ -6,7 +6,7 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.authorize.{UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.{Author, UserId, UserProject, UserRole}
 import tarot.domain.models.projects.{Project, ProjectId}
 import tarot.infrastructure.repositories.projects.ProjectDao
 import zio.*
@@ -61,8 +61,17 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
     for {
       _ <- ZIO.logDebug(s"Getting userRole $userId for project $projectId")
 
-      userRole <-  userProjectDao.getUserRole(userId.id, projectId.id)
+      userRole <- userProjectDao.getUserRole(userId.id, projectId.id)
         .tapError(e => ZIO.logErrorCause(s"Failed to get userRole $userId for project $projectId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get userRole $userId for project $projectId", e))
     } yield userRole.map(UserRoleEntity.toDomain)
+
+  override def getAuthors(minSpreads: Int): ZIO[Any, TarotError, List[Author]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting authors by min spreads $minSpreads")
+
+      authors <- userProjectDao.getAuthors(minSpreads)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get authors by min spreads $minSpreads", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get authors by min spreads $minSpreads", e))
+    } yield authors  
 }

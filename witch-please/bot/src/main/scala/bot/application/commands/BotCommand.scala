@@ -15,6 +15,8 @@ object BotCommand {
 
 object TarotCommand {
   case object Start extends TarotCommand
+  case object AdminStart extends TarotCommand
+  case object UserStart extends TarotCommand
   case object CreateProject extends TarotCommand
   final case class SelectProject(projectId: UUID) extends TarotCommand
   case object CreateSpread extends TarotCommand

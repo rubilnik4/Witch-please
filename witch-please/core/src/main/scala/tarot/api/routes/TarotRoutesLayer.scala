@@ -11,7 +11,7 @@ import zio.http.*
 
 object TarotRoutesLayer {
   private val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
-    UserEndpoint.endpoints ++ AuthEndpoint.endpoints ++
+    UserEndpoint.endpoints ++ AuthorEndpoint.endpoints ++  AuthEndpoint.endpoints ++
       ProjectEndpoint.endpoints ++ SpreadEndpoint.endpoints
 
   private val openApiDocs =
