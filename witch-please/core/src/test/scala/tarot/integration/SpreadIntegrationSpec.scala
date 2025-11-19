@@ -39,7 +39,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- TarotTestFixtures.getToken(clientType, clientSecret, userId, projectId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(projectId.id), Some(token), None))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(projectId.id), Some(token), None))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -57,7 +57,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(projectId), Some(token), Some(spreadId)))
+        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(projectId), Some(token), Some(spreadId)))
       } yield assertTrue(spreadId.toString.nonEmpty)
     },
 
@@ -82,7 +82,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        userId <- ZIO.fromOption(state.userId).orElseFail(TarotError.NotFound("userId not set"))
 
         app = ZioHttpInterpreter().toHttp(AuthorEndpoint.endpoints)
         request = ZIOHttpClient.getRequest(TarotApiRoutes.authorsGetPath(""))
@@ -90,7 +90,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         authors <- ZIOHttpClient.getResponse[List[AuthorResponse]](response)
       } yield assertTrue(
         authors.nonEmpty,
-        authors.head.id == spreadId)      
+        authors.head.id == userId)
     },
     
     test("should get spread") {
@@ -211,7 +211,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))
     
   private def spreadCreateRequest(projectId: UUID, cardCount: Int, photoId: String) =
     TelegramSpreadCreateRequest(

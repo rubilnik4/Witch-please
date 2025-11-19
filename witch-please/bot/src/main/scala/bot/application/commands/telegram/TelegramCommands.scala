@@ -7,8 +7,8 @@ import java.util.UUID
 object TelegramCommands {
   final val Start = "/start"
   final val Help = "/help"
-  final val UserStart = "/user_start"
-  final val AdminStart = "/admin_start"
+  final val ClientStart = "/client_start"
+  final val AuthorStart = "/author_start"
   final val ProjectCreate = "/project_create"
   final val ProjectSelect = "/project_select"
   final val SpreadCreate = "/spread_create"

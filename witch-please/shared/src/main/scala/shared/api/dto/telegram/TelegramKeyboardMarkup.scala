@@ -38,7 +38,7 @@ object TelegramKeyboardMarkup {
 
   given JsonDecoder[TelegramKeyboardMarkup] =
     JsonDecoder[Json.Obj].mapOrFail { obj =>
-      val keys = obj.fields.map(_._1).toSet
+      val keys = obj.fields.map((name, _) => name).toSet
       keys match {
         case ks if ks.contains("force_reply") =>
           obj.as[TelegramForceReply].left.map(err => s"ForceReply decode failed: $err")

@@ -5,8 +5,6 @@ import io.getquill.extras.InstantOps
 import io.getquill.jdbczio.*
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
-import tarot.domain.models.TarotError
-import tarot.domain.models.spreads.{Spread, SpreadStatusUpdate}
 import tarot.infrastructure.repositories.TarotTableNames
 import zio.ZIO
 
@@ -71,7 +69,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .filter(_.id == lift(spreadId))
           .join(cardTable)
           .on((spread, card) => spread.id == card.spreadId)
-          .groupBy(_._1)
+          .groupBy{ case (spread, _) => spread }
           .map { case (spread, grouped) => (spread.id, spread.cardCount, grouped.size)}
           .filter { case (_, expected, actual) => expected == actual }
           .take(1)

@@ -19,8 +19,8 @@ object StartFlow {
     for {
       _ <- ZIO.logInfo(s"Start command for chat ${context.chatId}")
 
-      userButton = TelegramInlineKeyboardButton("Хочу предсказаний", Some(TelegramCommands.UserStart))
-      adminButton = TelegramInlineKeyboardButton("Я тарологичка", Some(TelegramCommands.AdminStart))
+      userButton = TelegramInlineKeyboardButton("Хочу предсказаний", Some(TelegramCommands.ClientStart))
+      adminButton = TelegramInlineKeyboardButton("Я тарологичка", Some(TelegramCommands.AuthorStart))
       buttons = List(userButton, adminButton)
       _ <- telegramApi.sendInlineButtons(context.chatId, "Кто внутри тебя?", buttons)
     } yield ()

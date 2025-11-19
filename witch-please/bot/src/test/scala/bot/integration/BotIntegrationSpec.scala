@@ -34,15 +34,27 @@ object BotIntegrationSpec extends ZIOSpecDefault {
     test("send start command") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
         
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         startRequest = TestTelegramWebhook.startRequest(chatId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startRequest)
-        response <- app.runZIO(request)        
-        
+        response <- app.runZIO(request)
+      } yield assertTrue(response.status == Status.Ok)
+    },
+
+    test("send start author command") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        chatId <- getChatId
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        startAuthorRequest = TestTelegramWebhook.startAuthorRequest(chatId)
+        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startAuthorRequest)
+        response <- app.runZIO(request)
+
         session <- botSessionService.get(chatId)
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         _ <- ref.set(TestBotState(state.photoId, Some(session.clientSecret)))
@@ -62,8 +74,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        startRequest = TestTelegramWebhook.startRequest(chatId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startRequest)
+        startAuthorRequest = TestTelegramWebhook.startAuthorRequest(chatId)
+        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startAuthorRequest)
         response <- app.runZIO(request)
 
         session <- botSessionService.get(chatId)

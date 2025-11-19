@@ -68,7 +68,7 @@ final class TarotApiServiceMock(
       val spreadsCountByUser: Map[UUID, Int] =
         spreads.toList.flatMap { case (projectId, spreadsForProject) =>
           projectByUser.get(projectId).toList.map(userId => userId -> spreadsForProject.size)
-        }.groupMapReduce(_._1)(_._2)(_ + _)
+        }.groupMapReduce((userId, _) => userId)((_, spreadCount) => spreadCount)(_ + _)
 
       val usersById: Map[UUID, UserResponse] =
         users.values.map(user => user.id -> user).toMap

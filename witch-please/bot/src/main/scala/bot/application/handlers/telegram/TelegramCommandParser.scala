@@ -24,9 +24,9 @@ object TelegramCommandParser {
     command.split("\\s+").toList match {
       case List(TelegramCommands.Start) =>
         TarotCommand.Start
-      case List(TelegramCommands.AdminStart) =>
+      case List(TelegramCommands.AuthorStart) =>
         TarotCommand.AdminStart
-      case List(TelegramCommands.UserStart) =>
+      case List(TelegramCommands.ClientStart) =>
         TarotCommand.UserStart
       case List(TelegramCommands.ProjectCreate) =>
         TarotCommand.CreateProject

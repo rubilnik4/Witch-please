@@ -64,6 +64,9 @@ object TestTelegramWebhook {
   def startRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, TelegramCommands.Start)
 
+  def startAuthorRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, TelegramCommands.AuthorStart)
+    
   def createProjectRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, s"${TelegramCommands.ProjectCreate}")
 
