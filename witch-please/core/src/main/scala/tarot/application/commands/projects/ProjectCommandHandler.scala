@@ -7,5 +7,5 @@ import tarot.layers.TarotEnv
 import zio.ZIO
 
 trait ProjectCommandHandler {
-  def createProject(externalProject: ExternalProject, userId: UserId): ZIO[TarotEnv, TarotError, ProjectId]
+  def createDefaultProject(userId: UserId): ZIO[TarotEnv, TarotError, ProjectId]
 } 

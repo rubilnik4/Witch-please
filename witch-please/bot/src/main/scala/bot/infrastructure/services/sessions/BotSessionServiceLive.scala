@@ -70,15 +70,6 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, Some(pending), now))
     } yield ()
 
-  def setProject(chatId: Long, projectId: UUID, token: String): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logDebug(s"Set project $projectId for chat $chatId")
-
-      now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.update(chatId)(session => BotSession.withProject(session, projectId, token, now))
-      _ <- clearPending(chatId)
-    } yield ()
-
   def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")

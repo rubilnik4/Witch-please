@@ -9,15 +9,13 @@ import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.*
-import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.errors.TapirError
-import tarot.application.commands.*
 import tarot.layers.TarotEnv
 import zio.ZIO
 
 object UserEndpoint {
-  import TapirError._
+  import TapirError.*
   
   private final val tag = "users"
 
@@ -36,25 +34,7 @@ object UserEndpoint {
           user <- userQueryHandler.getUserByClientId(clientId)
         } yield UserResponseMapper.toResponse(user)).mapResponseErrors
       }
-
-  private val postUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint
-      .post
-      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "user")
-      .in(jsonBody[UserCreateRequest])
-      .out(jsonBody[IdResponse])
-      .errorOut(TapirError.tapirErrorOut)
-      .tag(tag)
-      .zServerLogic { request =>
-        (for {
-          _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")
-          
-          externalUser <- UserCreateRequestMapper.fromRequest(request, ClientType.Telegram)
-          userCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
-          userId <- userCommandHandler.createUser(externalUser)
-        } yield IdResponse(userId.id)).mapResponseErrors
-      }
-
+      
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] = 
-    List(getUserEndpoint, postUserEndpoint)
+    List(getUserEndpoint)
 }

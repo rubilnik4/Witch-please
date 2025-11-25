@@ -9,6 +9,5 @@ import java.util.UUID
 final case class AuthRequest(
   clientType: ClientType,
   userId: UUID,
-  clientSecret: String,
-  projectId: Option[UUID]
+  clientSecret: String
 ) derives JsonCodec, Schema

@@ -32,10 +32,10 @@ object StartFlow {
 
       username <- ZIO.fromOption(context.username)
         .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
-      _ <- setUser(context, username)(tarotApi, sessionService)
+      token <- setUser(context, username)(telegramApi, tarotApi, sessionService)     
 
-      _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username хозяйка таро!")
-      _ <- ProjectFlow.showProjects(context)(telegramApi, tarotApi, sessionService)
+      spreads <- tarotApi.getSpreads(token)
+      _ <- SpreadFlow.showSpreads(context, spreads)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def handleClientStart(context: TelegramContext)(
@@ -44,23 +44,23 @@ object StartFlow {
       _ <- ZIO.logInfo(s"Start as user command for chat ${context.chatId}")
 
       username <- ZIO.fromOption(context.username)
-        .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
-      _ <- setUser(context, username)(tarotApi, sessionService)
+        .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))    
 
       _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username страждущий!")
       _ <- ClientFlow.showAuthors(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   private def setUser(context: TelegramContext, username: String)
-    (tarotApi: TarotApiService,sessionService: BotSessionService) =
+    (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
       session <- sessionService.start(context.chatId, username)
 
       userRequest = UserCreateRequest(context.clientId.toString, session.clientSecret, username)
       userId <- tarotApi.getOrCreateUserId(userRequest)
-      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret, None)
+      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret)
       token <- tarotApi.tokenAuth(authRequest).map(_.token)
 
       _ <- sessionService.setUser(context.chatId, userId, token)
-    }  yield ()
+      _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username хозяйка таро!")
+    }  yield token
 }

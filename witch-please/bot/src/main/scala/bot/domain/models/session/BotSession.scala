@@ -10,7 +10,6 @@ final case class BotSession(
   token: Option[String],
   userId: Option[UUID],
   pending: Option[BotPendingAction],
-  projectId: Option[UUID],
   spreadId: Option[UUID],
   spreadProgress: Option[SpreadProgress],
   date: Option[LocalDate],
@@ -20,16 +19,13 @@ final case class BotSession(
 
 object BotSession {
   def newSession(clientSecret: String, now: Instant): BotSession =
-    BotSession(clientSecret, None, None, None, None, None, None, None, None, now)
+    BotSession(clientSecret, None, None, None, None, None, None, None, now)
 
   def withUser(session: BotSession, userId: UUID, token: String, now: Instant): BotSession =
     session.copy(userId = Some(userId), token = Some(token), updatedAt = now)
 
   def withPending(session: BotSession, pending: Option[BotPendingAction], now: Instant): BotSession =
     session.copy(pending = pending, updatedAt = now)  
-
-  def withProject(session: BotSession, projectId: UUID, token: String, now: Instant): BotSession =
-    session.copy(projectId = Some(projectId), token = Some(token), updatedAt = now)
 
   def withSpread(session: BotSession, spreadId: UUID, spreadProgress: SpreadProgress, now: Instant): BotSession =
     session.copy(

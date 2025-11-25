@@ -47,6 +47,15 @@ final class UserProjectDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (_, projectEntity) => projectEntity }
       }
     )
+
+  def getProjectIds(userId: UUID): ZIO[Any, SQLException, List[UUID]] =
+    run(
+      quote {
+        userProjectTable         
+          .filter (userProject => userProject.userId == lift(userId))
+          .map(userProject => userProject.projectId)
+      }
+    )
     
   def getUserRole(userId: UUID, projectId: UUID): ZIO[Any, SQLException, Option[UserRoleEntity]] =
     run(

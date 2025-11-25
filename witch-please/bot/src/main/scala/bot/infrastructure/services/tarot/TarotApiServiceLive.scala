@@ -6,7 +6,6 @@ import shared.api.dto.tarot.authorize.*
 import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
-import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.clients.SttpClient
@@ -23,7 +22,8 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending create user request: ${request.name}; clientId: ${request.clientId}")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.userCreatePath(baseUrl))
+      
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.authorCreatePath(baseUrl))
       userRequest = SttpClient.postRequest(uri, request)
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, userRequest)
@@ -32,6 +32,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def getUserByClientId(clientId: String): ZIO[Any, ApiError, UserResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending get user request by clientId: $clientId")
+      
       uri <- SttpClient.toSttpUri(TarotApiRoutes.userGetByClientIdPath(baseUrl, clientId))
       userRequest = SttpClient.getRequest(uri)
         .response(asJsonEither[TarotErrorResponse, UserResponse])
@@ -51,33 +52,17 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def getAuthors: ZIO[Any, ApiError, List[AuthorResponse]] =
     for {
       _ <- ZIO.logDebug(s"Sending get authors request")
+      
       uri <- SttpClient.toSttpUri(TarotApiRoutes.authorsGetPath(baseUrl))
       authorsRequest = SttpClient.getRequest(uri)
         .response(asJsonEither[TarotErrorResponse, List[AuthorResponse]])
       response <- SttpClient.sendJson(client, authorsRequest)
-    } yield response
-
-  override def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
-    for {
-      _ <- ZIO.logDebug(s"Sending create project request: ${request.name}")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.projectCreatePath(baseUrl))
-      projectRequest = SttpClient.postAuthRequest(uri, request, token)
-        .response(asJsonEither[TarotErrorResponse, IdResponse])
-      response <- SttpClient.sendJson(client, projectRequest)
-    } yield response
-
-  override def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
-    for {
-      _ <- ZIO.logDebug(s"Sending get projects request by userId: $userId")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.projectsGetPath(baseUrl, userId))
-      projectsRequest = SttpClient.getAuthRequest(uri, token)
-        .response(asJsonEither[TarotErrorResponse, List[ProjectResponse]])
-      response <- SttpClient.sendJson(client, projectsRequest)
-    } yield response
+    } yield response  
 
   override def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
-      _ <- ZIO.logDebug(s"Sending create spread request: ${request.title}; for project: ${request.projectId} ")
+      _ <- ZIO.logDebug(s"Sending create spread request: ${request.title}")
+      
       uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadCreatePath(baseUrl))
       spreadRequest = SttpClient.postAuthRequest(uri, request, token)
         .response(asJsonEither[TarotErrorResponse, IdResponse])
@@ -87,16 +72,18 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending get spread request by spreadId: $spreadId")
+      
       uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadGetPath(baseUrl, spreadId))
       spreadRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, SpreadResponse])
       response <- SttpClient.sendJson(client, spreadRequest)
     } yield response
 
-  override def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
+  override def getSpreads(token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
     for {
-      _ <- ZIO.logDebug(s"Sending get spreads request by projectId: $projectId")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadsGetPath(baseUrl, projectId))
+      _ <- ZIO.logDebug(s"Sending get spreads request")
+      
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadsGetPath(baseUrl))
       spreadsRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, List[SpreadResponse]])
       response <- SttpClient.sendJson(client, spreadsRequest)
@@ -140,7 +127,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
 
   override def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse] =
     for {
-      _ <- ZIO.logDebug(s"Sending auth token request for user ${request.userId} and project ${request.projectId}")
+      _ <- ZIO.logDebug(s"Sending auth token request for user ${request.userId}")
       uri <- SttpClient.toSttpUri(TarotApiRoutes.tokenAuthPath(baseUrl))
       authRequest = SttpClient.postRequest(uri, request)
         .response(asJsonEither[TarotErrorResponse, AuthResponse])

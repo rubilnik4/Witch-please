@@ -11,11 +11,11 @@ import zio.{Cause, UIO, ZIO}
 import java.util.UUID
 
 object JwtService {
-  def generateToken(clientType: ClientType, userId: UUID, projectId: Option[UUID], role: Role,
+  def generateToken(clientType: ClientType, userId: UUID, role: Role,
                     serverSecret: String, expirationMinutes: Int): UIO[String] =
     for {
       now <- DateTimeService.getDateTimeNow
-      payload = TokenPayload(clientType, userId, projectId, role).toJson
+      payload = TokenPayload(clientType, userId, role).toJson
       claim = JwtClaim(
         subject = Some(userId.toString),
         content = payload,

@@ -19,8 +19,6 @@ object TelegramTextHandler {
       _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action ${session.pending}")
 
       _ <- session.pending match {
-        case Some(BotPendingAction.ProjectName) =>
-          ProjectFlow.setProjectName(context, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.SpreadTitle) =>
           SpreadFlow.setSpreadTitle(context, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.SpreadCardCount(title: String)) =>

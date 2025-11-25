@@ -9,6 +9,5 @@ import java.util.UUID
 final case class TokenPayload(
   clientType: ClientType,
   userId: UUID,
-  projectId: Option[UUID],
   role: Role
 ) derives JsonCodec, Schema

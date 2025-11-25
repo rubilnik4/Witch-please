@@ -34,12 +34,11 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       for {
         photoId <- TarotTestFixtures.getPhoto
         userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        projectId <- TarotTestFixtures.getProject(userId)
-        spreadId <- TarotTestFixtures.getSpread(projectId, photoId)
-        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId, projectId)
+        spreadId <- TarotTestFixtures.getSpread(userId, photoId)
+        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
         
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(projectId.id), Some(token), Some(spreadId.id)))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id)))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -197,11 +196,10 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
     
   private def spreadCreateRequest(projectId: UUID, cardCount: Int, photoId: String) =
     TelegramSpreadCreateRequest(
-      projectId = projectId,
       title = "Spread integration test",
       cardCount = cardCount,
       coverPhotoId = photoId

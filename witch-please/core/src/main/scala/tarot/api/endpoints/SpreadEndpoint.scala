@@ -13,7 +13,7 @@ import tarot.api.dto.tarot.cards.CardResponseMapper
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
-import tarot.application.commands.*
+import tarot.domain.models.authorize.UserId
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
@@ -29,19 +29,19 @@ object SpreadEndpoint {
   private val getSpreadsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "spread" / "by-project" / path[UUID]("projectId"))
+      .in(TarotApiRoutes.apiPath / "spread")
       .out(jsonBody[List[SpreadResponse]])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload =>
-        projectId =>
+        _ =>
           (for {
-            _ <- ZIO.logInfo(s"Received request to get spreads by projectId $projectId")
-
+            _ <- ZIO.logInfo(s"Received request to get spreads by user ${tokenPayload.userId}")
+  
             handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
-            spreads <- handler.getSpreads(ProjectId(projectId))
+            spreads <- handler.getSpreads(UserId(tokenPayload.userId))
           } yield spreads.map(SpreadResponseMapper.toResponse)).mapResponseErrors
       }
 
@@ -53,7 +53,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload =>
         spreadId =>
           (for {
@@ -77,9 +77,10 @@ object SpreadEndpoint {
         request =>
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create spread: ${request.title}")
+            
             externalSpread <- TelegramSpreadCreateRequestMapper.fromTelegram(request)
             handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
-            spreadId <- handler.createSpread(externalSpread)
+            spreadId <- handler.createSpread(externalSpread, UserId(tokenPayload.userId))
           } yield IdResponse(spreadId.id)).mapResponseErrors
       }
 
@@ -109,7 +110,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload =>
         spreadId =>
           (for {
@@ -128,7 +129,7 @@ object SpreadEndpoint {
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
       .securityIn(auth.bearer[String]())
-      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.PreProject)(token).mapResponseErrors)
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload =>
         spreadId =>
           (for {

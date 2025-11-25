@@ -15,14 +15,14 @@ case object TarotApiRoutes {
     URL.decode(s"$base/$path").getOrElse {
       throw new IllegalArgumentException(s"Invalid URL: $base/$path")
     }
-  }
-
-  def userCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, TarotChannelType.Telegram, "user")
+  }  
 
   def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
     make(baseUrl, apiPath, TarotChannelType.Telegram, "user", "by-client", clientId)
 
+  def authorCreatePath(baseUrl: String): URL =
+    make(baseUrl, apiPath, TarotChannelType.Telegram, "author")
+    
   def authorsGetPath(baseUrl: String): URL =
     make(baseUrl, apiPath, "author")  
 
@@ -38,8 +38,8 @@ case object TarotApiRoutes {
   def spreadGetPath(baseUrl: String, spreadId: UUID): URL =    
     make(baseUrl, apiPath, "spread", spreadId.toString)
     
-  def spreadsGetPath(baseUrl: String, projectId: UUID): URL =
-    make(baseUrl, apiPath, "spread", "by-project", projectId.toString)
+  def spreadsGetPath(baseUrl: String): URL =
+    make(baseUrl, apiPath, "spread")
     
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, "spread", spreadId.toString, "publish")

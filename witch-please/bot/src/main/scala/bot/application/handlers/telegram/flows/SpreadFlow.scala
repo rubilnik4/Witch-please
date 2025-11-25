@@ -15,20 +15,20 @@ import zio.ZIO
 import java.util.UUID
 
 object SpreadFlow {  
-  def showSpreads(context: TelegramContext, projectId: UUID, spreads: List[SpreadResponse])(
+  def showSpreads(context: TelegramContext, spreads: List[SpreadResponse])(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Get spreads command by project $projectId for chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Get spreads command for chat ${context.chatId}")
 
       spreadButtons = spreads
         .sortBy(_.scheduledAt.fold(Long.MaxValue)(_.toEpochMilli))
         .zipWithIndex
         .map { case (spread, index) =>
           val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
-          val command = TelegramCommands.spreadSelectCommand(spread.id, spread.cardCount)
+          val command = TelegramCommands.authorSpreadSelect(spread.id, spread.cardCount)
           TelegramInlineKeyboardButton(label, Some(command))
         }
-      createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.SpreadCreate))
+      createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.AuthorSpreadCreate))
       buttons = spreadButtons :+ createButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
     } yield ()
@@ -70,12 +70,11 @@ object SpreadFlow {
       _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
-      projectId <- ZIO.fromOption(session.projectId)
         .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
-      request = TelegramSpreadCreateRequest(projectId, title, cardCount, fileId)
+      request = TelegramSpreadCreateRequest(title, cardCount, fileId)
       spreadId <- tarotApi.createSpread(request, token).map(_.id)     
 
       _ <- telegramApi.sendText(context.chatId, s"Расклад $title создан")        
@@ -104,8 +103,6 @@ object SpreadFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       session <- sessionService.get(context.chatId)
-      projectId <- ZIO.fromOption(session.projectId)
-        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
       spreadId <- ZIO.fromOption(session.spreadId)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
@@ -119,8 +116,10 @@ object SpreadFlow {
           ZIO.logError(s"Can't delete published spread $spreadId") *>
           ZIO.fail(new RuntimeException("Can't delete published spread $spreadId"))
       }
-
-      _ <- ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)
+      
+      _ <- sessionService.clearSpread(context.chatId)
+      spreads <- tarotApi.getSpreads(token)
+      _ <- showSpreads(context, spreads)(telegramApi, tarotApi, sessionService)
     } yield ()
     
   private def showSpread(context: TelegramContext, spread: SpreadResponse, createdCardIndexes: Set[Int])
@@ -134,9 +133,9 @@ object SpreadFlow {
          |Выбери действие:
          |""".stripMargin
 
-    val cardsButton = TelegramInlineKeyboardButton("Карты", Some(TelegramCommands.spreadCardsSelectCommand(spread.id)))
-    val publishButton = TelegramInlineKeyboardButton("Публикация", Some(TelegramCommands.spreadPublishCommand(spread.id)))
-    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(TelegramCommands.spreadDeleteCommand(spread.id)))
+    val cardsButton = TelegramInlineKeyboardButton("Карты", Some(TelegramCommands.authorSpreadCardsSelect(spread.id)))
+    val publishButton = TelegramInlineKeyboardButton("Публикация", Some(TelegramCommands.authorSpreadPublish(spread.id)))
+    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(TelegramCommands.authorSpreadDelete(spread.id)))
     val buttons = List(cardsButton, publishButton, deleteButton)
 
     for {

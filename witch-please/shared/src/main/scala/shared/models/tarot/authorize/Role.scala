@@ -4,13 +4,12 @@ import zio.json.*
 import sttp.tapir.Schema
 
 enum Role derives JsonCodec, Schema:
-  case User, PreProject, Admin
+  case User, Admin
 
 object Role {
   private val level: Map[Role, Int] =
     Map(
       User -> 0,
-      PreProject -> 10, 
       Admin -> 100
     )
 

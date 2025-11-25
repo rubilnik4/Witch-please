@@ -24,13 +24,13 @@ object UserIntegrationSpec extends ZIOSpecDefault {
   private val clientSecret = UserData.generateClientSecret()
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("User API integration")(
-    test("create user") {
+    test("create author") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestProjectState]]
 
-        app = ZioHttpInterpreter().toHttp(UserEndpoint.endpoints)        
+        app = ZioHttpInterpreter().toHttp(AuthorEndpoint.endpoints)        
         userRequest = getUserCreateRequest(clientId, clientSecret)
-        request = ZIOHttpClient.postRequest(TarotApiRoutes.userCreatePath(""), userRequest)
+        request = ZIOHttpClient.postRequest(TarotApiRoutes.authorCreatePath(""), userRequest)
         response <- app.runZIO(request)
         userId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 

@@ -4,7 +4,6 @@ import tarot.domain.models.photo.ExternalPhoto
 import tarot.domain.models.projects.ProjectId
 
 final case class ExternalSpread(
-  projectId: ProjectId,
   title: String,
   cardCount: Integer,
   coverPhoto: ExternalPhoto

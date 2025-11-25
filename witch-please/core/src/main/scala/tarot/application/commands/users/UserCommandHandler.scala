@@ -6,5 +6,5 @@ import tarot.layers.TarotEnv
 import zio.ZIO
 
 trait UserCommandHandler {
-  def createUser(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId]
+  def createAuthor(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId]
 }

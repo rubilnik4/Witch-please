@@ -9,7 +9,6 @@ import tarot.layers.TarotEnv
 import zio.ZIO
 
 trait AuthService {
-  def issueToken(clientType: ClientType, userId: UserId, clientSecret: String, projectId: Option[ProjectId])
-      : ZIO[TarotEnv, TarotError, Token]
+  def issueToken(clientType: ClientType, userId: UserId, clientSecret: String): ZIO[TarotEnv, TarotError, Token]
   def validateToken(token: String): ZIO[TarotEnv, TarotError, TokenPayload]
 }

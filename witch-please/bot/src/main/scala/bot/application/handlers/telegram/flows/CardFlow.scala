@@ -40,12 +40,12 @@ object CardFlow {
       cardButtons = (1 to cardsCount).map { index =>
         cards.find(_.index == index - 1) match {
           case Some(card) =>
-            TelegramInlineKeyboardButton(s"$index. ${card.description}", Some(TelegramCommands.cardCreateCommand(index)))
+            TelegramInlineKeyboardButton(s"$index. ${card.description}", Some(TelegramCommands.authorCardCreate(index)))
           case None =>
-            TelegramInlineKeyboardButton(s"$index. ➕ Создать карту", Some(TelegramCommands.cardCreateCommand(index)))
+            TelegramInlineKeyboardButton(s"$index. ➕ Создать карту", Some(TelegramCommands.authorCardCreate(index)))
         }
       }.toList
-      backToSpreadButton = TelegramInlineKeyboardButton(s"К раскладу", Some(TelegramCommands.spreadSelectCommand(spreadId, cardsCount)))
+      backToSpreadButton = TelegramInlineKeyboardButton(s"К раскладу", Some(TelegramCommands.authorSpreadSelect(spreadId, cardsCount)))
       buttons = cardButtons :+ backToSpreadButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()

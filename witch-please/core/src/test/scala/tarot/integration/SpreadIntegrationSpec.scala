@@ -35,11 +35,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       for {
         photoId <- TarotTestFixtures.getPhoto
         userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        projectId <- TarotTestFixtures.getProject(userId)
-        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId, projectId)
+        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(projectId.id), Some(token), None))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), None))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -49,15 +48,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadCreateRequest(projectId, cardCount, photoId)
+        spreadRequest = spreadCreateRequest(cardCount, photoId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
-        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(projectId), Some(token), Some(spreadId)))
+        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(token), Some(spreadId)))
       } yield assertTrue(spreadId.toString.nonEmpty)
     },
 
@@ -66,11 +64,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.spreadsGetPath("", projectId), token)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.spreadsGetPath(""), token)
         response <- app.runZIO(request)
         spreads <- ZIOHttpClient.getResponse[List[SpreadResponse]](response)
       } yield assertTrue(
@@ -114,10 +111,9 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        projectId <- ZIO.fromOption(state.projectId).orElseFail(TarotError.NotFound("projectId not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadCreateRequest(projectId, cardCount, photoId)
+        spreadRequest = spreadCreateRequest(cardCount, photoId)
         createRequest = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         createResponse <- app.runZIO(createRequest)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](createResponse).map(_.id)
@@ -211,11 +207,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
     
-  private def spreadCreateRequest(projectId: UUID, cardCount: Int, photoId: String) =
+  private def spreadCreateRequest(cardCount: Int, photoId: String) =
     TelegramSpreadCreateRequest(
-      projectId = projectId,
       title = "Spread integration test",
       cardCount = cardCount,
       coverPhotoId = photoId

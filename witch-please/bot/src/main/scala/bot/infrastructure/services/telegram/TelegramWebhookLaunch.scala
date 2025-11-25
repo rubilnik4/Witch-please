@@ -13,7 +13,7 @@ object TelegramWebhookLaunch {
         telegramWebhookService <- ZIO.serviceWith[BotEnv](_.botService.telegramWebhookService)
 
         _ <- ZIO.logInfo(s"Launching telegram webhook")
-        _ <- telegramWebhookService.setCommands(TelegramCommands.Commands)
+        _ <- telegramWebhookService.setCommands(TelegramCommands.DefaultCommands)
         _ <- telegramWebhookService.setWebhook(s"${BotApiRoutes.apiPath}/webhook")
         info <- telegramWebhookService.getWebhookInfo
         _    <- ZIO.logInfo(s"Webhook info: ${info.url}")

@@ -13,7 +13,7 @@ final class CardCommandHandlerLive(
   spreadRepository: SpreadRepository, 
   cardRepository: CardRepository
 ) extends CardCommandHandler {
-  def createCard (externalCard: ExternalCard): ZIO[TarotEnv, TarotError, CardId] = {
+  override def createCard (externalCard: ExternalCard): ZIO[TarotEnv, TarotError, CardId] = {
     for {
       _ <- ZIO.logInfo(s"Executing create card command for $externalCard")     
 

@@ -12,6 +12,7 @@ trait UserProjectRepository {
   def createProjectWithRole(project: Project, userId: UserId, role: Role): ZIO[Any, TarotError, UserProject]
   def getUserProject(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserProject]]
   def getProjects(userId: UserId): ZIO[Any, TarotError, List[Project]]
+  def getProjectIds(userId: UserId): ZIO[Any, TarotError, List[ProjectId]]
   def getUserRole(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserRole]]
   def getAuthors(minSpreads: Int): ZIO[Any, TarotError, List[Author]]
 }

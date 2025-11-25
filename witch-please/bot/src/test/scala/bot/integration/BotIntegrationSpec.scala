@@ -86,22 +86,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("send project flow") {
-      for {
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-        chatId <- getChatId
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- ProjectFlow.startProject(app, chatId)
-        _ <- ProjectFlow.projectName(app, chatId, "Test project")
-
-        session <- botSessionService.get(chatId)
-      } yield assertTrue(
-        session.projectId.nonEmpty,
-        session.pending.isEmpty
-      )
-    },
-
     test("create spread flow") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
@@ -110,8 +94,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
-        session <- botSessionService.get(chatId)
-        projectId <- ZIO.fromOption(session.projectId).orElseFail(new RuntimeException("projectId not set"))
+        session <- botSessionService.get(chatId)       
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- SpreadFlow.startSpread(app, chatId)

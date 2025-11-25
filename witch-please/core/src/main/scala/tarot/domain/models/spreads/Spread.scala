@@ -27,14 +27,14 @@ final case class Spread(
 }
 
 object Spread {
-  def toDomain(externalSpread: ExternalSpread, storedPhoto: FileSource): UIO[Spread] =
+  def toDomain(externalSpread: ExternalSpread, projectId: ProjectId, storedPhoto: FileSource): UIO[Spread] =
     val id = UUID.randomUUID()
     val externalPhotoId = ExternalPhoto.getFileId(externalSpread.coverPhoto)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
         id = SpreadId(id),
-        projectId = externalSpread.projectId,
+        projectId = projectId,
         title = externalSpread.title,
         cardCount = externalSpread.cardCount,
         spreadStatus = SpreadStatus.Draft,

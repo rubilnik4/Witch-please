@@ -42,11 +42,7 @@ object TelegramRouterHandler {
           case TarotCommand.AdminStart =>
             StartFlow.handleAuthorStart(context)(telegramApi, tarotApi, sessionService)
           case TarotCommand.UserStart =>
-            StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.CreateProject =>
-            ProjectFlow.createProject(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.SelectProject(projectId: UUID) =>
-            ProjectFlow.selectProject(context, projectId)(telegramApi, tarotApi, sessionService)        
+            StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)            
           case TarotCommand.CreateSpread =>
             SpreadFlow.createSpread(context)(telegramApi, sessionService)
           case TarotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>

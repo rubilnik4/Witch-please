@@ -15,7 +15,7 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
   private val projectDao = ProjectDao(quill)
   private val userProjectDao = UserProjectDao(quill)
 
-  def createUserProject(userProject: UserProject): ZIO[Any, TarotError, UserProject] =
+  override def createUserProject(userProject: UserProject): ZIO[Any, TarotError, UserProject] =
     for {
       _ <- ZIO.logDebug(s"Creating user project $userProject")
 
@@ -24,7 +24,7 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
         .mapError(e => DatabaseError(s"Failed to create user project $userProject", e))
     } yield UserProjectEntity.toDomain(userProject)
 
-  def createProjectWithRole(project: Project, userId: UserId, role: Role): ZIO[Any, TarotError, UserProject] =
+  override def createProjectWithRole(project: Project, userId: UserId, role: Role): ZIO[Any, TarotError, UserProject] =
     for {
       _ <- ZIO.logDebug(s"Creating project $project for user $userId")
 
@@ -39,7 +39,7 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
         .mapError(e => DatabaseError(s"Failed to create project $project for user $userId", e.getCause))
     } yield UserProjectEntity.toDomain(userProject)
 
-  def getUserProject(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserProject]] =
+  override def getUserProject(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserProject]] =
     for {
       _ <- ZIO.logDebug(s"Getting userProject $userId for project $projectId")
 
@@ -48,7 +48,7 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
         .mapError(e => DatabaseError(s"Failed to get userProject $userId for project $projectId", e))
     } yield userProject.map(UserProjectEntity.toDomain)
 
-  def getProjects(userId: UserId): ZIO[Any, TarotError, List[Project]] =
+  override def getProjects(userId: UserId): ZIO[Any, TarotError, List[Project]] =
     for {
       _ <- ZIO.logDebug(s"Getting userProject projects by userId $userId")
 
@@ -56,8 +56,17 @@ final class UserProjectRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
         .tapError(e =>  ZIO.logErrorCause(s"Failed to get userProject projects by userId $userId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get projects by userId $userId", e))
     } yield projects.map(ProjectEntity.toDomain)
+
+  override def getProjectIds(userId: UserId): ZIO[Any, TarotError, List[ProjectId]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting projects ids by userId $userId")
   
-  def getUserRole(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserRole]] =
+      projectIds <- userProjectDao.getProjectIds(userId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get projects ids by userId $userId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get projects ids by userId $userId", e))
+    } yield projectIds.map(ProjectId(_))
+  
+  override def getUserRole(userId: UserId, projectId: ProjectId): ZIO[Any, TarotError, Option[UserRole]] =
     for {
       _ <- ZIO.logDebug(s"Getting userRole $userId for project $projectId")
 

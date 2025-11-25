@@ -1,6 +1,5 @@
 package tarot.api.dto.tarot.spreads
 
-import shared.api.dto.tarot.projects.ProjectResponse
 import shared.api.dto.tarot.spreads.SpreadResponse
 import shared.api.dto.tarot.users.*
 import shared.models.tarot.authorize.ClientType
@@ -18,7 +17,6 @@ object SpreadResponseMapper {
   def toResponse(spread: Spread): SpreadResponse =
     SpreadResponse(
       id = spread.id.id,
-      projectId = spread.projectId.id,
       title = spread.title,
       cardCount = spread.cardCount,
       spreadStatus = spread.spreadStatus,

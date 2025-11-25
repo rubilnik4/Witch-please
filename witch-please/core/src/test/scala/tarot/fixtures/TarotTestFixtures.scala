@@ -29,29 +29,22 @@ object TarotTestFixtures {
     val user = ExternalUser(clientId, clientType, clientSecret, "test user")
     for {
       userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
-      userId <- userHandler.createUser(user)
+      userId <- userHandler.createAuthor(user)
     } yield userId
 
-  def getProject(userId: UserId): ZIO[TarotEnv, TarotError, ProjectId] =
-    val project = ExternalProject("test project")
-    for {
-      projectHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)
-      projectId <- projectHandler.createProject(project, userId)
-    } yield projectId
-
-  def getToken(clientType: ClientType, clientSecret: String, userId: UserId, projectId: ProjectId)
+  def getToken(clientType: ClientType, clientSecret: String, userId: UserId)
   : ZIO[TarotEnv, TarotError, String] =
     for {
       authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
-      token <- authService.issueToken(clientType, userId, clientSecret, Some(projectId))
+      token <- authService.issueToken(clientType, userId, clientSecret)
     } yield token.token
 
-  def getSpread(projectId: ProjectId, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
+  def getSpread(userId: UserId, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
     val photo = ExternalPhoto.Telegram(photoId)
-    val spread = ExternalSpread(projectId, "Test spread", 1, photo)
+    val spread = ExternalSpread("Test spread", 1, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
-      spreadId <- spreadHandler.createSpread(spread)
+      spreadId <- spreadHandler.createSpread(spread, userId)
     } yield spreadId
 
   def getChatId: ZIO[TarotEnv, TarotError, Long] =

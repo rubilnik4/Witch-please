@@ -5,13 +5,11 @@ import shared.api.dto.tarot.authorize.*
 import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.photo.PhotoResponse
-import shared.api.dto.tarot.projects.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.api.ApiError
-import shared.models.tarot.authorize.Role.PreProject
-import shared.models.tarot.authorize.{ClientType, Role}
+import shared.models.tarot.authorize.*
 import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.model.StatusCode
@@ -24,7 +22,6 @@ import java.util.UUID
 
 final class TarotApiServiceMock(
   userMap: Ref.Synchronized[Map[String, UserResponse]],
-  projectMap: Ref.Synchronized[Map[UUID, Map[UUID, ProjectResponse]]],
   spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
   cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
 ) extends TarotApiService {
@@ -57,68 +54,40 @@ final class TarotApiServiceMock(
   override def getAuthors: ZIO[Any, ApiError, List[AuthorResponse]] =
     for {
       users <- userMap.get
-      projects <- projectMap.get
       spreads <- spreadMap.get
     } yield {
-      val projectByUser: Map[UUID, UUID] =
-        projects.toList.flatMap { case (userId, projects) =>
-          projects.keys.map(projectId => projectId -> userId)
-        }.toMap
-
-      val spreadsCountByUser: Map[UUID, Int] =
-        spreads.toList.flatMap { case (projectId, spreadsForProject) =>
-          projectByUser.get(projectId).toList.map(userId => userId -> spreadsForProject.size)
-        }.groupMapReduce((userId, _) => userId)((_, spreadCount) => spreadCount)(_ + _)
+      val spreadsCountByUserId: Map[UUID, Int] =
+        spreads.map { case (userId, spreadsForUser) => userId -> spreadsForUser.size}
 
       val usersById: Map[UUID, UserResponse] =
-        users.values.map(user => user.id -> user).toMap
+       users.values.map(user => user.id -> user).toMap
 
-      spreadsCountByUser.toList.collect {
-        case (userId, spreadsCount) if spreadsCount >= 1 =>
-          usersById.get(userId).map(user => AuthorResponse( userId, user.name, spreadsCount))
+      spreadsCountByUserId.toList.collect {
+        case (userId, spreadsCount) if spreadsCount > 0 =>
+          usersById.get(userId).map { user => AuthorResponse(userId, user.name, spreadsCount) }
       }.flatten
     }
 
   override def tokenAuth(request: AuthRequest): ZIO[Any, ApiError, AuthResponse] =
-    val role = if (request.projectId.isDefined) Role.Admin else Role.PreProject
+    val role = Role.Admin
     val tokenPayload = TokenPayload(
       clientType = request.clientType,
       userId = request.userId,
-      projectId = request.projectId,
       role = role
     )
     val token = tokenPayload.toJson
     ZIO.succeed(AuthResponse(token = token, role = role))
 
-  override def createProject(request: ProjectCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
-    for {
-      now <- DateTimeService.getDateTimeNow
-      payload <- validateToken(token)
-      projectId = UUID.randomUUID()
-      project = getProjectResponse(projectId, request, now)
-      idResponse <- projectMap.modifyZIO { projects =>
-        val userProjects = projects.getOrElse(payload.userId, Map.empty)
-        val updatedUserProjects = userProjects.updated(projectId, project)
-        val updatedProjects = projects.updated(payload.userId, updatedUserProjects)
-        ZIO.succeed(IdResponse(projectId), updatedProjects)
-      }
-    } yield idResponse
-
-  override def getProjects(userId: UUID, token: String): ZIO[Any, ApiError, List[ProjectResponse]] =
-    projectMap.get.map(_.get(userId)).flatMap {
-      case Some(userProjects) => ZIO.succeed(userProjects.values.toList)
-      case None => ZIO.succeed(List.empty)
-    }
-
   override def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
+      tokenPayload <- getTokenPayload(token)
       spreadId = UUID.randomUUID()
       spread = getSpreadResponse(spreadId, request, now)
       idResponse <- spreadMap.modifyZIO { spreads =>
-        val projectSpreads = spreads.getOrElse(request.projectId, Map.empty)
-        val updatedProjectSpreads = projectSpreads.updated(spreadId, spread)
-        val updatedSpreads = spreads.updated(request.projectId, updatedProjectSpreads)
+        val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
+        val updatedProjectSpreads = userSpreads.updated(spreadId, spread)
+        val updatedSpreads = spreads.updated(tokenPayload.userId, updatedProjectSpreads)
         ZIO.succeed(IdResponse(spreadId), updatedSpreads)
       }
     } yield idResponse
@@ -129,11 +98,14 @@ final class TarotApiServiceMock(
       ZIO.fromOption(spread).orElseFail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found"))
     }
 
-  override def getSpreads(projectId: UUID, token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
-    spreadMap.get.map(_.get(projectId)).flatMap {
+  override def getSpreads(token: String): ZIO[Any, ApiError, List[SpreadResponse]] =
+  for {
+    tokenPayload <- getTokenPayload(token)
+    spreads <- spreadMap.get.map(_.get(tokenPayload.userId)).flatMap {
       case Some(spreads) => ZIO.succeed(spreads.values.toList)
       case None => ZIO.succeed(List.empty)
     }
+  } yield spreads
 
   override def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
@@ -174,17 +146,9 @@ final class TarotApiServiceMock(
       createdAt = now
     )
 
-  private def getProjectResponse(id: UUID, request: ProjectCreateRequest, now: Instant) =
-    ProjectResponse(
-      id = id,
-      name = request.name,
-      createdAt = now
-    )
-
   private def getSpreadResponse(id: UUID, request: TelegramSpreadCreateRequest, now: Instant) =
     SpreadResponse(
       id = id,
-      projectId = request.projectId,
       title = request.title,
       cardCount = request.cardCount,
       spreadStatus = SpreadStatus.Draft,
@@ -204,7 +168,7 @@ final class TarotApiServiceMock(
       createdAt = now
     )
 
-  private def validateToken(token: String): ZIO[Any, ApiError, TokenPayload] =
+  private def getTokenPayload(token: String): ZIO[Any, ApiError, TokenPayload] =
     ZIO.fromEither(token.fromJson[TokenPayload])
       .mapError(error => ApiError.InvalidResponse(token, error))
 }
@@ -214,9 +178,8 @@ object TarotApiServiceMock {
     ZLayer.fromZIO {
       for {
         usersRef <- Ref.Synchronized.make(Map.empty[String, UserResponse])
-        projectsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, ProjectResponse]])
         spreadsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, SpreadResponse]])
         cardsRef <- Ref.Synchronized.make(Map.empty[UUID, Map[UUID, CardResponse]])
-      } yield new TarotApiServiceMock(usersRef, projectsRef, spreadsRef, cardsRef)
+      } yield new TarotApiServiceMock(usersRef, spreadsRef, cardsRef)
     }
 }

@@ -7,41 +7,42 @@ import java.util.UUID
 object TelegramCommands {
   final val Start = "/start"
   final val Help = "/help"
-  final val ClientStart = "/client_start"
-  final val AuthorStart = "/author_start"
-  final val ProjectCreate = "/project_create"
-  final val ProjectSelect = "/project_select"
-  final val SpreadCreate = "/spread_create"
-  final val SpreadSelect = "/spread_select"
-  final val SpreadCardsSelect = "/spread_cards_select"
-  final val SpreadPublish = "/spread_publish"
-  final val SpreadDelete = "/spread_delete"
-  final val CardCreate = "/card_create"
   final val StubCommand = "/noop"
+  
+  final val AuthorStart = "/author_start"
+  final val AuthorSpreadCreate = "/author_spread_create"
+  final val AuthorSpreadSelect = "/author_spread_select"
+  final val AuthorSpreadCardsSelect = "/author_spread_cards_select"
+  final val AuthorSpreadPublish = "/author_spread_publish"
+  final val AuthorSpreadDelete = "/author_spread_delete"
+  final val AuthorCardCreate = "/author_card_create"
 
-  def projectSelectCommand(projectId: UUID): String =
-    s"${TelegramCommands.ProjectSelect} $projectId"
-    
-  def spreadSelectCommand(spreadId: UUID, cardCount: Int): String =
-    s"${TelegramCommands.SpreadSelect} $spreadId $cardCount"
+  final val ClientStart = "/client_start"
+  final val ClientAuthorSelect = "/client_author_select"
 
-  def spreadCardsSelectCommand(spreadId: UUID): String =
-    s"${TelegramCommands.SpreadCardsSelect} $spreadId"
-
-  def spreadPublishCommand(spreadId: UUID): String =    
-    s"${TelegramCommands.SpreadPublish} $spreadId"
-
-  def spreadDeleteCommand(spreadId: UUID): String =
-    s"${TelegramCommands.SpreadDelete} $spreadId"  
-    
-  def cardCreateCommand(index: Int): String =
-    s"${TelegramCommands.CardCreate} $index"
-
-  final val Commands: List[TelegramCommandRequest] = List(
+  final val DefaultCommands: List[TelegramCommandRequest] = List(
     TelegramCommandRequest(stripSlash(Start), "Начать заново"),
     TelegramCommandRequest(stripSlash(Help), "Помощь")
   )
+  
+  def authorSpreadSelect(spreadId: UUID, cardCount: Int): String =
+    s"${TelegramCommands.AuthorSpreadSelect} $spreadId $cardCount"
 
+  def authorSpreadCardsSelect(spreadId: UUID): String =
+    s"${TelegramCommands.AuthorSpreadCardsSelect} $spreadId"
+
+  def authorSpreadPublish(spreadId: UUID): String =    
+    s"${TelegramCommands.AuthorSpreadPublish} $spreadId"
+
+  def authorSpreadDelete(spreadId: UUID): String =
+    s"${TelegramCommands.AuthorSpreadDelete} $spreadId"  
+    
+  def authorCardCreate(index: Int): String =
+    s"${TelegramCommands.AuthorCardCreate} $index"
+
+  def clientAuthorSelect(author: UUID): String =
+    s"${TelegramCommands.ClientAuthorSelect} $author"
+    
   private def stripSlash(command: String): String =
     command.stripPrefix("/")
 }

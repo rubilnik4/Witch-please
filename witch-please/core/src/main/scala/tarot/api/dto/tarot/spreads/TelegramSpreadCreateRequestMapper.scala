@@ -23,8 +23,8 @@ object TelegramSpreadCreateRequestMapper {
   
   private def toDomain(request: TelegramSpreadCreateRequest): ExternalSpread =
     ExternalSpread(
-      projectId = ProjectId(request.projectId),
       title = request.title,
       cardCount = request.cardCount,
-      coverPhoto = ExternalPhoto.Telegram(request.coverPhotoId))
+      coverPhoto = ExternalPhoto.Telegram(request.coverPhotoId)
+    )
 }
