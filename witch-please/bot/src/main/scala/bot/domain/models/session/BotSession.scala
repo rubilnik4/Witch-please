@@ -2,7 +2,7 @@ package bot.domain.models.session
 
 import zio.ZIO
 
-import java.time.{Instant, LocalDate, LocalTime}
+import java.time.*
 import java.util.UUID
 
 final case class BotSession(
@@ -14,12 +14,13 @@ final case class BotSession(
   spreadProgress: Option[SpreadProgress],
   date: Option[LocalDate],
   time: Option[LocalTime],
+  cardOfDayDelay: Option[Duration],
   updatedAt: Instant
 )
 
 object BotSession {
   def newSession(clientSecret: String, now: Instant): BotSession =
-    BotSession(clientSecret, None, None, None, None, None, None, None, now)
+    BotSession(clientSecret, None, None, None, None, None, None, None, None, now)
 
   def withUser(session: BotSession, userId: UUID, token: String, now: Instant): BotSession =
     session.copy(userId = Some(userId), token = Some(token), updatedAt = now)
@@ -70,7 +71,12 @@ object BotSession {
     session.copy(
       time = Some(time),
       updatedAt = now)
-      
+
+  def withCardOfDayDelay(session: BotSession, delay: Duration, now: Instant): BotSession =
+    session.copy(
+      cardOfDayDelay = Some(delay),
+      updatedAt = now)
+
   def touched(session: BotSession, now: Instant): BotSession =
     session.copy(updatedAt = now)
 }

@@ -12,7 +12,7 @@ import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.*
 
-import java.time.Instant
+import java.time.{Duration, Instant}
 
 final class SpreadCommandHandlerLive(
   spreadRepository: SpreadRepository,
@@ -31,7 +31,7 @@ final class SpreadCommandHandlerLive(
       spreadId <- spreadRepository.createSpread(spread)
     } yield spreadId
 
-  override def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant, cardOfDayDelayHours: Int) : ZIO[TarotEnv, TarotError, Unit] =
+  override def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant, cardOfDayDelayHours: Duration) : ZIO[TarotEnv, TarotError, Unit] =
     for {
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
@@ -102,7 +102,7 @@ final class SpreadCommandHandlerLive(
       }
     } yield ()
 
-  private def schedulePublish(spread: Spread, scheduledAt: Instant, cardOfDayDelayHours: Int) =
+  private def schedulePublish(spread: Spread, scheduledAt: Instant, cardOfDayDelayHours: Duration) =
     for {      
       config <- ZIO.serviceWith[TarotEnv](_.config.publish)
 
@@ -118,8 +118,8 @@ final class SpreadCommandHandlerLive(
           *> ZIO.fail(ValidationError(s"scheduledAt must be after creation time ${spread.createdAt}"))
       }
       
-      cardOfDayAt = scheduledAt.plus(cardOfDayDelayHours.hour)
-      _ <- ZIO.when(cardOfDayDelayHours < 0 || cardOfDayDelayHours > config.maxCardOfDayDelayHours) {
+      cardOfDayAt = scheduledAt.plus(cardOfDayDelayHours)
+      _ <- ZIO.when(cardOfDayDelayHours > config.maxCardOfDayDelayHours) {
         ZIO.logError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelayHours} hours") *>
           ZIO.fail(TarotError.ValidationError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelayHours} hours"))
       }

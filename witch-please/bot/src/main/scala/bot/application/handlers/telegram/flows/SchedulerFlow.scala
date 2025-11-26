@@ -1,6 +1,7 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.ScheduleCommand
+import bot.application.commands.ScheduleCommand.SelectCardOfDay
 import bot.application.commands.telegram.SchedulerCommands
 import bot.application.handlers.telegram.markup.SchedulerMarkup
 import bot.domain.models.telegram.TelegramContext
@@ -15,7 +16,7 @@ import shared.infrastructure.services.common.DateTimeService
 import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, YearMonth}
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, YearMonth}
 
 object SchedulerFlow {
   def handle(context: TelegramContext, command: ScheduleCommand)
@@ -61,8 +62,10 @@ object SchedulerFlow {
           } yield ()
         case ScheduleCommand.SelectTime(time) =>
           selectTime(context, time)(telegramApi, tarotApi, sessionService)
-        case ScheduleCommand.Confirm(dateTime) =>
-          confirmDateTime(context, dateTime)(telegramApi, tarotApi, sessionService)
+        case ScheduleCommand.SelectCardOfDay(delay) =>
+          selectCardOfDayDelay(context, delay)(telegramApi, tarotApi, sessionService)
+        case ScheduleCommand.Confirm =>
+          confirmDateTime(context)(telegramApi, tarotApi, sessionService)
       }
 
   private def selectTime(context: TelegramContext, time: LocalTime)
@@ -72,45 +75,72 @@ object SchedulerFlow {
       
       _ <- sessionService.setTime(context.chatId, time)
 
-      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
       session <- sessionService.get(context.chatId)
       date <- ZIO.fromOption(session.date)
         .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
-      dateTime = LocalDateTime.of(date, time)
 
+      _ <- showDelayKeyboard(context, date, 0)(telegramApi)
+    } yield ()
+
+  private def selectCardOfDayDelay(context: TelegramContext, delay: Duration)
+    (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
+    for {
+      _ <- ZIO.logInfo(s"Select card of day delay $delay from chat ${context.chatId}")
+
+      _ <- sessionService.setCardOdDayDelay(context.chatId, delay)
+
+      session <- sessionService.get(context.chatId)
+      date <- ZIO.fromOption(session.date)
+        .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
+      time <- ZIO.fromOption(session.time)
+        .orElseFail(new RuntimeException(s"Time not found in session for chat ${context.chatId}"))
+      cardOfDayDelay <- ZIO.fromOption(session.cardOfDayDelay)
+        .orElseFail(new RuntimeException(s"Card of day delay not found in session for chat ${context.chatId}"))
+
+      month = YearMonth.of(date.getYear, date.getMonth)
+      buttons = List(
+        TelegramInlineKeyboardButton("Назад к дате", Some(SchedulerCommands.selectMonth(month))),
+        TelegramInlineKeyboardButton("Подтвердить", Some(SchedulerCommands.Confirm))
+      )
+
+      text =
+        s"""Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)}
+           |и картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}. Подтвердить?""".stripMargin
+      _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
+    } yield ()
+
+  private def confirmDateTime(context: TelegramContext)
+      (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
+    for {
+      _ <- ZIO.logInfo(s"Confirm datetime from chat ${context.chatId}")
+
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+      session <- sessionService.get(context.chatId)
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
+      spreadId <- ZIO.fromOption(session.spreadId)
+        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
+      date <- ZIO.fromOption(session.date)
+        .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
+      time <- ZIO.fromOption(session.time)
+        .orElseFail(new RuntimeException(s"Time not found in session for chat ${context.chatId}"))
+      cardOfDayDelay <- ZIO.fromOption(session.cardOfDayDelay)
+        .orElseFail(new RuntimeException(s"Card of day delay not found in session for chat ${context.chatId}"))
+
+      dateTime = LocalDateTime.of(date, time)
       today <- DateTimeService.currentLocalDateTime()
       _ <- ZIO.unless(CalendarService.isTimeEnable(today, dateTime, projectConfig.maxFutureTime)) {
         ZIO.logError(s"Can't select datetime: $dateTime before current $today") *>
           ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
       }
 
-      month = YearMonth.of(date.getYear, date.getMonth)
-      buttons = List(
-        TelegramInlineKeyboardButton("Назад к дате", Some(SchedulerCommands.selectMonth(month))),
-        TelegramInlineKeyboardButton("Подтвердить", Some(SchedulerCommands.confirm(dateTime)))
-      )
-
-      text = s"""Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)}. Подтвердить?"""
-      _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
-    } yield ()
-
-  private def confirmDateTime(context: TelegramContext, dateTime: LocalDateTime)
-      (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
-    for {
-      _ <- ZIO.logInfo(s"Confirm datetime $dateTime from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
-      spreadId <- ZIO.fromOption(session.spreadId)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-
       zoneOffset <- DateTimeService.getOffset
       scheduledAt = dateTime.toInstant(zoneOffset)
-      request = SpreadPublishRequest(scheduledAt)
+      request = SpreadPublishRequest(scheduledAt, cardOfDayDelay)
       _ <- tarotApi.publishSpread(request, spreadId, token)
 
-      _ <- telegramApi.sendText(context.chatId, s"Расклад будет опубликован ${DateFormatter.fromLocalDateTime(dateTime)}")
+      text = s"Расклад будет опубликован ${DateFormatter.fromLocalDateTime(dateTime)} c картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}"
+      _ <- telegramApi.sendText(context.chatId, text)
       _ <- sessionService.reset(context.chatId)
     } yield ()
 
@@ -119,5 +149,12 @@ object SchedulerFlow {
     for {
       dateButtons <- SchedulerMarkup.timeKeyboard(date, page)
       _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи время публикации расклада", dateButtons)
+    } yield ()
+
+  private def showDelayKeyboard(context: TelegramContext, date: LocalDate, page: Int)
+      (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      dateButtons <- SchedulerMarkup.timeKeyboard(date, page)
+      _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи время, через которое будет опубликована карта дня", dateButtons)
     } yield ()
 }

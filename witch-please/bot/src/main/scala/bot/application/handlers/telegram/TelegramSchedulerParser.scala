@@ -39,13 +39,8 @@ object TelegramSchedulerParser {
             case None =>
               BotCommand.Unknown
           }
-        case SchedulerCommands.Confirm :: dateTimeStr :: Nil =>
-          Try(LocalDateTime.parse(dateTimeStr)).toOption match {
-            case Some(dateTime) =>
-              ScheduleCommand.Confirm(dateTime)           
-            case None =>
-              BotCommand.Unknown
-          }
+        case List(SchedulerCommands.Confirm) =>
+          ScheduleCommand.Confirm
         case _ =>
           BotCommand.Unknown
     }

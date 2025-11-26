@@ -9,7 +9,7 @@ final case class TarotPublishConfig(
   batchLimit: Int,
   hardPastTime: Duration,
   maxFutureTime: Duration,
-  maxCardOfDayDelayHours: Int
+  maxCardOfDayDelayHours: Duration
 )
 
 object TarotPublishConfig {

@@ -8,11 +8,12 @@ object SchedulerCommands {
   final val SelectDate = s"${Prefix}_date"
   final val SelectTimePage = s"${Prefix}_time_page"
   final val SelectTime = s"${Prefix}_time"
+  final val SelectCardOfDayDelay = s"${Prefix}_card_of_day_delay"
   final val Confirm = s"${Prefix}_confirm"
 
   def selectMonth(month: YearMonth) = s"$SelectMonth $month"
   def selectDate(date: LocalDate) = s"$SelectDate $date"
   def selectTimePage(page: Int) = s"$SelectTimePage $page"
   def selectTime(time: LocalTime) = s"$SelectTime $time"
-  def confirm(dateTime: LocalDateTime) = s"$Confirm $dateTime"
+  def selectCardOfDayDelay(time: LocalTime) = s"$SelectTime $time"
 }

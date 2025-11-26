@@ -7,11 +7,11 @@ import bot.layers.BotEnv
 import shared.infrastructure.services.common.DateTimeService
 import zio.ZIO
 
-import java.time.{LocalDate, LocalTime}
+import java.time.*
 import java.util.UUID
 
 final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) extends BotSessionService {
-  def get(chatId: Long): ZIO[BotEnv, Throwable, BotSession] =
+  override def get(chatId: Long): ZIO[BotEnv, Throwable, BotSession] =
     for {
       _ <- ZIO.logDebug(s"Getting session for chat $chatId")
 
@@ -19,7 +19,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
         .someOrFail(new RuntimeException(s"Session not found for chat $chatId"))
     } yield currentSession
 
-  def start(chatId: Long, username: String): ZIO[BotEnv, Throwable, BotSession] =
+  override def start(chatId: Long, username: String): ZIO[BotEnv, Throwable, BotSession] =
     for {
       _ <- ZIO.logDebug(s"Starting session for chat $chatId")
       
@@ -39,14 +39,14 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       }
     } yield session
 
-  def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+  override def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Reset session for chat $chatId")
 
       _ <- botSessionRepository.delete(chatId)
     } yield ()
 
-  def setUser(chatId: Long, userId: UUID, token: String): ZIO[BotEnv, Throwable, Unit] =
+  override def setUser(chatId: Long, userId: UUID, token: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set user $userId for chat $chatId")
 
@@ -54,7 +54,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withUser(session, userId, token, now))
     } yield ()
 
-  def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+  override def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Clear pending action for chat $chatId")
 
@@ -62,7 +62,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, None, now))
     } yield ()
 
-  def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit] =
+  override def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set pending action $pending for chat $chatId")
 
@@ -70,7 +70,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, Some(pending), now))
     } yield ()
 
-  def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
+  override def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")
 
@@ -79,7 +79,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- clearPending(chatId)
     } yield ()
 
-  def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+  override def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Clear spread for chat $chatId")
 
@@ -87,7 +87,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpread(session, now))
     } yield ()
 
-  def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+  override def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Clear spread progress for chat $chatId")
 
@@ -95,7 +95,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpreadProgress(session, now))
     } yield ()
 
-  def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit] =
+  override def setCard(chatId: Long, index: Int): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set card $index for chat $chatId")
 
@@ -104,7 +104,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- clearPending(chatId)
     } yield ()
 
-  def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit] =
+  override def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set date $date for chat $chatId")
 
@@ -112,11 +112,19 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withDate(session, date, now))
     } yield ()
 
-  def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit] =
+  override def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set time $time for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
       _ <- botSessionRepository.update(chatId)(session => BotSession.withTime(session, time, now))
+    } yield ()
+
+  override def setCardOdDayDelay(chatId: Long, delay: Duration): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Set delay $delay for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withCardOfDayDelay(session, delay, now))
     } yield ()
 }

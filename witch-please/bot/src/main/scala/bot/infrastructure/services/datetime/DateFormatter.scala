@@ -25,4 +25,11 @@ object DateFormatter {
     val dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(DateTimeService.Zone)
     dateTimeFormatter.format(dateTime)
   }
+
+  def fromDuration(duration: Duration): String = {
+    val totalMinutes = duration.toMinutes
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    f"$hours%02d:$minutes%02d"
+  }
 }
