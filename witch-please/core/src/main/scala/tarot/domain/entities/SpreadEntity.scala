@@ -33,7 +33,7 @@ object SpreadEntity {
       photoId = coverPhotoId,
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
-      cardOfDayAt = spread.cardOfDayAt,
+      cardOfDayAt = Spread.getCardOfDayAt(spread),
       publishedAt = spread.publishedAt
     )
 }

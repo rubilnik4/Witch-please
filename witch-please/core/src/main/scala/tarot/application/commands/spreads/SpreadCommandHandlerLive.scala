@@ -119,9 +119,9 @@ final class SpreadCommandHandlerLive(
       }
       
       cardOfDayAt = scheduledAt.plus(cardOfDayDelayHours)
-      _ <- ZIO.when(cardOfDayDelayHours > config.maxCardOfDayDelayHours) {
-        ZIO.logError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelayHours} hours") *>
-          ZIO.fail(TarotError.ValidationError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelayHours} hours"))
+      _ <- ZIO.when(cardOfDayDelayHours > config.maxCardOfDayDelay) {
+        ZIO.logError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelay} hours") *>
+          ZIO.fail(TarotError.ValidationError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelay} hours"))
       }
       
       _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")

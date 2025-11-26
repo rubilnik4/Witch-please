@@ -8,7 +8,7 @@ import tarot.domain.models.photo.{ExternalPhoto, Photo}
 import tarot.domain.models.projects.ProjectId
 import zio.UIO
 
-import java.time.Instant
+import java.time.*
 import java.util.UUID
 
 final case class Spread(
@@ -20,7 +20,7 @@ final case class Spread(
   photo: Photo,
   createdAt: Instant,
   scheduledAt: Option[Instant],
-  cardOfDayAt: Option[Instant],                     
+  cardOfDayDelay: Option[Duration],
   publishedAt: Option[Instant]
 )
 {
@@ -42,7 +42,19 @@ object Spread {
         photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, externalPhotoId),
         createdAt = createdAt,
         scheduledAt = None,
-        cardOfDayAt = None,
+        cardOfDayDelay = None,
         publishedAt = None)
     } yield spread
+
+  def getCardOfDayAt(spread: Spread): Option[Instant] =
+    for {
+      scheduled <- spread.scheduledAt
+      delay <- spread.cardOfDayDelay
+    } yield scheduled.plus(delay)
+
+  def getCardOfDayDelay(scheduledAt: Option[Instant], cardOfDayAt: Option[Instant]): Option[Duration] =
+    for {
+      scheduled <- scheduledAt
+      cardOfDay <- cardOfDayAt
+    } yield Duration.between(scheduled, cardOfDay)
 }

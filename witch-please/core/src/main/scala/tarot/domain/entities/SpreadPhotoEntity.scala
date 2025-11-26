@@ -23,7 +23,7 @@ object SpreadPhotoEntity {
         photo = photo,
         createdAt = spreadPhoto.spread.createdAt,
         scheduledAt = spreadPhoto.spread.scheduledAt,
-        cardOfDayAt = spreadPhoto.spread.cardOfDayAt,
+        cardOfDayDelay = Spread.getCardOfDayDelay(spreadPhoto.spread.scheduledAt, spreadPhoto.spread.cardOfDayAt),
         publishedAt = spreadPhoto.spread.publishedAt)
     } yield spread
   }

@@ -226,6 +226,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     for {
       now <- DateTimeService.getDateTimeNow
       publishTime = now.plus(10.minute)
-      cardOfDayDelayHours = 2
+      cardOfDayDelayHours = 2.hours
     } yield SpreadPublishRequest(publishTime, cardOfDayDelayHours)
 }

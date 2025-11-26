@@ -52,7 +52,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(10.minute))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelayHours)
+        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -84,7 +84,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(config.maxFutureTime).plus(1.minute))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelayHours)
+        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -102,7 +102,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.minus(config.hardPastTime))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelayHours)
+        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -117,10 +117,10 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
-        maxCardOfDayDelay <- ZIO.serviceWith[TarotEnv](_.config.publish.maxCardOfDayDelayHours)       
+        maxCardOfDayDelay <- ZIO.serviceWith[TarotEnv](_.config.publish.maxCardOfDayDelay)       
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(10.minute))
-        publishRequest = spreadPublishRequest(publishTime, maxCardOfDayDelay + 1)
+        publishRequest = spreadPublishRequest(publishTime, maxCardOfDayDelay.plus(1.hours))
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -140,7 +140,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         publishTime <- DateTimeService.getDateTimeNow.map(_.plus(deadline))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelayHours)
+        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
@@ -171,7 +171,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         publishTime <- DateTimeService.getDateTimeNow
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelayHours)
+        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
@@ -216,7 +216,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
     test("should take lookahead spreads") {
       for {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
-        _ <- TestClock.adjust(config.maxCardOfDayDelayHours.hour)
+        _ <- TestClock.adjust(config.maxCardOfDayDelay)
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
@@ -266,6 +266,6 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       coverPhotoId = photoId
     )
 
-  private def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Int) =
+  private def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Duration) =
     SpreadPublishRequest(publishTime, cardOfDayDelayHours)
 }
