@@ -20,6 +20,7 @@ final case class Spread(
   photo: Photo,
   createdAt: Instant,
   scheduledAt: Option[Instant],
+  cardOfDayAt: Option[Instant],                     
   publishedAt: Option[Instant]
 )
 {
@@ -41,6 +42,7 @@ object Spread {
         photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, externalPhotoId),
         createdAt = createdAt,
         scheduledAt = None,
+        cardOfDayAt = None,
         publishedAt = None)
     } yield spread
 }

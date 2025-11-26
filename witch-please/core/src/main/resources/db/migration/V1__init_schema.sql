@@ -9,24 +9,29 @@ CREATE TABLE spreads (
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     card_count INT NOT NULL,
-    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
+    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'PreviewPublished', 'Published', 'Archived')),
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
-    published_at TIMESTAMPTZ
+    card_of_day_at TIMESTAMPTZ,
+    published_at TIMESTAMPTZ,
 
     CONSTRAINT chk_spread_status_times CHECK (
-        (spread_status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
-        (spread_status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
-        (spread_status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
+        (spread_status = 'Draft' AND scheduled_at IS NULL AND card_of_day_at IS NULL AND published_at IS NULL) OR
+        (spread_status = 'Scheduled' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NULL) OR
+        (spread_status = 'PreviewPublished' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NULL) OR
+        (spread_status = 'Published' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NOT NULL) OR
         (spread_status = 'Archived')
     )
 );
 
 CREATE INDEX idx_spreads_project_id ON spreads(project_id);
-CREATE INDEX idx_spreads_ready_scheduled_at
+CREATE INDEX idx_spreads_scheduled_at
     ON spreads(scheduled_at)
-    WHERE spread_status = 'Ready';
+    WHERE spread_status = 'Scheduled';
+CREATE INDEX idx_spreads_preview_published_at
+    ON spreads(card_of_day_at)
+    WHERE spread_status = 'PreviewPublished';
 CREATE INDEX idx_spreads_published_at
     ON spreads(published_at)
     WHERE spread_status = 'Published';

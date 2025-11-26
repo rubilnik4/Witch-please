@@ -6,7 +6,10 @@ import zio.config.magnolia.deriveConfig
 final case class TarotPublishConfig(
   tick: Duration,
   lookAhead: Duration,
-  batchLimit: Int
+  batchLimit: Int,
+  hardPastTime: Duration,
+  maxFutureTime: Duration,
+  maxCardOfDayDelayHours: Int
 )
 
 object TarotPublishConfig {

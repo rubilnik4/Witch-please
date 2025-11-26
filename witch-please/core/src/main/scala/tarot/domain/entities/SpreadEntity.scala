@@ -18,6 +18,7 @@ final case class SpreadEntity(
   photoId: UUID,
   createdAt: Instant,
   scheduledAt: Option[Instant],
+  cardOfDayAt: Option[Instant],                    
   publishedAt: Option[Instant]
 )
 
@@ -32,6 +33,7 @@ object SpreadEntity {
       photoId = coverPhotoId,
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
+      cardOfDayAt = spread.cardOfDayAt,
       publishedAt = spread.publishedAt
     )
 }

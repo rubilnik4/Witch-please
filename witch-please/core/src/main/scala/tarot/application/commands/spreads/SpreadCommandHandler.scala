@@ -10,7 +10,8 @@ import java.time.Instant
 
 trait SpreadCommandHandler {
   def createSpread(externalSpread: ExternalSpread, userId: UserId): ZIO[TarotEnv, TarotError, SpreadId]
-  def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant): ZIO[TarotEnv, TarotError, Unit]
+  def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant, cardOfDayDelayHours: Int): ZIO[TarotEnv, TarotError, Unit]
+  def publishPreviewSpread(spread: Spread): ZIO[TarotEnv, TarotError, Unit]
   def publishSpread(spread: Spread, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit]
   def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit]
 }

@@ -5,8 +5,6 @@ import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId}
 import zio.ZIO
 
-import java.util.UUID
-
 final case class SpreadPhotoEntity(
   spread: SpreadEntity,
   photo: PhotoEntity
@@ -25,6 +23,7 @@ object SpreadPhotoEntity {
         photo = photo,
         createdAt = spreadPhoto.spread.createdAt,
         scheduledAt = spreadPhoto.spread.scheduledAt,
+        cardOfDayAt = spreadPhoto.spread.cardOfDayAt,
         publishedAt = spreadPhoto.spread.publishedAt)
     } yield spread
   }

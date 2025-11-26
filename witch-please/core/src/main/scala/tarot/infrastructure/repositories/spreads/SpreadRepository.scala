@@ -13,6 +13,7 @@ trait SpreadRepository {
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]]
   def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]]
   def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]]
+  def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]]
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean]
   def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId]

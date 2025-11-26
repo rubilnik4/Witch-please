@@ -5,9 +5,7 @@ import zio.config.magnolia.deriveConfig
 
 final case class TarotProjectConfig(
   host: String,
-  port: Int,
-  hardPastTime: Duration,
-  maxFutureTime: Duration                            
+  port: Int                           
 )
 
 object TarotProjectConfig {

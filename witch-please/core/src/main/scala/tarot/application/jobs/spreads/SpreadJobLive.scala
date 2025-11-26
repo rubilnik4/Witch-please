@@ -1,6 +1,7 @@
 package tarot.application.jobs.spreads
 
 import shared.infrastructure.services.common.DateTimeService
+import tarot.application.jobs.spreads.SpreadPublishType.PreviewPublished
 import tarot.domain.models.TarotError
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -27,20 +28,31 @@ final class SpreadJobLive extends SpreadJob {
 
       now <- DateTimeService.getDateTimeNow
       deadline = now.plus(config.lookAhead)
-      spreads <- queryHandler.getScheduleSpreads(deadline, config.batchLimit)
 
-      publishResults <- ZIO.foreach(spreads) { spread =>
-        commandHandler.publishSpread(spread, now).either.map(SpreadPublishResult(spread.id, _))
+      scheduledSpreads <- queryHandler.getScheduledSpreads(deadline, config.batchLimit)
+      scheduledResults <- ZIO.foreach(scheduledSpreads) { spread =>
+        commandHandler.publishPreviewSpread(spread)
+          .either.map(SpreadPublishResult(spread.id, SpreadPublishType.PreviewPublished, _))
       }
+
+      previewSpreads <- queryHandler.getPreviewSpreads(deadline, config.batchLimit)
+      previewResults <- ZIO.foreach(previewSpreads) { spread =>
+        commandHandler.publishSpread(spread, now)
+          .either.map(SpreadPublishResult(spread.id, SpreadPublishType.Published, _))
+      }
+
+      publishResults = scheduledResults ++ previewResults
       _ <- logPublishSpread(publishResults)
     } yield publishResults
 
   private def logPublishSpread(publishResults: List[SpreadPublishResult]) =
     val successCount = publishResults.count(_.result.isRight)
+    val previewPublished = publishResults.count(result => result.result.isRight & result.publishType == SpreadPublishType.PreviewPublished)
+    val published = publishResults.count(result => result.result.isRight & result.publishType == SpreadPublishType.Published)
     val failed = publishResults.collect { case result if result.result.isLeft => result }
     for {
       _ <- ZIO.when(successCount > 0) {
-        ZIO.logInfo(s"Spread job: published=$successCount")
+        ZIO.logInfo(s"Spread job: published=$successCount, previewPublished=$previewPublished, card of day published=$published")
       }
       _ <- ZIO.when(failed.nonEmpty) {
         val details = failed.map(result => s"${result.id}: ${result.result.left}").mkString("\n  ")

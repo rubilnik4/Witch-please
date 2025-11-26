@@ -2,11 +2,10 @@ package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
+import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.cards.{Card, CardId}
-import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
 import tarot.infrastructure.repositories.cards.CardDao
@@ -41,8 +40,10 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       _ <- ZIO.logDebug(s"Updating spread status $spreadStatusUpdate")
 
       result <- (spreadStatusUpdate match {
-        case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, expectedAt) =>
-          spreadDao.updateToSchedule(spreadId.id, scheduledAt, expectedAt)
+        case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, cardOfDayAt, expectedAt) =>
+          spreadDao.updateToSchedule(spreadId.id, scheduledAt, cardOfDayAt, expectedAt)
+        case SpreadStatusUpdate.PreviewPublished(spreadId) =>
+          spreadDao.updateToPreviewPublish(spreadId.id)
         case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
           spreadDao.updateToPublish(spreadId.id, publishedAt)
       })
@@ -87,14 +88,24 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
 
   def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
     for {
-      _ <- ZIO.logDebug(s"Getting ready spread by deadline $deadline")
+      _ <- ZIO.logDebug(s"Getting scheduled spreads by deadline $deadline")
 
-      spreads <- spreadDao.getReadySpreads(deadline, limit)
+      spreads <- spreadDao.getScheduledSpreads(deadline, limit)
         .tapError(e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
         .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
     } yield spreads
-      
+
+  def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting preview spreads by deadline $deadline")
+
+      spreads <- spreadDao.getPreviewSpreads(deadline, limit)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get preview spreads by deadline $deadline", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get preview spreads by deadline $deadline", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
+    
   def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
     for {
       _ <- ZIO.logDebug(s"Checking spread $spreadId")
