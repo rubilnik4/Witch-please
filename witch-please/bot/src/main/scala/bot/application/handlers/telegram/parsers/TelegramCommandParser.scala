@@ -10,6 +10,8 @@ import scala.util.Try
 object TelegramCommandParser {
   def handle(command: String): BotCommand =
     command.trim match {
+      case command if command.startsWith(TelegramCommands.Start) =>
+        BotCommand.Start
       case command if command.startsWith(AuthorCommands.Prefix) =>
         TelegramAuthorParser.handle(command)
       case command if command.startsWith(ClientCommands.Prefix) =>
