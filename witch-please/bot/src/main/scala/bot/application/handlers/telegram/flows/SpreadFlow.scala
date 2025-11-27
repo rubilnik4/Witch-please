@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.TelegramCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.{BotPendingAction, SpreadProgress}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
@@ -25,10 +25,10 @@ object SpreadFlow {
         .zipWithIndex
         .map { case (spread, index) =>
           val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
-          val command = TelegramCommands.authorSpreadSelect(spread.id, spread.cardCount)
+          val command = AuthorCommands.spreadSelect(spread.id, spread.cardCount)
           TelegramInlineKeyboardButton(label, Some(command))
         }
-      createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(TelegramCommands.AuthorSpreadCreate))
+      createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(AuthorCommands.SpreadCreate))
       buttons = spreadButtons :+ createButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери расклад или создай новый", buttons)
     } yield ()
@@ -38,6 +38,7 @@ object SpreadFlow {
     for {
       _ <- ZIO.logInfo(s"Create spread for chat ${context.chatId}")
 
+      _ <- sessionService.clearSpread(context.chatId)
       _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadTitle)
       _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
     } yield ()
@@ -133,10 +134,11 @@ object SpreadFlow {
          |Выбери действие:
          |""".stripMargin
 
-    val cardsButton = TelegramInlineKeyboardButton("Карты", Some(TelegramCommands.authorSpreadCardsSelect(spread.id)))
-    val publishButton = TelegramInlineKeyboardButton("Публикация", Some(TelegramCommands.authorSpreadPublish(spread.id)))
-    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(TelegramCommands.authorSpreadDelete(spread.id)))
-    val buttons = List(cardsButton, publishButton, deleteButton)
+    val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
+    val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
+    val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadDelete(spread.id)))
+    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
+    val buttons = List(cardsButton, publishButton, editButton, deleteButton)
 
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)

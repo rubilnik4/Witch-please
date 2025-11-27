@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.TelegramCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
@@ -40,12 +40,12 @@ object CardFlow {
       cardButtons = (1 to cardsCount).map { index =>
         cards.find(_.index == index - 1) match {
           case Some(card) =>
-            TelegramInlineKeyboardButton(s"$index. ${card.description}", Some(TelegramCommands.authorCardCreate(index)))
+            TelegramInlineKeyboardButton(s"$index. ${card.description}", Some(AuthorCommands.cardCreate(index)))
           case None =>
-            TelegramInlineKeyboardButton(s"$index. ➕ Создать карту", Some(TelegramCommands.authorCardCreate(index)))
+            TelegramInlineKeyboardButton(s"$index. ➕ Создать карту", Some(AuthorCommands.cardCreate(index)))
         }
       }.toList
-      backToSpreadButton = TelegramInlineKeyboardButton(s"К раскладу", Some(TelegramCommands.authorSpreadSelect(spreadId, cardsCount)))
+      backToSpreadButton = TelegramInlineKeyboardButton(s"К раскладу", Some(AuthorCommands.spreadSelect(spreadId, cardsCount)))
       buttons = cardButtons :+ backToSpreadButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()

@@ -4,26 +4,32 @@ import java.time.*
 import java.util.UUID
 
 sealed trait BotCommand
-sealed trait TarotCommand extends BotCommand
+sealed trait AuthorCommand extends BotCommand
+sealed trait ClientCommand extends BotCommand
 sealed trait ScheduleCommand extends BotCommand
 
 object BotCommand {
+  case object Start extends BotCommand
   case object Noop extends BotCommand
   case object Help extends BotCommand
   case object Unknown extends BotCommand
 }
 
-object TarotCommand {
-  case object Start extends TarotCommand
-  case object AdminStart extends TarotCommand
-  case object UserStart extends TarotCommand 
-  case object CreateSpread extends TarotCommand
-  final case class SelectSpread(spreadId: UUID, cardCount: Int) extends TarotCommand
-  final case class SelectSpreadCards(spreadId: UUID) extends TarotCommand
-  final case class PublishSpread(spreadId: UUID) extends TarotCommand
-  final case class DeleteSpread(spreadId: UUID) extends TarotCommand
-  final case class CreateCard(index: Int) extends TarotCommand
+object AuthorCommand {  
+  case object Start extends AuthorCommand
+  case object CreateSpread extends AuthorCommand
+  final case class SelectSpread(spreadId: UUID, cardCount: Int) extends AuthorCommand
+  final case class SelectSpreadCards(spreadId: UUID) extends AuthorCommand
+  final case class PublishSpread(spreadId: UUID) extends AuthorCommand
+  final case class DeleteSpread(spreadId: UUID) extends AuthorCommand
+  final case class CreateCard(index: Int) extends AuthorCommand
 }
+
+object ClientCommand {
+  case object Start extends ClientCommand
+  final case class SelectAuthor(authorId: UUID) extends ClientCommand
+}
+
 
 object ScheduleCommand {
   final case class SelectMonth(month: YearMonth) extends ScheduleCommand

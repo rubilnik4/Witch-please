@@ -77,6 +77,13 @@ object BotSession {
       cardOfDayDelay = Some(delay),
       updatedAt = now)
 
+  def clearDateTime(session: BotSession, now: Instant): BotSession =
+    session.copy(
+      date = None,
+      time = None,
+      cardOfDayDelay = None,
+      updatedAt = now)  
+
   def touched(session: BotSession, now: Instant): BotSession =
     session.copy(updatedAt = now)
 }

@@ -1,18 +1,15 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.handlers.telegram.markup.SchedulerMarkup
-import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.spreads.{SpreadPublishRequest, SpreadResponse}
 import shared.infrastructure.services.common.DateTimeService
 import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
-import java.time.{Instant, YearMonth}
-import java.util.UUID
+import java.time.YearMonth
 
 object PublishFlow {    
   def publishSpread(context: TelegramContext)(

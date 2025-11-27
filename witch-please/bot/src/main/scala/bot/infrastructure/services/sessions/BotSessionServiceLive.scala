@@ -127,4 +127,12 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       now <- DateTimeService.getDateTimeNow
       _ <- botSessionRepository.update(chatId)(session => BotSession.withCardOfDayDelay(session, delay, now))
     } yield ()
+
+  override def clearDateTime(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Clear datetime for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.clearDateTime(session, now))
+    } yield ()
 }

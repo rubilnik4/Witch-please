@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.TelegramCommands
+import bot.application.commands.telegram.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -19,8 +19,8 @@ object StartFlow {
     for {
       _ <- ZIO.logInfo(s"Start command for chat ${context.chatId}")
 
-      userButton = TelegramInlineKeyboardButton("Хочу предсказаний", Some(TelegramCommands.ClientStart))
-      adminButton = TelegramInlineKeyboardButton("Я тарологичка", Some(TelegramCommands.AuthorStart))
+      userButton = TelegramInlineKeyboardButton("Хочу предсказаний", Some(ClientCommands.Start))
+      adminButton = TelegramInlineKeyboardButton("Я тарологичка", Some(AuthorCommands.Start))
       buttons = List(userButton, adminButton)
       _ <- telegramApi.sendInlineButtons(context.chatId, "Кто внутри тебя?", buttons)
     } yield ()

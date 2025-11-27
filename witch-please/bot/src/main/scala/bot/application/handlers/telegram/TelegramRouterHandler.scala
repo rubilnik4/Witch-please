@@ -2,6 +2,7 @@ package bot.application.handlers.telegram
 
 import bot.application.commands.*
 import bot.application.handlers.telegram.flows.*
+import bot.application.handlers.telegram.parsers.TelegramCommandParser
 import bot.domain.models.telegram.*
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -20,8 +21,12 @@ object TelegramRouterHandler {
 
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
       _ <- TelegramCommandParser.handle(command) match {
-        case tarotCommand: TarotCommand =>
-          handleTarotCommand(context, tarotCommand)(telegramApi, tarotApi, sessionService)        
+        case BotCommand.Start =>
+          StartFlow.handleStart(context)(telegramApi, tarotApi, sessionService)
+        case authorCommand: AuthorCommand =>
+          handleAuthorCommand(context, authorCommand)(telegramApi, tarotApi, sessionService)
+        case clientCommand: ClientCommand =>
+          handleClientCommand(context, clientCommand)(telegramApi, tarotApi, sessionService)
         case scheduleCommand: ScheduleCommand =>
           SchedulerFlow.handle(context, scheduleCommand)(telegramApi, tarotApi, sessionService)
         case BotCommand.Noop =>
@@ -33,31 +38,37 @@ object TelegramRouterHandler {
       }
     } yield ()
 
-  private def handleTarotCommand(context: TelegramContext, command: TarotCommand)
+  private def handleAuthorCommand(context: TelegramContext, command: AuthorCommand)
     (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
       for {
         _ <- command match {
-          case TarotCommand.Start =>
-            StartFlow.handleStart(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.AdminStart =>
+          case AuthorCommand.Start =>
             StartFlow.handleAuthorStart(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.UserStart =>
-            StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)            
-          case TarotCommand.CreateSpread =>
+          case AuthorCommand.CreateSpread =>
             SpreadFlow.createSpread(context)(telegramApi, sessionService)
-          case TarotCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
+          case AuthorCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
             SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.SelectSpreadCards(spreadId: UUID) =>
+          case AuthorCommand.SelectSpreadCards(spreadId: UUID) =>
             CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.PublishSpread(spreadId: UUID) =>
+          case AuthorCommand.PublishSpread(spreadId: UUID) =>
             PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.DeleteSpread(spreadId: UUID) =>
+          case AuthorCommand.DeleteSpread(spreadId: UUID) =>
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
-          case TarotCommand.CreateCard(index: Int) =>
+          case AuthorCommand.CreateCard(index: Int) =>
             CardFlow.createCard(context, index)(telegramApi, sessionService)
-       
         }
       } yield ()
+
+  private def handleClientCommand(context: TelegramContext, command: ClientCommand)
+      (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- command match {
+        case ClientCommand.Start =>
+          StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)
+        case ClientCommand.SelectAuthor(authorId: UUID) =>
+          StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)
+      }
+    } yield ()
 
   private val helpText: String =
     """Команды:

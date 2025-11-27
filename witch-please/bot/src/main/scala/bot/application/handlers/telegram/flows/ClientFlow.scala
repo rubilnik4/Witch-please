@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.TelegramCommands
+import bot.application.commands.telegram.{ClientCommands, TelegramCommands}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -18,7 +18,7 @@ object ClientFlow {
       authors <- tarotApi.getAuthors
       authorsButtons = authors.zipWithIndex.map { case (author, idx) =>
         TelegramInlineKeyboardButton(s"${idx + 1}. ${author.name}. ${author.spreadsCount} раскладов", 
-          Some(TelegramCommands.clientAuthorSelect(author.id)))
+          Some(ClientCommands.authorSelect(author.id)))
       }
       
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери свою тарологичку", authorsButtons)

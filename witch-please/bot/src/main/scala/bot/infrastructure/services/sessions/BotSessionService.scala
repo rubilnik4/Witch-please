@@ -20,5 +20,6 @@ trait BotSessionService {
   def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit]
   def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit]
   def setCardOdDayDelay(chatId: Long, delay: Duration): ZIO[BotEnv, Throwable, Unit]
+  def clearDateTime(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def reset(chatId: Long): ZIO[BotEnv, Throwable, Unit]
 }

@@ -1,14 +1,14 @@
 package bot.application.handlers.telegram.markup
 
 import bot.application.commands.telegram.{SchedulerCommands, TelegramCommands}
-import bot.domain.models.calendar.{Calendar, CalendarDay, CalendarMonth, CalendarTime, CalendarTimeGrid, CalendarTimeSlot}
+import bot.domain.models.calendar.*
 import bot.infrastructure.services.calendar.CalendarService
 import bot.layers.BotEnv
 import shared.api.dto.telegram.*
 import shared.infrastructure.services.common.DateTimeService
-import zio.{UIO, ZIO}
+import zio.ZIO
 
-import java.time.{LocalDate, YearMonth}
+import java.time.{Duration, LocalDate, LocalTime, YearMonth}
 
 object SchedulerMarkup {
   def monthKeyboard(month: YearMonth): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
@@ -26,6 +26,16 @@ object SchedulerMarkup {
       today <- DateTimeService.currentLocalDateTime()
       calendarTime = CalendarService.buildTime(today, date, projectConfig.maxFutureTime, page = page)
     } yield keyboardTime(calendarTime)
+
+  def delayKeyboard(date: LocalDate, page: Int): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
+    for {
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+      maxDelay = projectConfig.maxCardOfDayDelay
+
+      today <- DateTimeService.currentLocalDateTime()
+      calendarTime = CalendarService.buildTime(today, date, Duration.ofDays(1),
+        page = page, start = LocalTime.of(0, 0), end = LocalTime.MIDNIGHT.plus(maxDelay).plusMinutes(1))
+    } yield keyboardDelay(calendarTime)
 
   private def keyboardDate(calendar: Calendar): List[List[TelegramInlineKeyboardButton]] = {
     val monthKeyboard = getMonthKeyboard(calendar.month)
@@ -59,7 +69,13 @@ object SchedulerMarkup {
 
   private def keyboardTime(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
     val timeKeyboard = getTimeKeyboard(timeGrid.time)
-    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots)
+    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots, SchedulerCommands.selectTime)
+    timeKeyboard :: slotKeyboard
+  }
+
+  private def keyboardDelay(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
+    val timeKeyboard = getTimeKeyboard(timeGrid.time)
+    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots, SchedulerCommands.selectCardOfDayDelay)
     timeKeyboard :: slotKeyboard
   }
 
@@ -83,11 +99,11 @@ object SchedulerMarkup {
     returnButton :: pageButtons
   }
 
-  private def getTimeSlotKeyboard(calendarSlots: List[CalendarTimeSlot]) =
+  private def getTimeSlotKeyboard(calendarSlots: List[CalendarTimeSlot], slotCommand: LocalTime => String) =
     calendarSlots
       .map { slot =>
         val label = f"${slot.time.getHour}%02d:${slot.time.getMinute}%02d"
-        TelegramInlineKeyboardButton(label, Some(SchedulerCommands.selectTime(slot.time)))
+        TelegramInlineKeyboardButton(label, Some(slotCommand(slot.time)))
       }
       .grouped(5).map(_.toList).toList
 }

@@ -1,7 +1,6 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.ScheduleCommand
-import bot.application.commands.ScheduleCommand.SelectCardOfDay
 import bot.application.commands.telegram.SchedulerCommands
 import bot.application.handlers.telegram.markup.SchedulerMarkup
 import bot.domain.models.telegram.TelegramContext
@@ -26,6 +25,8 @@ object SchedulerFlow {
           for {
             _ <- ZIO.logInfo(s"Select month $month from chat ${context.chatId}")
 
+            _ <- sessionService.clearDateTime(context.chatId)
+            
             projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
             today <- DateTimeService.currentLocalDate()
             _ <- ZIO.unless(CalendarService.isPrevMonthEnable(today, month) &&
@@ -154,7 +155,7 @@ object SchedulerFlow {
   private def showDelayKeyboard(context: TelegramContext, date: LocalDate, page: Int)
       (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      dateButtons <- SchedulerMarkup.timeKeyboard(date, page)
+      dateButtons <- SchedulerMarkup.delayKeyboard(date, page)
       _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи время, через которое будет опубликована карта дня", dateButtons)
     } yield ()
 }

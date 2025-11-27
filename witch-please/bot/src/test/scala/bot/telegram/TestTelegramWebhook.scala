@@ -1,7 +1,7 @@
 package bot.telegram
 
 import bot.api.dto.*
-import bot.application.commands.telegram.TelegramCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 
 import java.time.Instant
 import java.util.UUID
@@ -65,17 +65,17 @@ object TestTelegramWebhook {
     textRequest(chatId, TelegramCommands.Start)
 
   def startAuthorRequest(chatId: Long): TelegramWebhookRequest =
-    textRequest(chatId, TelegramCommands.AuthorStart)   
+    textRequest(chatId, AuthorCommands.Start)
     
   def createSpreadRequest(chatId: Long): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.AuthorSpreadCreate}")
+    textRequest(chatId, s"${AuthorCommands.SpreadCreate}")
 
   def selectSpreadsRequest(chatId: Long, spreadId: UUID, cardCount: Int): TelegramWebhookRequest =
-    textRequest(chatId, TelegramCommands.authorSpreadSelect(spreadId, cardCount))
+    textRequest(chatId, AuthorCommands.spreadSelect(spreadId, cardCount))
 
   def createCardRequest(chatId: Long, index: Int): TelegramWebhookRequest =
-    textRequest(chatId, TelegramCommands.authorCardCreate(index))
+    textRequest(chatId, AuthorCommands.cardCreate(index))
     
-  def publishSpreadRequest(chatId: Long, scheduledAt: Instant): TelegramWebhookRequest =
-    textRequest(chatId, s"${TelegramCommands.AuthorSpreadPublish} ${scheduledAt.getEpochSecond}")
+  def publishSpreadRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.spreadPublish(spreadId))
 }
