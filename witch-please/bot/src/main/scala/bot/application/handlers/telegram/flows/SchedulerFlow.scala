@@ -26,7 +26,7 @@ object SchedulerFlow {
             _ <- ZIO.logInfo(s"Select month $month from chat ${context.chatId}")
 
             _ <- sessionService.clearDateTime(context.chatId)
-            
+
             projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
             today <- DateTimeService.currentLocalDate()
             _ <- ZIO.unless(CalendarService.isPrevMonthEnable(today, month) &&
@@ -105,8 +105,8 @@ object SchedulerFlow {
       )
 
       text =
-        s"""Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)}
-           |и картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}. Подтвердить?""".stripMargin
+        s"Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)} " +
+          s"и картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}. Подтвердить?"
       _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
     } yield ()
 

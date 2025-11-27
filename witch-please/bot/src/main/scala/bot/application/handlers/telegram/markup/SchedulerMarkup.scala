@@ -75,7 +75,11 @@ object SchedulerMarkup {
 
   private def keyboardDelay(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
     val timeKeyboard = getTimeKeyboard(timeGrid.time)
-    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots, SchedulerCommands.selectCardOfDayDelay)
+    val selectDelay: LocalTime => String = time => {
+      val delay = Duration.between(LocalTime.MIDNIGHT, time)
+      SchedulerCommands.selectCardOfDayDelay(delay)
+    }
+    val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots, selectDelay)
     timeKeyboard :: slotKeyboard
   }
 
