@@ -163,7 +163,7 @@ final class TarotApiServiceMock(
       id = id,
       index = index,
       spreadId = spreadId,
-      description = request.description,
+      description = request.title,
       photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
       createdAt = now
     )

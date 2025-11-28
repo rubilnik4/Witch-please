@@ -24,15 +24,12 @@ final case class Spread(
   cardOfDayDelay: Option[Duration],
   publishedAt: Option[Instant]
 )
-{
-  override def toString: String = id.toString
-}
 
 object Spread {
   def toDomain(command: CreateSpreadCommand, projectId: ProjectId, storedPhoto: FileStorage): UIO[Spread] =
     val id = UUID.randomUUID()
-    val coverPhoto = command.photo
-    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, coverPhoto.sourceType, coverPhoto.fileId)
+    val photoFile = command.photo
+    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, photoFile.sourceType, photoFile.fileId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(

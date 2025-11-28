@@ -3,6 +3,7 @@ package tarot.fixtures
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
+import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.*
 import tarot.domain.models.authorize.*
 import tarot.domain.models.photo.PhotoFile
@@ -27,7 +28,7 @@ object TarotTestFixtures {
     } yield photoId
 
   def getUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
-    val user = ExternalUser(clientId, clientType, clientSecret, "test user")
+    val user = CreateAuthorCommand(clientId, clientType, clientSecret, "test user")
     for {
       userHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
       userId <- userHandler.createAuthor(user)

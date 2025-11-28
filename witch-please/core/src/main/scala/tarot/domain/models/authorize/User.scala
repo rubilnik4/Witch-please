@@ -2,6 +2,7 @@ package tarot.domain.models.authorize
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
+import tarot.application.commands.users.commands.CreateAuthorCommand
 import zio.UIO
 
 import java.time.Instant
@@ -21,7 +22,7 @@ final case class User(
 }
 
 object User {
-  def toDomain(externalUser: ExternalUser, secretHash: String): UIO[User] =
+  def toDomain(externalUser: CreateAuthorCommand, secretHash: String): UIO[User] =
     for {
       createdAt <- DateTimeService.getDateTimeNow
       user = User(

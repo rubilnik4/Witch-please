@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
+import bot.application.commands.telegram.AuthorCommands
 import bot.domain.models.session.BotPendingAction
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
@@ -57,22 +57,22 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Create card $index for chat ${context.chatId}")
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardDescription(index))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardTitle(index))
       _ <- telegramApi.sendReplyText(context.chatId, s"Напиши описание карты")
     } yield ()
 
-  def setCardDescription(context: TelegramContext, index: Int, description: String)(
+  def setCardTitle(context: TelegramContext, index: Int, title: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Handle card description from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Handle card title from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(index, description))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(index, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания карты")
     } yield ()
 
-  def setCardPhoto(context: TelegramContext, index: Int, description: String, fileId: String)(
+  def setCardPhoto(context: TelegramContext, index: Int, title: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
@@ -86,10 +86,10 @@ object CardFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
-      request = CardCreateRequest(description, photo)
+      request = CardCreateRequest(title, photo)
       _ <- tarotApi.createCard(request, spreadId, index, token)
       _ <- sessionService.setCard(context.chatId, index)
-      _ <- telegramApi.sendText(context.chatId, s"Карта $description создана")
+      _ <- telegramApi.sendText(context.chatId, s"Карта $title создана")
 
       cards <- tarotApi.getCards(spreadId, token)
       _ <- showCards(context, spreadId, cards)(telegramApi, tarotApi, sessionService)

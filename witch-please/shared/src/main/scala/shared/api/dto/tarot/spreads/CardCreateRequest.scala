@@ -8,6 +8,6 @@ import zio.{IO, ZIO}
 import java.util.UUID
 
 final case class CardCreateRequest(
-  description: String,
+  title: String,
   photo: PhotoRequest
 ) derives JsonCodec, Schema

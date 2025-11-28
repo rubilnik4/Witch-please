@@ -218,7 +218,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
   private def cardCreateRequest(photoId: String) =
     CardCreateRequest(
-      description = "Card integration test",
+      title = "Card integration test",
       coverPhotoId = photoId
     )
 

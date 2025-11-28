@@ -17,7 +17,7 @@ object CardFlow {
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("CardIndex", chatId) { case BotPendingAction.CardDescription(i) => i }
+      _ <- CommonFlow.expectPending("CardIndex", chatId) { case BotPendingAction.CardTitle(i) => i }
     } yield ()
 
   def cardDescription(app: Routes[BotEnv, Response], chatId: Long, desc: String): ZIO[Scope & BotEnv, Throwable, Unit] =

@@ -1,6 +1,6 @@
 package tarot.application.commands.users
 
-import shared.models.tarot.authorize.Role
+import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.*
@@ -12,18 +12,18 @@ import zio.ZIO
 final class UserCommandHandlerLive(
   userRepository: UserRepository
 ) extends UserCommandHandler {
-  override def createAuthor(externalUser: ExternalUser): ZIO[TarotEnv, TarotError, UserId] = 
+  override def createAuthor(command: CreateAuthorCommand): ZIO[TarotEnv, TarotError, UserId] =
     for {
-      _ <- ZIO.logInfo(s"Executing create user command for $externalUser")
+      _ <- ZIO.logInfo(s"Executing create user ${command.name} command")
       
-      exists <- userRepository.existsUserByClientId(externalUser.clientId)
+      exists <- userRepository.existsUserByClientId(command.clientId)
       _ <- ZIO.when(exists)(
-        ZIO.logError(s"User ${externalUser.clientId} already exists") *>
-          ZIO.fail(TarotError.Conflict("User ${externalUser.clientId} already exists"))
+        ZIO.logError(s"User ${command.clientId} already exists") *>
+          ZIO.fail(TarotError.Conflict(s"User ${command.clientId} already exists"))
       )
 
-      secretHash <- UserService.hashSecret(externalUser.clientSecret)
-      user <- User.toDomain(externalUser, secretHash)
+      secretHash <- UserService.hashSecret(command.clientSecret)
+      user <- User.toDomain(command, secretHash)
       userId <- userRepository.createUser(user)
 
       projectCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)

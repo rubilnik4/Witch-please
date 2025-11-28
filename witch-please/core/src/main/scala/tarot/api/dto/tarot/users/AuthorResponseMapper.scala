@@ -2,9 +2,10 @@ package tarot.api.dto.tarot.users
 
 import shared.api.dto.tarot.users.*
 import shared.models.tarot.authorize.ClientType
+import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.authorize.{Author, ExternalUser, User}
+import tarot.domain.models.authorize.{Author, User}
 import zio.json.*
 import zio.schema.*
 import zio.{IO, ZIO}

@@ -4,9 +4,10 @@ import shared.api.dto.tarot.spreads.SpreadResponse
 import shared.api.dto.tarot.users.*
 import shared.models.tarot.authorize.ClientType
 import tarot.api.dto.tarot.photo.PhotoResponseMapper
+import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.authorize.{ExternalUser, User}
+import tarot.domain.models.authorize.User
 import tarot.domain.models.projects.Project
 import tarot.domain.models.spreads.Spread
 import zio.json.*
