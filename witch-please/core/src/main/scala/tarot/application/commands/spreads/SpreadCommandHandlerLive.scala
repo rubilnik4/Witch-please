@@ -2,10 +2,11 @@ package tarot.application.commands.spreads
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.spreads.SpreadStatus
+import tarot.application.commands.spreads.commands.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.authorize.UserId
-import tarot.domain.models.photo.ExternalPhoto
+import tarot.domain.models.photo.PhotoFile
 import tarot.domain.models.spreads.*
 import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
@@ -19,74 +20,70 @@ final class SpreadCommandHandlerLive(
   cardRepository: CardRepository
 ) extends SpreadCommandHandler {
   
-  override def createSpread(externalSpread: ExternalSpread, userId: UserId) : ZIO[TarotEnv, TarotError, SpreadId] =
+  override def createSpread(command: CreateSpreadCommand) : ZIO[TarotEnv, TarotError, SpreadId] =
     for {
-      _ <- ZIO.logInfo(s"Executing create spread command for $externalSpread")
+      _ <- ZIO.logInfo(s"Executing create spread ${command.title} command")
       
       projectQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.projectQueryHandler)
-      projectId <- projectQueryHandler.getDefaultProject(userId)
+      projectId <- projectQueryHandler.getDefaultProject(command.userId)
       
-      photoSource <- getPhotoSource(externalSpread)
-      spread <- Spread.toDomain(externalSpread, projectId, photoSource)
+      photoSource <- getPhotoSource(command.photo)
+      spread <- Spread.toDomain(command, projectId, photoSource)
       spreadId <- spreadRepository.createSpread(spread)
     } yield spreadId
 
-  override def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant, cardOfDayDelayHours: Duration) : ZIO[TarotEnv, TarotError, Unit] =
+  override def updateSpread(command: UpdateSpreadCommand): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      spread <- spreadRepository.getSpread(spreadId)
-        .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
+      _ <- ZIO.logInfo(s"Executing update spread command for ${command.spreadId}")
 
-      _ <- checkingPublish(spread)
-      _ <- schedulePublish(spread, scheduledAt, cardOfDayDelayHours)
+      spread <- getSpread(command.spreadId)
+      _ <- validateModifyStatus(spread)
+      photoSource <- getPhotoSource(command.photo)
+      spread <- SpreadUpdate.toDomain(command, photoSource)
+      _ <- spreadRepository.updateSpread(command.spreadId, spread)
     } yield ()
 
-  override def publishPreviewSpread(spread: Spread): ZIO[TarotEnv, TarotError, Unit] =
+  override def scheduleSpread(command: ScheduleSpreadCommand) : ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing schedule spread command for spread ${command.spreadId}")
+
+      spread <- getSpread(command.spreadId)
+      _ <- validatePublishing(spread)
+      _ <- schedulePublish(spread, command.scheduledAt, command.cardOfDayDelayHours)
+    } yield ()
+
+  override def publishPreviewSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
     for {  
-      _ <- ZIO.logInfo(s"Publish preview spread ${spread.id}")
+      _ <- ZIO.logInfo(s"Executing publish preview command for spread $spreadId")
       
-      spreadStatusUpdate = SpreadStatusUpdate.PreviewPublished(spread.id)
+      spreadStatusUpdate = SpreadStatusUpdate.PreviewPublished(spreadId)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
     } yield ()
 
-  override def publishSpread(spread: Spread, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
+  override def publishSpread(spreadId: SpreadId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Publish spread ${spread.id}")
+      _ <- ZIO.logInfo(s"Executing publish command for spread $spreadId")
 
-      spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
+      spreadStatusUpdate = SpreadStatusUpdate.Published(spreadId, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
     } yield ()
-    
+
   override def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Executing delete spread command for $spreadId")
+      _ <- ZIO.logInfo(s"Executing delete command for spread $spreadId")
       
-      spread <- spreadRepository.getSpread(spreadId)
-        .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
-
-      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.PreviewPublished) {
-        ZIO.logError(s"Spread ${spread.id} already preview published, couldn't be deleted") *>
-          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already preview published, couldn't be deleted"))
-      }
-      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.Published) {
-        ZIO.logError(s"Spread ${spread.id} already published, couldn't be deleted") *>
-          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already published, couldn't be deleted"))
-      }
-
+      spread <- getSpread(spreadId)
+      _ <- validateModifyStatus(spread)
       _ <- spreadRepository.deleteSpread(spreadId)
-
-      _ <- ZIO.logInfo(s"Successfully spread deleted: $spreadId")
     } yield ()
 
-  private def getPhotoSource(externalSpread: ExternalSpread) =
+  private def getPhotoSource(photoFile: PhotoFile) =
     for {
       photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
-
-      storedPhoto <- externalSpread.coverPhoto match {
-        case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
-      }
+      storedPhoto <- photoService.fetchAndStore(photoFile.fileId)
     } yield storedPhoto
 
-  private def checkingPublish(spread: Spread) =
+  private def validatePublishing(spread: Spread) =
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
@@ -128,4 +125,20 @@ final class SpreadCommandHandlerLive(
       spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, cardOfDayAt, spread.scheduledAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
     } yield ()
+
+  private def validateModifyStatus(spread: Spread) =
+    for {
+      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.PreviewPublished) {
+        ZIO.logError(s"Spread ${spread.id} already preview published, couldn't be modify") *>
+          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already preview published, couldn't be modify"))
+      }
+      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.Published) {
+        ZIO.logError(s"Spread ${spread.id} already published, couldn't be modify") *>
+          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already published, couldn't be modify"))
+      }
+    } yield ()
+
+  private def getSpread(spreadId: SpreadId) =
+    spreadRepository.getSpread(spreadId)
+      .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
 }

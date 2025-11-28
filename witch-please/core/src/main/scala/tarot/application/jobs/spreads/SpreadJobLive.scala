@@ -31,13 +31,13 @@ final class SpreadJobLive extends SpreadJob {
 
       scheduledSpreads <- queryHandler.getScheduledSpreads(deadline, config.batchLimit)
       scheduledResults <- ZIO.foreach(scheduledSpreads) { spread =>
-        commandHandler.publishPreviewSpread(spread)
+        commandHandler.publishPreviewSpread(spread.id)
           .either.map(SpreadPublishResult(spread.id, SpreadPublishType.PreviewPublished, _))
       }
 
       previewSpreads <- queryHandler.getPreviewSpreads(deadline, config.batchLimit)
       previewResults <- ZIO.foreach(previewSpreads) { spread =>
-        commandHandler.publishSpread(spread, now)
+        commandHandler.publishSpread(spread.id, now)
           .either.map(SpreadPublishResult(spread.id, SpreadPublishType.Published, _))
       }
 

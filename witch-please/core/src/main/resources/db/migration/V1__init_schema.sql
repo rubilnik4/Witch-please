@@ -36,17 +36,6 @@ CREATE INDEX idx_spreads_published_at
     ON spreads(published_at)
     WHERE spread_status = 'Published';
 
-CREATE TABLE photos (
-    id UUID PRIMARY KEY,
-    storage_type TEXT NOT NULL CHECK (storage_type IN ('Local', 'S3')),
-    owner_type TEXT NOT NULL CHECK (owner_type IN ('Spread', 'Card')),
-    owner_id UUID NOT NULL,
-    path TEXT,
-    bucket TEXT,
-    key TEXT,
-    file_id TEXT
-);
-
 CREATE TABLE cards (
     id UUID PRIMARY KEY,
     index INT NOT NULL,
@@ -54,6 +43,18 @@ CREATE TABLE cards (
     description TEXT NOT NULL,
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE photos (
+    id UUID PRIMARY KEY,
+    owner_type TEXT NOT NULL CHECK (owner_type IN ('Spread', 'Card')),
+    owner_id UUID NOT NULL,
+    storage_type TEXT NOT NULL CHECK (storage_type IN ('Local', 'S3')),
+    source_type TEXT NOT NULL CHECK (source_type IN ('Telegram', 'S3')),
+    file_id TEXT NOT NULL,
+    path TEXT,
+    bucket TEXT,
+    key TEXT
 );
 
 CREATE INDEX idx_spreads_photo_id ON spreads(photo_id);

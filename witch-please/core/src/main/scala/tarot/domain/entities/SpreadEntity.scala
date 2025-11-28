@@ -1,10 +1,7 @@
 package tarot.domain.entities
 
 import shared.models.tarot.spreads.SpreadStatus
-import tarot.domain.models.TarotError
-import tarot.domain.models.projects.ProjectId
-import tarot.domain.models.spreads.{Spread, SpreadId}
-import zio.ZIO
+import tarot.domain.models.spreads.Spread
 
 import java.time.Instant
 import java.util.UUID
@@ -33,7 +30,7 @@ object SpreadEntity {
       photoId = coverPhotoId,
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
-      cardOfDayAt = Spread.getCardOfDayAt(spread),
+      cardOfDayAt = Spread.getCardOfDayAt(spread.scheduledAt, spread.cardOfDayDelay),
       publishedAt = spread.publishedAt
     )
 }

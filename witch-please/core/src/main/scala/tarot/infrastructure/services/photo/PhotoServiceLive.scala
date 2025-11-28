@@ -2,12 +2,12 @@ package tarot.infrastructure.services.photo
 
 import shared.infrastructure.services.storage.FileStorageService
 import shared.infrastructure.services.telegram.TelegramApiService
-import shared.models.files.{FileSource, StoredFile}
+import shared.models.files.*
 import tarot.domain.models.{TarotError, TarotErrorMapper}
 import zio.ZIO
 
 final class PhotoServiceLive(telegram: TelegramApiService, storage: FileStorageService) extends PhotoService:
-  def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileSource] =
+  def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileStorage] =
     for {
       _ <- ZIO.logInfo(s"Downloading photo: $fileId")
       telegramFile <- telegram.downloadPhoto(fileId)

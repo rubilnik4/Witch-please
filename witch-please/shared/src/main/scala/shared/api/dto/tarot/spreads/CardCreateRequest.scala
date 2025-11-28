@@ -1,12 +1,13 @@
 package shared.api.dto.tarot.spreads
 
+import shared.api.dto.tarot.photo.PhotoRequest
 import zio.json.*
 import zio.schema.*
 import zio.{IO, ZIO}
 
 import java.util.UUID
 
-final case class TelegramCardCreateRequest(
+final case class CardCreateRequest(
   description: String,
-  coverPhotoId: String
+  photo: PhotoRequest
 ) derives JsonCodec, Schema

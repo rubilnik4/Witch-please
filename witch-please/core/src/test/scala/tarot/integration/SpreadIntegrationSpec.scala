@@ -210,14 +210,14 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
     
   private def spreadCreateRequest(cardCount: Int, photoId: String) =
-    TelegramSpreadCreateRequest(
+    SpreadCreateRequest(
       title = "Spread integration test",
       cardCount = cardCount,
       coverPhotoId = photoId
     )
 
   private def cardCreateRequest(photoId: String) =
-    TelegramCardCreateRequest(
+    CardCreateRequest(
       description = "Card integration test",
       coverPhotoId = photoId
     )

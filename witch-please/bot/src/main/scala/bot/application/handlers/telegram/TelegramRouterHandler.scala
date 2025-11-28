@@ -46,15 +46,17 @@ object TelegramRouterHandler {
             StartFlow.handleAuthorStart(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateSpread =>
             SpreadFlow.createSpread(context)(telegramApi, sessionService)
-          case AuthorCommand.SelectSpread(spreadId: UUID, cardCount: Int) =>
+          case AuthorCommand.EditSpread(spreadId) =>
+            SpreadFlow.editSpread(context, spreadId)(telegramApi, sessionService)  
+          case AuthorCommand.SelectSpread(spreadId, cardCount) =>
             SpreadFlow.selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.SelectSpreadCards(spreadId: UUID) =>
+          case AuthorCommand.SelectSpreadCards(spreadId) =>
             CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.PublishSpread(spreadId: UUID) =>
+          case AuthorCommand.PublishSpread(spreadId) =>
             PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.DeleteSpread(spreadId: UUID) =>
+          case AuthorCommand.DeleteSpread(spreadId) =>
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.CreateCard(index: Int) =>
+          case AuthorCommand.CreateCard(index) =>
             CardFlow.createCard(context, index)(telegramApi, sessionService)
         }
       } yield ()
@@ -65,7 +67,7 @@ object TelegramRouterHandler {
       _ <- command match {
         case ClientCommand.Start =>
           StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)
-        case ClientCommand.SelectAuthor(authorId: UUID) =>
+        case ClientCommand.SelectAuthor(authorId) =>
           StartFlow.handleClientStart(context)(telegramApi, tarotApi, sessionService)
       }
     } yield ()

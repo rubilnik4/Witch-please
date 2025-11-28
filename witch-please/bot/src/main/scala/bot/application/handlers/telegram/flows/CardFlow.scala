@@ -7,9 +7,11 @@ import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cards.CardResponse
-import shared.api.dto.tarot.spreads.TelegramCardCreateRequest
+import shared.api.dto.tarot.photo.PhotoRequest
+import shared.api.dto.tarot.spreads.CardCreateRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
+import shared.models.files.FileSourceType
 import zio.ZIO
 
 import java.util.UUID
@@ -82,8 +84,9 @@ object CardFlow {
         .orElseFail(new RuntimeException(s"CardCount not found in session for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-
-      request = TelegramCardCreateRequest(description, fileId)
+      
+      photo = PhotoRequest(FileSourceType.Telegram, fileId)
+      request = CardCreateRequest(description, photo)
       _ <- tarotApi.createCard(request, spreadId, index, token)
       _ <- sessionService.setCard(context.chatId, index)
       _ <- telegramApi.sendText(context.chatId, s"Карта $description создана")

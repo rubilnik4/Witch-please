@@ -4,7 +4,6 @@ import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.users.*
 import shared.models.tarot.authorize.ClientType
-import shared.models.tarot.contracts.TarotChannelType
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
@@ -22,7 +21,7 @@ object UserEndpoint {
   private val getUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / TarotChannelType.Telegram / "user" / "by-client" / path[String]("clientId"))
+      .in(TarotApiRoutes.apiPath / "user" / "by-client" / path[String]("clientId"))
       .out(jsonBody[UserResponse])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)

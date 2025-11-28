@@ -1,7 +1,7 @@
 package tarot.domain.models.cards
 
 import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileSource
+import shared.models.files.FileStorage
 import shared.models.tarot.photo.PhotoOwnerType
 import tarot.domain.models.photo.*
 import tarot.domain.models.spreads.SpreadId
@@ -23,9 +23,10 @@ final case class Card(
 }
 
 object Card {
-  def toDomain(externalCard: ExternalCard, storedPhoto: FileSource): UIO[Card] =
+  def toDomain(externalCard: ExternalCard, storedPhoto: FileStorage): UIO[Card] =
     val id = UUID.randomUUID()
-    val externalPhotoId = ExternalPhoto.getFileId(externalCard.coverPhoto)
+    val coverPhoto = externalCard.coverPhoto
+    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, coverPhoto.sourceType, coverPhoto.fileId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       card = Card(
@@ -33,7 +34,7 @@ object Card {
         index = externalCard.index,
         spreadId = externalCard.spreadId,
         description = externalCard.description,
-        photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, externalPhotoId),
+        photo = photo,
         createdAt = createdAt)
     } yield card
 }

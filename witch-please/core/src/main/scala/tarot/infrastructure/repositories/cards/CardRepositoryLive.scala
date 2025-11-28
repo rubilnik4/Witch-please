@@ -10,8 +10,8 @@ import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
 import tarot.infrastructure.repositories.cards.CardDao
-import tarot.infrastructure.repositories.spreads.PhotoDao
-import zio.{ZIO, *}
+import tarot.infrastructure.repositories.photo.PhotoDao
+import zio.*
 
 import java.sql.SQLException
 import java.time.Instant

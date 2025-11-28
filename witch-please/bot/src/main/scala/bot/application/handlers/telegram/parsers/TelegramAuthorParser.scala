@@ -13,6 +13,13 @@ object TelegramAuthorParser {
         AuthorCommand.Start
       case List(AuthorCommands.SpreadCreate) =>
         AuthorCommand.CreateSpread
+      case AuthorCommands.SpreadEdit :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            AuthorCommand.EditSpread(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }
       case AuthorCommands.SpreadSelect :: spreadIdStr :: cardCountStr :: Nil =>
         (Try(UUID.fromString(spreadIdStr)).toOption, cardCountStr.toIntOption) match {
           case (Some(spreadId), Some(cardCount)) =>
@@ -49,6 +56,6 @@ object TelegramAuthorParser {
             BotCommand.Unknown
         }
       case _ =>
-        BotCommand.Unknown  
-    }      
+        BotCommand.Unknown
+    }
 }

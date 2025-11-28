@@ -2,7 +2,7 @@ package tarot.application.commands.cards
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
-import tarot.domain.models.photo.ExternalPhoto
+import tarot.domain.models.photo.PhotoFile
 import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
@@ -34,9 +34,7 @@ final class CardCommandHandlerLive(
     for {
       photoService <- ZIO.serviceWith[TarotEnv](_.tarotService.photoService)
 
-      storedPhoto <- externalCard.coverPhoto match {
-        case ExternalPhoto.Telegram(fileId) => photoService.fetchAndStore(fileId)
-      }
+      storedPhoto <- photoService.fetchAndStore(externalCard.coverPhoto.fileId)
       card <- Card.toDomain(externalCard, storedPhoto)
     } yield card
   }

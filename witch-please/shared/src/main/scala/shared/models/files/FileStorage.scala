@@ -1,5 +1,5 @@
 package shared.models.files
 
-enum FileSource:
+enum FileStorage:
   case Local(path: String)
   case S3(bucket: String, key: String)

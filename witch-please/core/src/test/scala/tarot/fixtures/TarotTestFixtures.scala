@@ -2,9 +2,10 @@ package tarot.fixtures
 
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
+import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.domain.models.*
 import tarot.domain.models.authorize.*
-import tarot.domain.models.photo.ExternalPhoto
+import tarot.domain.models.photo.PhotoFile
 import tarot.domain.models.projects.*
 import tarot.domain.models.spreads.*
 import tarot.layers.TarotEnv
@@ -40,8 +41,8 @@ object TarotTestFixtures {
     } yield token.token
 
   def getSpread(userId: UserId, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
-    val photo = ExternalPhoto.Telegram(photoId)
-    val spread = ExternalSpread("Test spread", 1, photo)
+    val photo = PhotoFile.Telegram(photoId)
+    val spread = CreateSpreadCommand("Test spread", 1, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
       spreadId <- spreadHandler.createSpread(spread, userId)

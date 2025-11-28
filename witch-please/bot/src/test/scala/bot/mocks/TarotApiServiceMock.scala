@@ -78,7 +78,7 @@ final class TarotApiServiceMock(
     val token = tokenPayload.toJson
     ZIO.succeed(AuthResponse(token = token, role = role))
 
-  override def createSpread(request: TelegramSpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
+  override def createSpread(request: SpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
       tokenPayload <- getTokenPayload(token)
@@ -107,7 +107,7 @@ final class TarotApiServiceMock(
     }
   } yield spreads
 
-  override def createCard(request: TelegramCardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
+  override def createCard(request: CardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"index must be positive")).when(index < 0)
 
@@ -146,7 +146,7 @@ final class TarotApiServiceMock(
       createdAt = now
     )
 
-  private def getSpreadResponse(id: UUID, request: TelegramSpreadCreateRequest, now: Instant) =
+  private def getSpreadResponse(id: UUID, request: SpreadCreateRequest, now: Instant) =
     SpreadResponse(
       id = id,
       title = request.title,
@@ -158,7 +158,7 @@ final class TarotApiServiceMock(
       publishedAt = None
     )
 
-  private def getCardResponse(id: UUID, request: TelegramCardCreateRequest, index: Int, spreadId: UUID, now: Instant) =
+  private def getCardResponse(id: UUID, request: CardCreateRequest, index: Int, spreadId: UUID, now: Instant) =
     CardResponse(
       id = id,
       index = index,

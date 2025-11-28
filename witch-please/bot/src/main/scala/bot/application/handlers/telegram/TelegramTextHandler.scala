@@ -6,8 +6,6 @@ import bot.domain.models.telegram.*
 import bot.layers.BotEnv
 import zio.*
 
-import java.time.Instant
-
 object TelegramTextHandler {
   def handle(context: TelegramContext, text: String): ZIO[BotEnv, Throwable, Unit] =
     for {
@@ -19,18 +17,18 @@ object TelegramTextHandler {
       _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action ${session.pending}")
 
       _ <- session.pending match {
-        case Some(BotPendingAction.SpreadTitle) =>
-          SpreadFlow.setSpreadTitle(context, text)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.SpreadCardCount(title: String)) =>
+        case Some(BotPendingAction.SpreadTitle(spreadMode)) =>
+          SpreadFlow.setSpreadTitle(context, spreadMode, text)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.SpreadCardCount(spreadMode, title)) =>
           text.toIntOption match {
             case Some(cardCount) =>
-              SpreadFlow.setSpreadCardCount(context, title, cardCount)(telegramApi, tarotApi, sessionService)
+              SpreadFlow.setSpreadCardCount(context, spreadMode, title, cardCount)(telegramApi, tarotApi, sessionService)
             case None =>
               telegramApi.sendText(context.chatId, "Введи число карт числом")
           }
-        case Some(BotPendingAction.CardDescription(index: Int)) =>
+        case Some(BotPendingAction.CardDescription(index)) =>
           CardFlow.setCardDescription(context, index, text)(telegramApi, tarotApi, sessionService)
-        case None | Some(BotPendingAction.SpreadPhoto(_, _)) | Some(BotPendingAction.CardPhoto(_, _)) =>
+        case None | Some(BotPendingAction.SpreadPhoto(_,_,_)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)

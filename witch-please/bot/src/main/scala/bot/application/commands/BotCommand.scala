@@ -18,6 +18,7 @@ object BotCommand {
 object AuthorCommand {  
   case object Start extends AuthorCommand
   case object CreateSpread extends AuthorCommand
+  final case class EditSpread(spreadId: UUID) extends AuthorCommand
   final case class SelectSpread(spreadId: UUID, cardCount: Int) extends AuthorCommand
   final case class SelectSpreadCards(spreadId: UUID) extends AuthorCommand
   final case class PublishSpread(spreadId: UUID) extends AuthorCommand
@@ -30,7 +31,6 @@ object ClientCommand {
   final case class SelectAuthor(authorId: UUID) extends ClientCommand
 }
 
-
 object ScheduleCommand {
   final case class SelectMonth(month: YearMonth) extends ScheduleCommand
   final case class SelectDate(date: LocalDate) extends ScheduleCommand
@@ -39,4 +39,3 @@ object ScheduleCommand {
   final case class SelectCardOfDay(delay: Duration) extends ScheduleCommand
   object Confirm extends ScheduleCommand
 }
-

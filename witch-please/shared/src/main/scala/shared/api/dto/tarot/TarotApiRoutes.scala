@@ -1,6 +1,5 @@
 package shared.api.dto.tarot
 
-import shared.models.tarot.contracts.TarotChannelType
 import zio.*
 import zio.http.*
 
@@ -18,28 +17,25 @@ case object TarotApiRoutes {
   }  
 
   def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
-    make(baseUrl, apiPath, TarotChannelType.Telegram, "user", "by-client", clientId)
+    make(baseUrl, apiPath, "user", "by-client", clientId)
 
   def authorCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, TarotChannelType.Telegram, "author")
+    make(baseUrl, apiPath, "author")
     
   def authorsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "author")  
-
-  def projectCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "project")
-
-  def projectsGetPath(baseUrl: String, userId: UUID): URL =
-    make(baseUrl, apiPath, "project", "by-user", userId.toString)
+    make(baseUrl, apiPath, "author")   
 
   def spreadCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, TarotChannelType.Telegram, "spread")
+    make(baseUrl, apiPath, "spread")
 
   def spreadGetPath(baseUrl: String, spreadId: UUID): URL =    
     make(baseUrl, apiPath, "spread", spreadId.toString)
     
   def spreadsGetPath(baseUrl: String): URL =
     make(baseUrl, apiPath, "spread")
+
+  def spreadUpdatePath(baseUrl: String, spreadId: UUID): URL =
+    make(baseUrl, apiPath, "spread", spreadId.toString)
     
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, "spread", spreadId.toString, "publish")
@@ -48,7 +44,7 @@ case object TarotApiRoutes {
     make(baseUrl, apiPath, "spread", spreadId.toString)
     
   def cardCreatePath(baseUrl: String, spreadId: UUID, index: Int): URL =
-    make(baseUrl, apiPath, TarotChannelType.Telegram, "spread", spreadId.toString, "cards", index.toString)
+    make(baseUrl, apiPath, "spread", spreadId.toString, "cards", index.toString)
 
   def cardsGetPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, "card", "by-spread", spreadId.toString)

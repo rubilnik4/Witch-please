@@ -1,0 +1,30 @@
+package tarot.domain.models.spreads
+
+import shared.infrastructure.services.common.DateTimeService
+import shared.models.files.FileStorage
+import shared.models.tarot.photo.PhotoOwnerType
+import tarot.application.commands.spreads.commands.UpdateSpreadCommand
+import tarot.domain.models.photo.Photo
+import zio.UIO
+
+import java.time.*
+
+final case class SpreadUpdate(
+  title: String,
+  cardCount: Int,
+  photo: Photo
+)
+
+object SpreadUpdate {
+  def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStorage): UIO[SpreadUpdate] =
+    val coverPhoto = command.photo
+    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, command.spreadId.id, coverPhoto.sourceType, coverPhoto.fileId)
+    for {
+      createdAt <- DateTimeService.getDateTimeNow
+      spread = SpreadUpdate(
+        title = command.title,
+        cardCount = command.cardCount,      
+        photo = photo
+      )
+    } yield spread
+}

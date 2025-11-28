@@ -4,8 +4,10 @@ import io.getquill.*
 import io.getquill.extras.InstantOps
 import io.getquill.jdbczio.*
 import shared.models.tarot.spreads.SpreadStatus
-import tarot.domain.entities.{CardEntity, PhotoEntity, SpreadEntity, SpreadPhotoEntity}
+import tarot.domain.entities.*
+import tarot.domain.models.spreads.SpreadUpdate
 import tarot.infrastructure.repositories.TarotTableNames
+import tarot.infrastructure.repositories.photo.PhotoQuillMappings
 import zio.ZIO
 
 import java.sql.SQLException
@@ -14,6 +16,7 @@ import java.util.UUID
 
 final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
   import SpreadQuillMappings.given
+  import PhotoQuillMappings.given
   import quill.*
 
   def getSpread(spreadId: UUID): ZIO[Any, SQLException, Option[SpreadPhotoEntity]] =
@@ -77,20 +80,6 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .nonEmpty
       })
 
-  def validateSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
-    run(
-      quote {
-        spreadTable
-          .filter(_.id == lift(spreadId))
-          .join(cardTable)
-          .on((spread, card) => spread.id == card.spreadId)
-          .groupBy{ case (spread, _) => spread }
-          .map { case (spread, grouped) => (spread.id, spread.cardCount, grouped.size)}
-          .filter { case (_, expected, actual) => expected == actual }
-          .take(1)
-          .nonEmpty
-    })
-
   def insertSpread(spread: SpreadEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {
@@ -144,6 +133,19 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           _.publishedAt -> lift(Option(publishedAt))
         )
     })
+
+  def updateSpread(spreadId: UUID, spread: SpreadUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        spreadTable
+          .filter(_.id == lift(spreadId))
+          .update(
+            _.title -> lift(spread.title),
+            _.cardCount -> lift(spread.cardCount),
+            _.photoId -> lift(photoId)
+          )
+      }
+    )
 
   def deleteSpread(spreadId: UUID): ZIO[Any, SQLException, UUID] =
     run(

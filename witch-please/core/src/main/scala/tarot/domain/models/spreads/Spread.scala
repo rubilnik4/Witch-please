@@ -1,10 +1,11 @@
 package tarot.domain.models.spreads
 
 import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileSource
+import shared.models.files.FileStorage
 import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
-import tarot.domain.models.photo.{ExternalPhoto, Photo}
+import tarot.application.commands.spreads.commands.CreateSpreadCommand
+import tarot.domain.models.photo.Photo
 import tarot.domain.models.projects.ProjectId
 import zio.UIO
 
@@ -28,28 +29,29 @@ final case class Spread(
 }
 
 object Spread {
-  def toDomain(externalSpread: ExternalSpread, projectId: ProjectId, storedPhoto: FileSource): UIO[Spread] =
+  def toDomain(command: CreateSpreadCommand, projectId: ProjectId, storedPhoto: FileStorage): UIO[Spread] =
     val id = UUID.randomUUID()
-    val externalPhotoId = ExternalPhoto.getFileId(externalSpread.coverPhoto)
+    val coverPhoto = command.photo
+    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, coverPhoto.sourceType, coverPhoto.fileId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
         id = SpreadId(id),
         projectId = projectId,
-        title = externalSpread.title,
-        cardCount = externalSpread.cardCount,
+        title = command.title,
+        cardCount = command.cardCount,
         spreadStatus = SpreadStatus.Draft,
-        photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, externalPhotoId),
+        photo = photo,
         createdAt = createdAt,
         scheduledAt = None,
         cardOfDayDelay = None,
         publishedAt = None)
     } yield spread
 
-  def getCardOfDayAt(spread: Spread): Option[Instant] =
+  def getCardOfDayAt(scheduledAt: Option[Instant], cardOfDayDelay: Option[Duration]): Option[Instant] =
     for {
-      scheduled <- spread.scheduledAt
-      delay <- spread.cardOfDayDelay
+      scheduled <- scheduledAt
+      delay <- cardOfDayDelay
     } yield scheduled.plus(delay)
 
   def getCardOfDayDelay(scheduledAt: Option[Instant], cardOfDayAt: Option[Instant]): Option[Duration] =

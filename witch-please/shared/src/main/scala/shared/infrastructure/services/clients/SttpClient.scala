@@ -42,6 +42,15 @@ object SttpClient {
     putRequest(uri, request)
       .auth.bearer(token)
 
+  def deleteRequest(uri: Uri): RequestT[Identity, Either[String, String], Any] =
+    basicRequest
+      .delete(uri)
+      .contentType(jsonContentType)
+
+  def deleteAuthRequest(uri: Uri, token: String): RequestT[Identity, Either[String, String], Any] =
+    deleteRequest(uri)
+      .auth.bearer(token)
+
   def sendJson[Response, Error](
       client: SttpBackend[Task, Any],
       request: RequestT[Identity, Either[ResponseException[Error, String], Response], Any])

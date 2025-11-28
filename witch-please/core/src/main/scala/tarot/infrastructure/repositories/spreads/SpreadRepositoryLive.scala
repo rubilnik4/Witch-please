@@ -2,13 +2,13 @@ package tarot.infrastructure.repositories.spreads
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
-import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.projects.ProjectId
-import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
+import tarot.domain.models.spreads.*
 import tarot.infrastructure.repositories.cards.CardDao
+import tarot.infrastructure.repositories.photo.PhotoDao
 import zio.{ZIO, *}
 
 import java.sql.SQLException
@@ -20,7 +20,56 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
 
-  def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
+  override def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting spread $spreadId")
+
+      spread <- spreadDao.getSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError("Failed to get spread", e))
+        .flatMap(spreadMaybe => ZIO.foreach(spreadMaybe)(SpreadPhotoEntity.toDomain))
+    } yield spread
+
+  override def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting spread by projectId $projectId")
+
+      spreads <- spreadDao.getSpreads(projectId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get spreads by projectId $projectId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get spreads by projectId $projectId", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
+
+  override def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting scheduled spreads by deadline $deadline")
+
+      spreads <- spreadDao.getScheduledSpreads(deadline, limit)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
+
+  override def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting preview spreads by deadline $deadline")
+
+      spreads <- spreadDao.getPreviewSpreads(deadline, limit)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get preview spreads by deadline $deadline", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get preview spreads by deadline $deadline", e))
+        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
+    } yield spreads
+
+  override def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
+    for {
+      _ <- ZIO.logDebug(s"Checking spread $spreadId")
+
+      exists <- spreadDao.existsSpread(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to check spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to check spread $spreadId", e))
+    } yield exists
+
+  override def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
     for {
       _ <- ZIO.logDebug(s"Creating spread $spread")
 
@@ -35,7 +84,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
     } yield SpreadId(spreadId)
 
-  def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
+  override def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Updating spread status $spreadStatusUpdate")
 
@@ -57,7 +106,21 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       }
     } yield ()
 
-  def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
+  override def updateSpread(spreadId: SpreadId, spread: SpreadUpdate): ZIO[Any, TarotError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Updating spread $spreadId")
+
+      spreadId <- quill.transaction {
+        for {
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))         
+          spreadId <- spreadDao.updateSpread(spreadId.id, spread, photoId)
+        } yield spreadId
+      }
+        .tapError(e => ZIO.logErrorCause(s"Failed to update spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to update spread $spreadId", e))
+    } yield ()
+
+  override def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Deleting spread $spreadId")
 
@@ -65,62 +128,4 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .tapError(e => ZIO.logErrorCause(s"Failed to delete spread $spreadId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to delete spread $spreadId", e))
     } yield ()
-
-  def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting spread $spreadId")
-
-      spread <- spreadDao.getSpread(spreadId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get spread $spreadId", Cause.fail(e)))
-        .mapError(e => DatabaseError("Failed to get spread", e))
-        .flatMap(spreadMaybe => ZIO.foreach(spreadMaybe)(SpreadPhotoEntity.toDomain))
-    } yield spread
-
-  def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting spread by projectId $projectId")
-
-      spreads <- spreadDao.getSpreads(projectId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get spreads by projectId $projectId", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get spreads by projectId $projectId", e))
-        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
-    } yield spreads
-
-  def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting scheduled spreads by deadline $deadline")
-
-      spreads <- spreadDao.getScheduledSpreads(deadline, limit)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
-        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
-    } yield spreads
-
-  def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting preview spreads by deadline $deadline")
-
-      spreads <- spreadDao.getPreviewSpreads(deadline, limit)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get preview spreads by deadline $deadline", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get preview spreads by deadline $deadline", e))
-        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
-    } yield spreads
-    
-  def existsSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
-    for {
-      _ <- ZIO.logDebug(s"Checking spread $spreadId")
-
-      exists <- spreadDao.existsSpread(spreadId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to check spread $spreadId", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to check spread $spreadId", e))
-    } yield exists
-
-  def validateSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
-    for {
-      _ <- ZIO.logDebug(s"Validating spread $spreadId")
-
-      exists <- spreadDao.validateSpread(spreadId.id)
-        .tapError(e => ZIO.logErrorCause(s"Failed to validate spread $spreadId", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to validate spread $spreadId", e))
-    } yield exists
 }

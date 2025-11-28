@@ -4,7 +4,7 @@ import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, CardPhotoEntity, PhotoEntity}
 import tarot.infrastructure.repositories.TarotTableNames
-import tarot.infrastructure.repositories.spreads.SpreadQuillMappings
+import tarot.infrastructure.repositories.photo.PhotoQuillMappings
 import zio.ZIO
 
 import java.sql.SQLException
@@ -12,7 +12,7 @@ import java.time.Instant
 import java.util.UUID
 
 final class CardDao(quill: Quill.Postgres[SnakeCase]) {
-  import SpreadQuillMappings.given
+  import PhotoQuillMappings.given
   import quill.*
 
   def getCards(spreadId: UUID): ZIO[Any, SQLException, List[CardPhotoEntity]] =

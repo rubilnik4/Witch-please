@@ -6,7 +6,7 @@ import zio.stream.ZStream
 import zio.{Cause, Chunk, ZIO}
 
 final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:  
-  def storePhoto(storedFile: StoredFile): ZIO[Any, Throwable, FileSource] =
+  def storePhoto(storedFile: StoredFile): ZIO[Any, Throwable, FileStorage] =
     val fullPath = rootPath / storedFile.fileName
 
     for {
@@ -24,7 +24,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
       _ <- Files.writeBytes(fullPath, Chunk.fromArray(storedFile.bytes))
         .tapError(ex => ZIO.logErrorCause(s"[LocalPhotoStorage] Failed to store photo: ${storedFile.fileName}", Cause.fail(ex)))
         .mapError(ex => new RuntimeException(s"Failed to write file to $fullPath", ex))
-    } yield FileSource.Local(fullPath.toString)
+    } yield FileStorage.Local(fullPath.toString)
 
   def getResourcePhoto(resourcePath: String): ZIO[Any, Throwable, StoredFile] =
     for {
