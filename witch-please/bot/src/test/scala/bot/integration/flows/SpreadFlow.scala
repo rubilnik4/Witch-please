@@ -1,7 +1,7 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.BotPendingAction
+import bot.domain.models.session.{BotPendingAction, SpreadMode}
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -12,28 +12,31 @@ import java.util.UUID
 
 
 object SpreadFlow {
-  def startSpread(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def startSpread(app: Routes[BotEnv, Response], chatId: Long, spreadMode: SpreadMode): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.createSpreadRequest(chatId)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("SpreadTitle", chatId) { case BotPendingAction.SpreadTitle => () }
+      _ <- CommonFlow.expectPending("SpreadTitle", chatId) {
+        case BotPendingAction.SpreadTitle(mode) if mode == spreadMode => () }
     } yield ()
 
-  def spreadTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def spreadTitle(app: Routes[BotEnv, Response], chatId: Long, title: String, spreadMode: SpreadMode): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, title)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("SpreadCardCount", chatId) { case BotPendingAction.SpreadCardCount(title) => title }
+      _ <- CommonFlow.expectPending("SpreadCardCount", chatId) {
+        case BotPendingAction.SpreadCardCount(mode, t) if mode == spreadMode && t == title => t }
     } yield ()
 
-  def spreadCardCount(app: Routes[BotEnv, Response], chatId: Long, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def spreadCardCount(app: Routes[BotEnv, Response], chatId: Long, cardCount: Int, spreadMode: SpreadMode): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, cardCount.toString)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
-      _ <- CommonFlow.expectPending("SpreadPhoto", chatId) { case BotPendingAction.SpreadPhoto(cardCount,_) => cardCount }
+      _ <- CommonFlow.expectPending("SpreadPhoto", chatId) {
+        case BotPendingAction.SpreadPhoto(mode, _, c) if mode == spreadMode && c == cardCount => c }
     } yield ()
 
   def selectSpread(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =

@@ -2,7 +2,7 @@ package bot.integration
 
 import bot.api.BotApiRoutes
 import bot.api.endpoints.*
-import bot.domain.models.session.BotPendingAction
+import bot.domain.models.session.{BotPendingAction, SpreadMode}
 import bot.integration.flows.*
 import bot.layers.BotEnv
 import bot.layers.TestBotEnvLayer.testEnvLive
@@ -94,12 +94,13 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
         chatId <- getChatId
-        session <- botSessionService.get(chatId)       
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- SpreadFlow.startSpread(app, chatId)
-        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
-        _ <- SpreadFlow.spreadCardCount(app, chatId, cardCount)
+        session <- botSessionService.get(chatId)
+        spreadMode = SpreadMode.Create
+          
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)        
+        _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
+        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread", spreadMode)
+        _ <- SpreadFlow.spreadCardCount(app, chatId, cardCount, spreadMode)
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
