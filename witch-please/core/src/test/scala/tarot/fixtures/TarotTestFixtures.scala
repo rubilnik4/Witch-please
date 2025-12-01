@@ -1,5 +1,6 @@
 package tarot.fixtures
 
+import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
@@ -42,11 +43,11 @@ object TarotTestFixtures {
     } yield token.token
 
   def getSpread(userId: UserId, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
-    val photo = PhotoFile.Telegram(photoId)
-    val spread = CreateSpreadCommand("Test spread", 1, photo)
+    val photo = PhotoFile(FileSourceType.Telegram ,photoId)
+    val command = CreateSpreadCommand(userId, "Test spread", 1, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
-      spreadId <- spreadHandler.createSpread(spread, userId)
+      spreadId <- spreadHandler.createSpread(command)
     } yield spreadId
 
   def getChatId: ZIO[TarotEnv, TarotError, Long] =

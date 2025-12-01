@@ -3,10 +3,12 @@ package tarot.integration
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.IdResponse
+import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.infrastructure.services.common.DateTimeService
+import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
@@ -213,13 +215,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
     SpreadCreateRequest(
       title = "Spread integration test",
       cardCount = cardCount,
-      coverPhotoId = photoId
+      photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
   private def cardCreateRequest(photoId: String) =
     CardCreateRequest(
       title = "Card integration test",
-      coverPhotoId = photoId
+      photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
   private def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
