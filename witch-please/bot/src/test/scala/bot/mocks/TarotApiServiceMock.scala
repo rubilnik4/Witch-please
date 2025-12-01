@@ -135,8 +135,46 @@ final class TarotApiServiceMock(
     }
 
   override def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
-    ZIO.unit     
-  
+    ZIO.unit
+
+  override def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+  for {
+    now <- DateTimeService.getDateTimeNow
+    tokenPayload <- getTokenPayload(token)
+    _ <- spreadMap.modifyZIO { spreads =>
+      val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
+      userSpreads.get(spreadId) match {
+        case None =>
+          ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found for user ${tokenPayload.userId}"))
+        case Some(spread) =>
+          val updatedSpread = getSpreadResponse(request, spread)
+          val updatedUserSpreads = userSpreads.updated(spreadId, updatedSpread)
+          val updatedSpreads = spreads.updated(tokenPayload.userId, updatedUserSpreads)
+          ZIO.succeed((), updatedSpreads)
+      }
+    }
+  } yield ()
+
+  override def deleteSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      tokenPayload <- getTokenPayload(token)
+      _ <- spreadMap.modifyZIO { spreads =>
+        val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
+        userSpreads.get(spreadId) match {
+        case None =>
+          ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code,s"Spread $spreadId not found for user ${tokenPayload.userId}"))
+        case Some(spread) =>
+          val deletedUserSpreads = userSpreads - spreadId
+          val deletedSpreads =
+            if (deletedUserSpreads.isEmpty)
+              spreads - tokenPayload.userId
+            else
+              spreads.updated(tokenPayload.userId, deletedUserSpreads)
+          ZIO.succeed((), deletedSpreads)
+        }
+      }
+    } yield ()
+
   private def getUserResponse(id: UUID, request: UserCreateRequest, now: Instant) =
     UserResponse(
       id = id,
@@ -152,10 +190,22 @@ final class TarotApiServiceMock(
       title = request.title,
       cardCount = request.cardCount,
       spreadStatus = SpreadStatus.Draft,
-      photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
+      photo = PhotoResponse(PhotoOwnerType.Spread, id, request.photo.sourceType, request.photo.fileId),
       createdAt =  now,
       scheduledAt = None,
       publishedAt = None
+    )
+
+  private def getSpreadResponse(request: SpreadUpdateRequest, spread: SpreadResponse) =
+    SpreadResponse(
+      id = spread.id,
+      title = request.title,
+      cardCount = request.cardCount,
+      spreadStatus = spread.spreadStatus,
+      photo = PhotoResponse(PhotoOwnerType.Spread, spread.id, request.photo.sourceType, request.photo.fileId),
+      createdAt = spread.createdAt,
+      scheduledAt = spread.scheduledAt,
+      publishedAt = spread.publishedAt
     )
 
   private def getCardResponse(id: UUID, request: CardCreateRequest, index: Int, spreadId: UUID, now: Instant) =
@@ -164,7 +214,7 @@ final class TarotApiServiceMock(
       index = index,
       spreadId = spreadId,
       description = request.title,
-      photo = PhotoResponse(PhotoOwnerType.Spread, id, Some(request.coverPhotoId)),
+      photo = PhotoResponse(PhotoOwnerType.Spread, id, request.photo.sourceType, request.photo.fileId),
       createdAt = now
     )
 
