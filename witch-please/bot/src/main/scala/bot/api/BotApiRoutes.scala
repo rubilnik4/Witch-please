@@ -1,6 +1,5 @@
 package bot.api
 
-import shared.models.tarot.contracts.*
 import zio.*
 import zio.http.*
 
