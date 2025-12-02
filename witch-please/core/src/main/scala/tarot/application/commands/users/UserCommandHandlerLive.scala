@@ -26,7 +26,7 @@ final class UserCommandHandlerLive(
       user <- User.toDomain(command, secretHash)
       userId <- userRepository.createUser(user)
 
-      projectCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.projectCommandHandler)
+      projectCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.projectCommandHandler)
       _ <- projectCommandHandler.createDefaultProject(userId)
     } yield userId
 }

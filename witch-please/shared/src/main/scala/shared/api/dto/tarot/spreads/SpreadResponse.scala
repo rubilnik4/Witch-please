@@ -11,7 +11,7 @@ import java.util.UUID
 final case class SpreadResponse(
   id: UUID,
   title: String,
-  cardCount: Int,
+  cardsCount: Int,
   spreadStatus: SpreadStatus,
   photo: PhotoResponse,
   createdAt: Instant,

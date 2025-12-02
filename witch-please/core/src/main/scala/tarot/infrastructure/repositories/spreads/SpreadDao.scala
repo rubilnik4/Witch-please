@@ -147,13 +147,12 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       }
     )
 
-  def deleteSpread(spreadId: UUID): ZIO[Any, SQLException, UUID] =
+  def deleteSpread(spreadId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {
         spreadTable
           .filter(_.id == lift(spreadId))
           .delete
-          .returning(_.id)
       })
 
   private inline def isScheduleStatus(spread: SpreadEntity) =

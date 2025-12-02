@@ -19,7 +19,7 @@ object CommonFlow {
   def expectPending[A](name: String, chatId: Long)(
     pending: PartialFunction[BotPendingAction, A]): ZIO[BotEnv, Throwable, A] =
     for {
-      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
       session <- botSessionService.get(chatId)
       got <- ZIO.fromOption(session.pending).orElseFail(new RuntimeException(s"pending is empty, expected $name"))
       result <- if (pending.isDefinedAt(got)) ZIO.succeed(pending(got))
@@ -28,7 +28,7 @@ object CommonFlow {
 
   def expectNoPending(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
-      botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
       session <- botSessionService.get(chatId)
       _ <- ZIO.fail(new RuntimeException(s"pending must be empty, got ${session.pending}"))
         .unless(session.pending.isEmpty)

@@ -6,7 +6,7 @@ import tarot.application.commands.spreads.commands.{CreateSpreadCommand, UpdateS
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.authorize.UserId
-import tarot.domain.models.photo.PhotoFile
+import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
 import zio.json.*

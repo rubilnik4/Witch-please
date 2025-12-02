@@ -39,7 +39,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get spreads by user ${tokenPayload.userId}")
   
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
             spreads <- handler.getSpreads(UserId(tokenPayload.userId))
           } yield spreads.map(SpreadResponseMapper.toResponse)).mapResponseErrors
       }
@@ -56,9 +56,9 @@ object SpreadEndpoint {
       .serverLogic { tokenPayload =>
         spreadId =>
           (for {
-            _ <- ZIO.logInfo(s"Received request to get spread by spreadId $spreadId")
+            _ <- ZIO.logInfo(s"Received request to get spread by $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
             spread <- handler.getSpread(SpreadId(spreadId))
           } yield SpreadResponseMapper.toResponse(spread)).mapResponseErrors
       }
@@ -77,7 +77,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create spread: ${request.title}")            
            
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
             command <- SpreadRequestMapper.fromRequest(request, UserId(tokenPayload.userId))
             spreadId <- handler.createSpread(command)
           } yield IdResponse(spreadId.id)).mapResponseErrors
@@ -97,7 +97,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to update spread: $spreadId")
             
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
             command <- SpreadRequestMapper.fromRequest(request, SpreadId(spreadId))
             _ <- handler.updateSpread(command)
           } yield()).mapResponseErrors
@@ -116,7 +116,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to delete spread: $spreadId")
             
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
             _ <- handler.deleteSpread(SpreadId(spreadId))
           } yield()).mapResponseErrors
       }
@@ -135,7 +135,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get cards by spreadId $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
             cards <- handler.getCards(SpreadId(spreadId))
           } yield cards.map(CardResponseMapper.toResponse)).mapResponseErrors
       }
@@ -154,7 +154,7 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"Received request to get cards count by spreadId $spreadId")
 
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.cardQueryHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
             cardsCount <- handler.getCardsCount(SpreadId(spreadId))
           } yield cardsCount).mapResponseErrors
       }
@@ -174,7 +174,7 @@ object SpreadEndpoint {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $index for spread $spreadId")
             
             externalCard <- CardCreateRequestMapper.fromRequest(request, index, spreadId)
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.cardCommandHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
             cardId <- handler.createCard(externalCard)
           } yield IdResponse(cardId.id)).mapResponseErrors
         }
@@ -195,7 +195,7 @@ object SpreadEndpoint {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")
             
             _ <- SpreadPublishRequestMapper.validate(request)
-            handler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.spreadCommandHandler)
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
             command = ScheduleSpreadCommand(SpreadId(spreadId), request.scheduledAt, request.cardOfDayDelayHours)
             _ <- handler.scheduleSpread(command)
           } yield ()).mapResponseErrors
@@ -204,7 +204,7 @@ object SpreadEndpoint {
 
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(
-      getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint, deleteSpreadEndpoint,
+      getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint, putSpreadEndpoint, deleteSpreadEndpoint,
       getCardsEndpoint, getCardsCountEndpoint, postCardEndpoint,
       publishSpreadEndpoint
     )

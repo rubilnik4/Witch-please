@@ -32,7 +32,7 @@ object AuthorEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to get authors")
 
-          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userQueryHandler)
+          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userQueryHandler)
           authors <- userQueryHandler.getAuthors
         } yield authors.map(AuthorResponseMapper.toResponse)).mapResponseErrors
       }
@@ -50,7 +50,7 @@ object AuthorEndpoint {
           _ <- ZIO.logInfo(s"Received request to create user: ${request.name}")
 
           externalUser <- UserCreateRequestMapper.fromRequest(request, ClientType.Telegram)
-          userCommandHandler <- ZIO.serviceWith[TarotEnv](_.tarotCommandHandler.userCommandHandler)
+          userCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.userCommandHandler)
           userId <- userCommandHandler.createAuthor(externalUser)
           
         } yield IdResponse(userId.id)).mapResponseErrors

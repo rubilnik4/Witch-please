@@ -1,28 +1,28 @@
 package tarot.api.dto.tarot.photo
 
-import shared.api.dto.tarot.photo.{PhotoRequest, PhotoResponse}
-import shared.api.dto.tarot.spreads.SpreadRequest
-import tarot.domain.models.TarotError
-import tarot.domain.models.TarotError.ValidationError
+import shared.api.dto.tarot.photo.PhotoResponse
 import tarot.domain.models.photo.Photo
-import zio.ZIO
 
 object PhotoResponseMapper {
   def toResponse(photo: Photo): PhotoResponse =
     photo match {
-      case Photo.Local(_, ownerType, ownerId, sourceType, fileId) =>
+      case Photo.Local(id, fileId, _, ownerType, ownerId, sourceType, sourceId) =>
         PhotoResponse(
+          id = id.id,
+          fileId = fileId,
           ownerType = ownerType,
           ownerId = ownerId,
           sourceType = sourceType,
-          fileId = fileId
+          sourceId = sourceId
         )
-      case Photo.S3(_, _, ownerType, ownerId, sourceType, fileId) =>
+      case Photo.S3(id, fileId, _, _, ownerType, ownerId, sourceType, sourceId) =>
         PhotoResponse(
+          id = id.id,
+          fileId = fileId,
           ownerType = ownerType,
           ownerId = ownerId,
           sourceType = sourceType,
-          fileId = fileId
+          sourceId = sourceId
         )
     }
 }

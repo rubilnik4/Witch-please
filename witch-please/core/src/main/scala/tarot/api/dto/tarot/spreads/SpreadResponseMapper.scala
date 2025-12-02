@@ -19,7 +19,7 @@ object SpreadResponseMapper {
     SpreadResponse(
       id = spread.id.id,
       title = spread.title,
-      cardCount = spread.cardCount,
+      cardsCount = spread.cardsCount,
       spreadStatus = spread.spreadStatus,
       photo = PhotoResponseMapper.toResponse(spread.photo),
       createdAt = spread.createdAt,

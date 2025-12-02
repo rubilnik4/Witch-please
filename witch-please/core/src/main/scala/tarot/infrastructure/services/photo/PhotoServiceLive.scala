@@ -11,12 +11,10 @@ final class PhotoServiceLive(telegram: TelegramApiService, storage: FileStorageS
     for {
       _ <- ZIO.logInfo(s"Downloading photo: $fileId")
       telegramFile <- telegram.downloadPhoto(fileId)
-        .tapError(err => ZIO.logError(s"Failed to download photo from Telegram. FileId: $fileId. Error: $err"))
         .mapError(err => TarotErrorMapper.toTarotError("TelegramApiService", err))
 
       _ <- ZIO.logInfo(s"Storing photo: ${telegramFile.fileName}")
       photoFile = StoredFile(telegramFile.fileName, telegramFile.bytes)
-      photoSource <- storage.storePhoto(photoFile)
-        .tapError(err => ZIO.logError(s"Failed to store photo: ${photoFile.fileName}. Error: $err"))
+      photoSource <- storage.storeFile(photoFile)
         .mapError(err => TarotError.StorageError(err.getMessage, err.getCause))
     } yield photoSource

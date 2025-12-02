@@ -12,7 +12,7 @@ import zio.http.{Handler, HandlerAspect, Header, Request}
 object AuthValidator {
   def verifyToken(requiredRole: Role)(token: String): ZIO[TarotEnv, TarotError, TokenPayload] =
     for {
-      authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
+      authService <- ZIO.serviceWith[TarotEnv](_.services.authService)
       payload <- authService.validateToken(token)
       _ <- ZIO.unless(Role.atLeast(payload.role, requiredRole)) {
         ZIO.logWarning(s"Authorization for user ${payload.userId} failed: required $requiredRole, got ${payload.role}") *>

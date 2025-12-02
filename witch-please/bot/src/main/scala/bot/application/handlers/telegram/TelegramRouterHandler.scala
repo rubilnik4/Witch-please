@@ -15,9 +15,9 @@ import java.util.UUID
 object TelegramRouterHandler {
   def handle(context: TelegramContext, command: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      telegramApi <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
-      tarotApi <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
-      sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
 
       _ <- ZIO.logInfo(s"Received command from chat ${context.chatId}: $command")
       _ <- TelegramCommandParser.handle(command) match {

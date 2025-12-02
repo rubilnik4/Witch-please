@@ -29,7 +29,7 @@ object AuthEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to auth user: ${request.userId}")
           
-          authService <- ZIO.serviceWith[TarotEnv](_.tarotService.authService)
+          authService <- ZIO.serviceWith[TarotEnv](_.services.authService)
           token <- authService.issueToken(request.clientType, UserId(request.userId), request.clientSecret)
         } yield AuthResponseMapper.fromDomain(token))
           .mapError(TarotErrorResponseMapper.toResponse)

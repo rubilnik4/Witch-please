@@ -23,7 +23,7 @@ object WebhookEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Telegram webhook: chat_id=$chatId, user_id=$username, user=$username, text=$text")
 
-          telegramCommandService <- ZIO.serviceWith[BotEnv](_.botCommandHandler.telegramCommandHandler)
+          telegramCommandService <- ZIO.serviceWith[BotEnv](_.commandHandlers.telegramCommandHandler)
           telegramMessage = TelegramMessage.fromRequest(request)
           _ <- telegramCommandService.handle(telegramMessage)
         } yield ())

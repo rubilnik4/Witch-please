@@ -9,9 +9,9 @@ import shared.infrastructure.telemetry.metrics.TelemetryMeter
 import shared.infrastructure.telemetry.tracing.TelemetryTracing
 
 final case class BotEnvLive(
-  config: BotConfig,
-  botService: BotService,
-  botCommandHandler: BotCommandHandler,
-  telemetryMeter: TelemetryMeter,
-  telemetryTracing: TelemetryTracing
+                             config: BotConfig,
+                             services: BotService,
+                             commandHandlers: BotCommandHandler,
+                             telemetryMeter: TelemetryMeter,
+                             telemetryTracing: TelemetryTracing
 ) extends BotEnv

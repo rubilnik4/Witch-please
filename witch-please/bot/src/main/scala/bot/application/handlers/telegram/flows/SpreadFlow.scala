@@ -27,7 +27,7 @@ object SpreadFlow {
         .zipWithIndex
         .map { case (spread, index) =>
           val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
-          val command = AuthorCommands.spreadSelect(spread.id, spread.cardCount)
+          val command = AuthorCommands.spreadSelect(spread.id, spread.cardsCount)
           TelegramInlineKeyboardButton(label, Some(command))
         }
       createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(AuthorCommands.SpreadCreate))
@@ -145,7 +145,7 @@ object SpreadFlow {
     val summaryText =
       s""" Расклад: “${spread.title}”
          | Публикация: ${getScheduledText(spread)}
-         | Карт по плану: ${spread.cardCount}
+         | Карт по плану: ${spread.cardsCount}
          | Создано карт: ${createdCardIndexes.size}
          |
          |Выбери действие:

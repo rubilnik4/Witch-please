@@ -10,10 +10,10 @@ import tarot.infrastructure.services.TarotService
 
 trait TarotEnv {
   def config: TarotConfig
-  def tarotService: TarotService
-  def tarotJob: TarotJob
-  def tarotCommandHandler: TarotCommandHandler
-  def tarotQueryHandler: TarotQueryHandler
+  def services: TarotService
+  def jobs: TarotJob
+  def commandHandlers: TarotCommandHandler
+  def queryHandlers: TarotQueryHandler
   def telemetryMeter: TelemetryMeter
   def telemetryTracing: TelemetryTracing
 }

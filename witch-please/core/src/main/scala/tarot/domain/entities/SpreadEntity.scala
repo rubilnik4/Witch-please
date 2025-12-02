@@ -25,7 +25,7 @@ object SpreadEntity {
       id = spread.id.id,
       projectId = spread.projectId.id,
       title = spread.title,
-      cardCount = spread.cardCount,
+      cardCount = spread.cardsCount,
       spreadStatus = spread.spreadStatus,
       photoId = coverPhotoId,
       createdAt = spread.createdAt,

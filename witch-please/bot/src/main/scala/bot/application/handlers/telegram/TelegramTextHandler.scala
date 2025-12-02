@@ -9,9 +9,9 @@ import zio.*
 object TelegramTextHandler {
   def handle(context: TelegramContext, text: String): ZIO[BotEnv, Throwable, Unit] =
     for {
-      telegramApi <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
-      tarotApi <- ZIO.serviceWith[BotEnv](_.botService.tarotApiService)
-      sessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
 
       session <- sessionService.get(context.chatId)
       _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action ${session.pending}")
@@ -31,7 +31,7 @@ object TelegramTextHandler {
         case None | Some(BotPendingAction.SpreadPhoto(_,_,_)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
-            telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
+            telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
             _ <- telegramApiService.sendText(context.chatId, "Пожалуйста, используйте команды. Введите /help.")
           } yield ()
       }

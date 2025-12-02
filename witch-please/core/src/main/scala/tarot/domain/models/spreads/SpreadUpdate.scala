@@ -8,6 +8,7 @@ import tarot.domain.models.photo.Photo
 import zio.UIO
 
 import java.time.*
+import java.util.UUID
 
 final case class SpreadUpdate(
   title: String,
@@ -18,7 +19,8 @@ final case class SpreadUpdate(
 object SpreadUpdate {
   def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStorage): UIO[SpreadUpdate] =
     val coverPhoto = command.photo
-    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, command.spreadId.id, coverPhoto.sourceType, coverPhoto.fileId)
+    val photo = Photo.toPhoto(UUID.randomUUID(), storedPhoto, PhotoOwnerType.Spread, command.spreadId.id,
+      coverPhoto.sourceType, coverPhoto.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = SpreadUpdate(

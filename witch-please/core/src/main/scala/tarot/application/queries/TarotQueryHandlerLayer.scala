@@ -2,6 +2,7 @@ package tarot.application.queries
 
 import tarot.application.configurations.TarotConfig
 import tarot.application.queries.cards.*
+import tarot.application.queries.photos.PhotoQueryHandlerLayer
 import tarot.application.queries.projects.*
 import tarot.application.queries.spreads.*
 import tarot.application.queries.users.*
@@ -15,6 +16,7 @@ object TarotQueryHandlerLayer {
       UserQueryHandlerLayer.live ++
       ProjectQueryHandlerLayer.live ++
       SpreadQueryHandlerLayer.live ++
-      CardQueryHandlerLayer.live
+      CardQueryHandlerLayer.live ++
+      PhotoQueryHandlerLayer.live
     ) >>> ZLayer.fromFunction(TarotQueryHandlerLive.apply)
 }

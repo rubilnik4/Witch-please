@@ -16,7 +16,7 @@ final case class Spread(
   id: SpreadId,
   projectId: ProjectId,
   title: String,
-  cardCount: Int,
+  cardsCount: Int,
   spreadStatus: SpreadStatus,
   photo: Photo,
   createdAt: Instant,
@@ -26,17 +26,17 @@ final case class Spread(
 )
 
 object Spread {
-  def toDomain(command: CreateSpreadCommand, projectId: ProjectId, storedPhoto: FileStorage): UIO[Spread] =
+  def toDomain(command: CreateSpreadCommand, projectId: ProjectId, photoFile: FileStorage): UIO[Spread] =
     val id = UUID.randomUUID()
-    val photoFile = command.photo
-    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Spread, id, photoFile.sourceType, photoFile.fileId)
+    val photoSource = command.photo
+    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, PhotoOwnerType.Spread, id, photoSource.sourceType, photoSource.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
         id = SpreadId(id),
         projectId = projectId,
         title = command.title,
-        cardCount = command.cardCount,
+        cardsCount = command.cardCount,
         spreadStatus = SpreadStatus.Draft,
         photo = photo,
         createdAt = createdAt,

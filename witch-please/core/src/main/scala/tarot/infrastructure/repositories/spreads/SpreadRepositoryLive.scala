@@ -120,12 +120,12 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .mapError(e => DatabaseError(s"Failed to update spread $spreadId", e))
     } yield ()
 
-  override def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Unit] =
+  override def deleteSpread(spreadId: SpreadId): ZIO[Any, TarotError, Boolean] =
     for {
       _ <- ZIO.logDebug(s"Deleting spread $spreadId")
 
-      _ <-  spreadDao.deleteSpread(spreadId.id)
+      count <-  spreadDao.deleteSpread(spreadId.id)
         .tapError(e => ZIO.logErrorCause(s"Failed to delete spread $spreadId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to delete spread $spreadId", e))
-    } yield ()
+    } yield count > 0
 }

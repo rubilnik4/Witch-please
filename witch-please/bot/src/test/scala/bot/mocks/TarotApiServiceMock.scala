@@ -188,9 +188,10 @@ final class TarotApiServiceMock(
     SpreadResponse(
       id = id,
       title = request.title,
-      cardCount = request.cardCount,
+      cardsCount = request.cardCount,
       spreadStatus = SpreadStatus.Draft,
-      photo = PhotoResponse(PhotoOwnerType.Spread, id, request.photo.sourceType, request.photo.fileId),
+      photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Spread, id, 
+        request.photo.sourceType, request.photo.sourceId),
       createdAt =  now,
       scheduledAt = None,
       publishedAt = None
@@ -200,9 +201,10 @@ final class TarotApiServiceMock(
     SpreadResponse(
       id = spread.id,
       title = request.title,
-      cardCount = request.cardCount,
+      cardsCount = request.cardCount,
       spreadStatus = spread.spreadStatus,
-      photo = PhotoResponse(PhotoOwnerType.Spread, spread.id, request.photo.sourceType, request.photo.fileId),
+      photo = PhotoResponse(spread.photo.id, spread.photo.fileId, PhotoOwnerType.Spread, spread.id, 
+        request.photo.sourceType, request.photo.sourceId),
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
       publishedAt = spread.publishedAt
@@ -214,7 +216,8 @@ final class TarotApiServiceMock(
       index = index,
       spreadId = spreadId,
       description = request.title,
-      photo = PhotoResponse(PhotoOwnerType.Spread, id, request.photo.sourceType, request.photo.fileId),
+      photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Card, id, 
+        request.photo.sourceType, request.photo.sourceId),
       createdAt = now
     )
 

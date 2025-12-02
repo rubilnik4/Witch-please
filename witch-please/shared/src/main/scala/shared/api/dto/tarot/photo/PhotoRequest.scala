@@ -6,5 +6,5 @@ import zio.schema.*
 
 final case class PhotoRequest(
   sourceType: FileSourceType,
-  fileId: String
+  sourceId: String
 ) derives JsonCodec, Schema

@@ -9,8 +9,8 @@ import shared.infrastructure.telemetry.tracing.TelemetryTracing
 
 trait BotEnv {
   def config: BotConfig
-  def botService: BotService
-  def botCommandHandler: BotCommandHandler
+  def services: BotService
+  def commandHandlers: BotCommandHandler
   def telemetryMeter: TelemetryMeter
   def telemetryTracing: TelemetryTracing
 }

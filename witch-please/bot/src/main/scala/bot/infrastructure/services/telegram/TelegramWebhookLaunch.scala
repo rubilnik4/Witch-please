@@ -10,7 +10,7 @@ object TelegramWebhookLaunch {
     ZLayer.scoped {
       for {
         telegramConfig <- ZIO.serviceWith[BotEnv](_.config.telegram)
-        telegramWebhookService <- ZIO.serviceWith[BotEnv](_.botService.telegramWebhookService)
+        telegramWebhookService <- ZIO.serviceWith[BotEnv](_.services.telegramWebhookService)
 
         _ <- ZIO.logInfo(s"Launching telegram webhook")
         _ <- telegramWebhookService.setCommands(TelegramCommands.DefaultCommands)

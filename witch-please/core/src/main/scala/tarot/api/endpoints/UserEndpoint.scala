@@ -29,7 +29,7 @@ object UserEndpoint {
         (for {
           _ <- ZIO.logInfo(s"Received request to get user by clientId $clientId")
           
-          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.userQueryHandler)
+          userQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userQueryHandler)
           user <- userQueryHandler.getUserByClientId(clientId)
         } yield UserResponseMapper.toResponse(user)).mapResponseErrors
       }

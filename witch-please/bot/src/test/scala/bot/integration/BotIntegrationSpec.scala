@@ -47,7 +47,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -70,7 +70,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
         clientSecret <- ZIO.fromOption(state.clientSecret).orElseFail(new RuntimeException("clientSecret not set"))
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -92,7 +92,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
         session <- botSessionService.get(chatId)
         spreadMode = SpreadMode.Create
@@ -116,7 +116,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
         session <- botSessionService.get(chatId)
         spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
@@ -148,7 +148,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
         session <- botSessionService.get(chatId)
         spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
@@ -198,9 +198,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
   private def getPhoto: ZIO[BotEnv, Throwable, String] =
     for {
-      fileStorageService <- ZIO.serviceWith[BotEnv](_.botService.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[BotEnv](_.botService.telegramApiService)
-      photo <- fileStorageService.getResourcePhoto(resourcePath)
+      fileStorageService <- ZIO.serviceWith[BotEnv](_.services.fileStorageService)
+      telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      photo <- fileStorageService.getResourceFile(resourcePath)
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       chatId <- getChatId
       photoId <- telegramApiService.sendPhoto(chatId, telegramFile)

@@ -146,7 +146,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(        
         spread.spreadStatus == SpreadStatus.Scheduled,
@@ -156,7 +156,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
     test("shouldn't take spreads after deadline") {
       for {
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
 
         spreadIds <- spreadJob.publishSpreads().map(_.map(_.id))
       } yield assertTrue(
@@ -177,7 +177,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.tarotQueryHandler.spreadQueryHandler)
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(
         spread.spreadStatus == SpreadStatus.Scheduled,
@@ -190,7 +190,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
 
         result <- spreadJob.publishSpreads()
         previewResult = result.filter(_.publishType == SpreadPublishType.PreviewPublished).map(_.id)
@@ -222,7 +222,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
 
         result <- spreadJob.publishSpreads()
         previewResult = result.filter(_.publishType == SpreadPublishType.PreviewPublished).map(_.id)

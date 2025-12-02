@@ -5,7 +5,6 @@ import zio.*
 import zio.telemetry.opentelemetry.metrics.*
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.TimeUnit
 
 final class TelemetryMeterLive (meter: Meter, cache: Ref.Synchronized[Map[String, Histogram[Double]]]) extends TelemetryMeter {
 

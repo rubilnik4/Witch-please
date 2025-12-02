@@ -21,10 +21,10 @@ final case class Card(
 )
 
 object Card {
-  def toDomain(command: CreateCardCommand, storedPhoto: FileStorage): UIO[Card] =
+  def toDomain(command: CreateCardCommand, photoFile: FileStorage): UIO[Card] =
     val id = UUID.randomUUID()
-    val photoFile = command.photo
-    val photo = Photo.toPhoto(storedPhoto, PhotoOwnerType.Card, id, photoFile.sourceType, photoFile.fileId)
+    val photoSource = command.photo
+    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, PhotoOwnerType.Card, id, photoSource.sourceType, photoSource.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       card = Card(

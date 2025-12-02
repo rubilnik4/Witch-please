@@ -8,8 +8,10 @@ import zio.schema.*
 import java.util.UUID
 
 final case class PhotoResponse(
+  id: UUID,
+  fileId: UUID,
   ownerType: PhotoOwnerType,
   ownerId: UUID,
   sourceType: FileSourceType,
-  fileId: String
+  sourceId: String
 ) derives JsonCodec, Schema

@@ -10,7 +10,7 @@ object SpreadJobLayer {
   val runner: ZLayer[TarotEnv, Nothing, Unit] =
     ZLayer.scoped {
       for {
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.tarotJob.spreadJob)
+        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
         _ <- spreadJob.run.forkScoped
       } yield ()
     }

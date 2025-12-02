@@ -5,7 +5,7 @@ import tarot.api.dto.tarot.photo.PhotoRequestMapper
 import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.photo.PhotoFile
+import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.SpreadId
 import zio.json.*
 import zio.schema.*

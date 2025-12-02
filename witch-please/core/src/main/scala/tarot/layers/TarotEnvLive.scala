@@ -10,11 +10,11 @@ import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.services.TarotService
 
 final case class TarotEnvLive(
-  config: TarotConfig,
-  tarotService: TarotService,
-  tarotJob: TarotJob,
-  tarotCommandHandler: TarotCommandHandler,
-  tarotQueryHandler: TarotQueryHandler,
-  telemetryMeter: TelemetryMeter,
-  telemetryTracing: TelemetryTracing
+                               config: TarotConfig,
+                               services: TarotService,
+                               jobs: TarotJob,
+                               commandHandlers: TarotCommandHandler,
+                               queryHandlers: TarotQueryHandler,
+                               telemetryMeter: TelemetryMeter,
+                               telemetryTracing: TelemetryTracing
 ) extends TarotEnv
