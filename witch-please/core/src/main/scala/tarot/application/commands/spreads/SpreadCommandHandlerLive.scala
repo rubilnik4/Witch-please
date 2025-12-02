@@ -37,6 +37,7 @@ final class SpreadCommandHandlerLive(
 
       previousSpread <- getSpread(command.spreadId)
       _ <- validateModifyStatus(previousSpread)
+      cards <- cardRepository.getCards(command.spreadId)
 
       photoFile <- getPhotoFile(command.photo)
       spread <- SpreadUpdate.toDomain(command, photoFile)
@@ -44,6 +45,11 @@ final class SpreadCommandHandlerLive(
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
       _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id, previousSpread.photo.fileId)
+
+      cardCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
+      _ <- ZIO.foreachParDiscard(cards) { card =>
+        cardCommandHandler.deleteCard(card)
+      }
     } yield ()
 
   override def scheduleSpread(command: ScheduleSpreadCommand) : ZIO[TarotEnv, TarotError, Unit] =
@@ -76,8 +82,8 @@ final class SpreadCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing delete command for spread $spreadId")
       
       spread <- getSpread(spreadId)
-      cards <- cardRepository.getCards(spreadId)
       _ <- validateModifyStatus(spread)
+      cards <- cardRepository.getCards(spreadId)
       _ <- spreadRepository.deleteSpread(spreadId)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)

@@ -57,7 +57,7 @@ final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
           .filter(_.id == lift(photoId))
           .delete
       })
-
+  
   private inline def photoTable =
     quote(querySchema[PhotoEntity](TarotTableNames.photos))
 }

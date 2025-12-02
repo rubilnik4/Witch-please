@@ -21,7 +21,7 @@ import zio.test.*
 import zio.test.TestAspect.sequential
 
 object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
-  private final val cardCount = 2
+  private final val cardCount = 3
   private final val clientId = "123456789"
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
@@ -54,7 +54,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadUpdateRequest(cardCount, photoId)
+        spreadRequest = spreadUpdateRequest(cardCount - 1, photoId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadUpdatePath("", spreadId), spreadRequest, token)
         _ <- app.runZIO(request)
 

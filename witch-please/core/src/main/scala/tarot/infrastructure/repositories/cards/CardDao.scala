@@ -25,6 +25,14 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (card, photo) => CardPhotoEntity(card, photo) }
       })
 
+  def getCardIds(spreadId: UUID): ZIO[Any, SQLException, List[UUID]] =
+    run(
+      quote {
+        cardTable
+          .filter { card => card.spreadId == lift(spreadId) }
+          .map { card => card.id }
+      })
+      
   def getCardsCount(spreadId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {
@@ -41,6 +49,14 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
+  def deleteCard(cardId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardTable
+          .filter(_.id == lift(cardId))
+          .delete
+      })
+      
   private inline def cardTable =
     quote(querySchema[CardEntity](TarotTableNames.cards))
 

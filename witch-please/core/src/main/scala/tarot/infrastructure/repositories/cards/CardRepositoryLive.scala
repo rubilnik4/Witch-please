@@ -6,22 +6,18 @@ import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.{Card, CardId}
-import tarot.domain.models.photo.Photo
-import tarot.domain.models.projects.ProjectId
-import tarot.domain.models.spreads.{Spread, SpreadId, SpreadStatusUpdate}
-import tarot.infrastructure.repositories.cards.CardDao
+import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.repositories.photo.PhotoDao
 import zio.*
 
 import java.sql.SQLException
-import java.time.Instant
 import java.util.UUID
 
 final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRepository {
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
 
-  def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
+  override def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
     for {
       _ <- ZIO.logDebug(s"Getting cards by spreadId $spreadId")
 
@@ -31,7 +27,16 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
     } yield cards
 
-  def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
+  override def getCardIds(spreadId: SpreadId): ZIO[Any, TarotError, List[CardId]]=
+    for {
+      _ <- ZIO.logDebug(s"Getting card ids by spreadId $spreadId")
+
+      ids <- cardDao.getCardIds(spreadId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get card ids by spreadId $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get card ids by spreadId $spreadId", e))
+    } yield ids.map(CardId(_))
+
+  override def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long] =
     for {
       _ <- ZIO.logDebug(s"Getting cards count by spreadId $spreadId")
 
@@ -39,8 +44,8 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .tapError(e => ZIO.logErrorCause(s"Failed to get cards count by spreadId $spreadId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
     } yield cardsCount
-  
-  def createCard(card: Card): ZIO[Any, TarotError, CardId] =
+
+  override def createCard(card: Card): ZIO[Any, TarotError, CardId] =
     for {
       _ <- ZIO.logDebug(s"Creating card $card")
 
@@ -54,4 +59,13 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .tapError(e => ZIO.logErrorCause(s"Failed to create card $card", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
     } yield CardId(cardId)
+
+  override def deleteCard(cardId: CardId): ZIO[Any, TarotError, Boolean] =
+    for {
+      _ <- ZIO.logDebug(s"Deleting card $cardId")
+
+      count <- cardDao.deleteCard(cardId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to delete card $cardId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to delete card $cardId", e))
+    } yield count > 0
 }
