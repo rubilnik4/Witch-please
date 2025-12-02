@@ -78,6 +78,9 @@ final class SpreadCommandHandlerLive(
       spread <- getSpread(spreadId)
       _ <- validateModifyStatus(spread)
       _ <- spreadRepository.deleteSpread(spreadId)
+
+      photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
+      _ <- photoCommandHandler.deletePhoto(spread.photo.id, spread.photo.fileId)
     } yield ()
 
   private def getPhotoFile(photoFile: PhotoSource) =

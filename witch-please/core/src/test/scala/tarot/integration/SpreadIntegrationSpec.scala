@@ -120,13 +120,21 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         createResponse <- app.runZIO(createRequest)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](createResponse).map(_.id)
 
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
+        previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
+
         deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
         _ <- app.runZIO(deleteRequest)
 
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
         spreadError <- spreadQueryHandler.getSpread(SpreadId(spreadId)).flip
+        photoError <- photoQueryHandler.getPhoto(previousSpread.photo.id).flip
       } yield assertTrue(
         spreadError match {
+          case TarotError.NotFound(_) => true
+          case _ => false
+        },
+        photoError match {
           case TarotError.NotFound(_) => true
           case _ => false
         }
@@ -204,13 +212,13 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
         cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
-        photoToDelete <- photoQueryHandler.getPhoto(previousSpread.photo.id).either
+        photoError <- photoQueryHandler.getPhoto(previousSpread.photo.id).flip
       } yield assertTrue(
         spread.id.id == spreadId,
         cardsCount == spread.cardsCount,
         spread.photo.sourceId == photoId,
-        photoToDelete match {
-          case Left(TarotError.NotFound(_)) => true
+        photoError match {
+          case TarotError.NotFound(_) => true
           case _ => false
         }
       )
