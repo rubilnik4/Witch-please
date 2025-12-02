@@ -107,40 +107,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spread.id == spreadId)
     },
 
-    test("should delete spread") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadCreateRequest(cardCount, photoId)
-        createRequest = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
-        createResponse <- app.runZIO(createRequest)
-        spreadId <- ZIOHttpClient.getResponse[IdResponse](createResponse).map(_.id)
-
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-
-        deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
-        _ <- app.runZIO(deleteRequest)
-
-        spreadError <- spreadQueryHandler.getSpread(SpreadId(spreadId)).flip
-        photoError <- photoQueryHandler.getPhoto(previousSpread.photo.id).flip
-      } yield assertTrue(
-        spreadError match {
-          case TarotError.NotFound(_) => true
-          case _ => false
-        },
-        photoError match {
-          case TarotError.NotFound(_) => true
-          case _ => false
-        }
-      )
-    },
-
     test("should send card to current spread") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
@@ -190,38 +156,6 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         createdCardsCount <- ZIOHttpClient.getResponse[Int](response)
       } yield assertTrue(
         createdCardsCount == cardCount)
-    },
-
-    test("should update spread") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-        cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadUpdateRequest(cardCount, photoId)
-        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadUpdatePath("", spreadId), spreadRequest, token)
-        _ <- app.runZIO(request)
-
-        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-        cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
-        photoError <- photoQueryHandler.getPhoto(previousSpread.photo.id).flip
-      } yield assertTrue(
-        spread.id.id == spreadId,
-        cardsCount == spread.cardsCount,
-        spread.photo.sourceId == photoId,
-        photoError match {
-          case TarotError.NotFound(_) => true
-          case _ => false
-        }
-      )
     },
 
     test("should publish spread") {

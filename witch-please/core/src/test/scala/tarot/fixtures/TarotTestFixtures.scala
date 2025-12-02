@@ -3,10 +3,12 @@ package tarot.fixtures
 import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
+import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.*
 import tarot.domain.models.authorize.*
+import tarot.domain.models.cards.CardId
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
 import tarot.layers.TarotEnv
@@ -48,6 +50,16 @@ object TarotTestFixtures {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
       spreadId <- spreadHandler.createSpread(command)
     } yield spreadId
+
+  def getCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardId]] =
+    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    for {
+      cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
+      cardIds <- ZIO.foreach(0 until cardCount) { index =>
+        val command = CreateCardCommand(index, spreadId, "Test card", photo)
+        cardHandler.createCard(command)
+      }
+    } yield cardIds.toList
 
   def getChatId: ZIO[TarotEnv, TarotError, Long] =
     for {

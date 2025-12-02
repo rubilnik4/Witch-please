@@ -15,7 +15,7 @@ final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
   import PhotoQuillMappings.given
   import quill.*
 
-  def getSpread(photoId: UUID): ZIO[Any, SQLException, Option[PhotoEntity]] =
+  def getPhoto(photoId: UUID): ZIO[Any, SQLException, Option[PhotoEntity]] =
     run(
       quote {
         photoTable
@@ -23,7 +23,25 @@ final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
           .take(1)
       })
       .map(_.headOption)
-      
+
+  def existPhoto(photoId: UUID): ZIO[Any, SQLException, Boolean] =
+    run(
+      quote {
+        photoTable
+          .filter { photo => photo.id == lift(photoId) }
+          .take(1).
+          nonEmpty
+      })
+
+  def existAnyPhoto(photoIds: List[UUID]): ZIO[Any, SQLException, Boolean] =
+    run(
+      quote {
+        photoTable
+          .filter { photo => lift(photoIds).contains(photo.id) }
+          .take(1).
+          nonEmpty
+      })
+
   def insertPhoto(photo: PhotoEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {

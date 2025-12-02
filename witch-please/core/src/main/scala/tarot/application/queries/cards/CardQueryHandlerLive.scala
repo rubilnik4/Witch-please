@@ -1,12 +1,9 @@
 package tarot.application.queries.cards
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.User
 import tarot.domain.models.cards.Card
-import tarot.domain.models.projects.Project
-import tarot.domain.models.spreads.{Spread, SpreadId}
+import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.repositories.cards.CardRepository
-import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
 
