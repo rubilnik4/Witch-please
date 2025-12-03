@@ -71,11 +71,15 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        cardRequest = cardCreateRequest(photoId)
-        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, 0), cardRequest, token)
-        response <- app.runZIO(request)
-        cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
-      } yield assertTrue(cardId.toString.nonEmpty)
+        cardIds <- ZIO.foreach(0 until cardsCount) { position =>
+          val cardRequest = TarotTestRequests.cardCreateRequest(photoId)
+          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, position), cardRequest, token)
+          for {
+            response <- app.runZIO(request)
+            cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
+          } yield cardId
+        }
+      } yield assertTrue(cardIds.length == cardsCount)
     },
 
     test("can't publish spread when scheduledAt is after maxFutureTime") {
