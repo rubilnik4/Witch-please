@@ -44,7 +44,7 @@ CREATE TABLE cards (
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
 
-    CONSTRAINT uq_cards_spread_index UNIQUE (spread_id, position);
+    CONSTRAINT uq_cards_spread_position UNIQUE (spread_id, position)
 );
 
 CREATE INDEX idx_cards_spread_id ON cards(spread_id);
