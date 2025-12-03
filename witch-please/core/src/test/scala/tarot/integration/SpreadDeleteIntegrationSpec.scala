@@ -1,14 +1,17 @@
 package tarot.integration
 
 import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.infrastructure.services.common.DateTimeService
+import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.*
-import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
+import tarot.fixtures.TarotTestFixtures
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -17,13 +20,13 @@ import zio.json.*
 import zio.test.*
 import zio.test.TestAspect.sequential
 
-object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
+object SpreadDeleteIntegrationSpec extends ZIOSpecDefault {
   private final val cardsCount = 3
   private final val clientId = "123456789"
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
 
-  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
+  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread delete API integration")(
     test("initialize test state") {
       for {
         photoId <- TarotTestFixtures.createPhoto
@@ -35,35 +38,6 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id)))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
-    },
-
-    test("should update spread") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-        cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = TarotTestRequests.spreadUpdateRequest(cardsCount - 1, photoId)
-        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadUpdatePath("", spreadId), spreadRequest, token)
-        _ <- app.runZIO(request)
-
-        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-        spreadCardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
-        spreadPhotoExist <- photoQueryHandler.existPhoto(previousSpread.photo.id)
-      } yield assertTrue(
-        spread.id.id == spreadId,
-        spreadCardsCount == previousSpread.cardsCount,
-        spread.photo.sourceId == photoId,
-        !spreadPhotoExist
-      )
     },
 
     test("should delete spread") {
@@ -105,5 +79,5 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))  
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
 }

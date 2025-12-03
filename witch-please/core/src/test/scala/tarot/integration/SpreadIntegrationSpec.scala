@@ -3,19 +3,16 @@ package tarot.integration
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.cards.CardResponse
 import shared.api.dto.tarot.common.IdResponse
-import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
-import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.*
-import tarot.fixtures.TarotTestFixtures
+import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -35,9 +32,9 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
     test("initialize test state") {
       for {
-        photoId <- TarotTestFixtures.getPhoto
-        userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
+        photoId <- TarotTestFixtures.createPhoto
+        userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
+        token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), None))
@@ -52,7 +49,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadCreateRequest(cardsCount, photoId)
+        spreadRequest = TarotTestRequests.spreadCreateRequest(cardsCount, photoId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -117,7 +114,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         cardIds <- ZIO.foreach(0 until cardsCount) { position =>
-          val cardRequest = cardCreateRequest(photoId)
+          val cardRequest = TarotTestRequests.cardCreateRequest(photoId)
           val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, position), cardRequest, token)
           for {
             response <- app.runZIO(request)
@@ -165,7 +162,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest <- spreadPublishRequest
+        publishRequest <- TarotTestRequests.spreadPublishRequest
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
@@ -184,31 +181,4 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
     ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
-    
-  private def spreadCreateRequest(cardCount: Int, photoId: String) =
-    SpreadCreateRequest(
-      title = "Spread integration test",
-      cardCount = cardCount,
-      photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-
-  private def spreadUpdateRequest(cardCount: Int, photoId: String) =
-    SpreadUpdateRequest(
-      title = "Spread integration test",
-      cardCount = cardCount,
-      photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-
-  private def cardCreateRequest(photoId: String) =
-    CardCreateRequest(
-      title = "Card integration test",
-      photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-
-  private def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
-    for {
-      now <- DateTimeService.getDateTimeNow
-      publishTime = now.plus(10.minute)
-      cardOfDayDelayHours = 2.hours
-    } yield SpreadPublishRequest(publishTime, cardOfDayDelayHours)
 }

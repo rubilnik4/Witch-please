@@ -14,7 +14,7 @@ import tarot.api.endpoints.*
 import tarot.application.jobs.spreads.SpreadPublishType
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.SpreadId
-import tarot.fixtures.TarotTestFixtures
+import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.integration.SpreadPublishIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
@@ -35,10 +35,10 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread publish API integration")(
     test("initialize test state") {
       for {
-        photoId <- TarotTestFixtures.getPhoto
-        userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        spreadId <- TarotTestFixtures.getSpread(userId, 2, photoId)
-        token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
+        photoId <- TarotTestFixtures.createPhoto
+        userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
+        spreadId <- TarotTestFixtures.createSpread(userId, 2, photoId)
+        token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
         
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id)))
@@ -54,7 +54,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(10.minute))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -86,7 +86,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(config.maxFutureTime).plus(1.minute))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -104,7 +104,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.minus(config.hardPastTime))
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -122,7 +122,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         maxCardOfDayDelay <- ZIO.serviceWith[TarotEnv](_.config.publish.maxCardOfDayDelay)       
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         publishTime <- DateTimeService.getDateTimeNow.map(time => time.plus(10.minute))
-        publishRequest = spreadPublishRequest(publishTime, maxCardOfDayDelay.plus(1.hours))
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, maxCardOfDayDelay.plus(1.hours))
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
 
@@ -142,7 +142,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         publishTime <- DateTimeService.getDateTimeNow.map(_.plus(deadline))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
@@ -173,7 +173,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         publishTime <- DateTimeService.getDateTimeNow
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest = spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
+        publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         _ <- app.runZIO(request)
 
@@ -209,6 +209,22 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         request = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
+        response <- app.runZIO(request)
+      } yield assertTrue(
+        response.status == Status.Conflict
+      )
+    },
+
+    test("can't create cards on preview published spread") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        cardRequest = cardCreateRequest(photoId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, 0), cardRequest, token)
         response <- app.runZIO(request)
       } yield assertTrue(
         response.status == Status.Conflict
@@ -268,6 +284,5 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
-  private def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Duration) =
-    SpreadPublishRequest(publishTime, cardOfDayDelayHours)
+
 }

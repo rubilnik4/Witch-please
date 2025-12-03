@@ -17,7 +17,7 @@ import zio.ZIO
 object TarotTestFixtures {
   final val resourcePath = "photos/test.png"
   
-  def getPhoto: ZIO[TarotEnv, TarotError, String] =
+  def createPhoto: ZIO[TarotEnv, TarotError, String] =
     for {
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.services.fileStorageService)
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramChannelService)
@@ -29,21 +29,21 @@ object TarotTestFixtures {
         .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
     } yield photoId
 
-  def getUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
+  def createUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
     val user = CreateAuthorCommand(clientId, clientType, clientSecret, "test user")
     for {
       userHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.userCommandHandler)
       userId <- userHandler.createAuthor(user)
     } yield userId
 
-  def getToken(clientType: ClientType, clientSecret: String, userId: UserId)
+  def createToken(clientType: ClientType, clientSecret: String, userId: UserId)
   : ZIO[TarotEnv, TarotError, String] =
     for {
       authService <- ZIO.serviceWith[TarotEnv](_.services.authService)
       token <- authService.issueToken(clientType, userId, clientSecret)
     } yield token.token
 
-  def getSpread(userId: UserId, cardsCount: Int, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
+  def createSpread(userId: UserId, cardsCount: Int, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
     val photo = PhotoSource(FileSourceType.Telegram ,photoId)
     val command = CreateSpreadCommand(userId, "Test spread", cardsCount, photo)
     for {
@@ -51,7 +51,7 @@ object TarotTestFixtures {
       spreadId <- spreadHandler.createSpread(command)
     } yield spreadId
 
-  def getCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardId]] =
+  def createCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardId]] =
     val photo = PhotoSource(FileSourceType.Telegram, photoId)
     for {
       cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)

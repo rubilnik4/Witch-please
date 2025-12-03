@@ -24,7 +24,7 @@ final class CardCommandHandlerLive(
       spread <- spreadQueryHandler.getSpread(command.spreadId)
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
 
-      _ <- ZIO.when(command.position <= 0) {
+      _ <- ZIO.when(command.position < 0) {
         ZIO.logError(s"Card position must be > 0, got ${command.position}") *>
           ZIO.fail(TarotError.ValidationError(s"Card position must be > 0, got ${command.position}"))
       }
