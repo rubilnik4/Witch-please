@@ -41,6 +41,17 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .size
       })
 
+  def existCardPosition(spreadId: UUID, position: Int): ZIO[Any, SQLException, Boolean] =
+    run(
+      quote {
+        cardTable
+          .filter { card =>
+            card.spreadId == lift(spreadId) &&
+            card.position == lift(position) }
+          .take(1)
+          .nonEmpty
+      })
+
   def insertCard(card: CardEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {

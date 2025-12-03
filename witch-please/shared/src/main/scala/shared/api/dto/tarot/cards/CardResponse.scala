@@ -9,7 +9,7 @@ import java.util.UUID
 
 final case class CardResponse(
   id: UUID,
-  index: Int,                           
+  position: Int,
   spreadId: UUID,
   description: String,
   photo: PhotoResponse,

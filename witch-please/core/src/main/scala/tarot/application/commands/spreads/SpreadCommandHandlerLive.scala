@@ -35,8 +35,9 @@ final class SpreadCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Executing update spread command for ${command.spreadId}")
 
-      previousSpread <- getSpread(command.spreadId)
-      _ <- validateModifyStatus(previousSpread)
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      previousSpread <- spreadQueryHandler.getSpread(command.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(previousSpread)
       cards <- cardRepository.getCards(command.spreadId)
 
       photoFile <- getPhotoFile(command.photo)
@@ -45,18 +46,14 @@ final class SpreadCommandHandlerLive(
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
       _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id, previousSpread.photo.fileId)
-
-      cardCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
-      _ <- ZIO.foreachParDiscard(cards) { card =>
-        cardCommandHandler.deleteCard(card)
-      }
     } yield ()
 
   override def scheduleSpread(command: ScheduleSpreadCommand) : ZIO[TarotEnv, TarotError, Unit] =
     for {
       _ <- ZIO.logInfo(s"Executing schedule spread command for spread ${command.spreadId}")
 
-      spread <- getSpread(command.spreadId)
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(command.spreadId)
       _ <- validatePublishing(spread)
       _ <- schedulePublish(spread, command.scheduledAt, command.cardOfDayDelayHours)
     } yield ()
@@ -80,9 +77,10 @@ final class SpreadCommandHandlerLive(
   override def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
     for {
       _ <- ZIO.logInfo(s"Executing delete command for spread $spreadId")
-      
-      spread <- getSpread(spreadId)
-      _ <- validateModifyStatus(spread)
+
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
       cards <- cardRepository.getCards(spreadId)
       _ <- spreadRepository.deleteSpread(spreadId)
 
@@ -140,21 +138,25 @@ final class SpreadCommandHandlerLive(
       _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")
       spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, cardOfDayAt, spread.scheduledAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
+
+      _ <- deleteCardsOnPublish(spread)
     } yield ()
 
-  private def validateModifyStatus(spread: Spread) =
+  private def deleteCardsOnPublish(spread: Spread) =
     for {
-      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.PreviewPublished) {
-        ZIO.logError(s"Spread ${spread.id} already preview published, couldn't be modify") *>
-          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already preview published, couldn't be modify"))
-      }
-      _ <- ZIO.when(spread.spreadStatus == SpreadStatus.Published) {
-        ZIO.logError(s"Spread ${spread.id} already published, couldn't be modify") *>
-          ZIO.fail(TarotError.Conflict(s"Spread ${spread.id} already published, couldn't be modify"))
+      _ <- ZIO.logInfo(s"Deleting cards on publishing by ${spread.id}")
+
+      cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+      cards <- cardQueryHandler.getCards(spread.id)
+      cardsToDelete =
+        if spread.cardsCount < cards.length then
+          cards.sortBy(_.position).takeRight(cards.length - spread.cardsCount)
+        else
+          Nil
+
+      cardCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
+      _ <- ZIO.foreachParDiscard(cardsToDelete) { card =>
+        cardCommandHandler.deleteCard(card)
       }
     } yield ()
-
-  private def getSpread(spreadId: SpreadId) =
-    spreadRepository.getSpread(spreadId)
-      .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
 }

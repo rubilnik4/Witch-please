@@ -28,6 +28,6 @@ object AuthorCommands {
   def spreadDelete(spreadId: UUID): String =
     s"$SpreadDelete $spreadId"
 
-  def cardCreate(index: Int): String =
-    s"$CardCreate $index"
+  def cardCreate(position: Int): String =
+    s"$CardCreate $position"
 }

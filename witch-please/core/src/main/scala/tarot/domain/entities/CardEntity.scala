@@ -7,7 +7,7 @@ import java.util.UUID
 
 final case class CardEntity(
   id: UUID,
-  index: Int,
+  position: Int,
   spreadId: UUID,
   title: String,
   photoId: UUID,
@@ -18,7 +18,7 @@ object CardEntity {
   def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
     CardEntity(
       id = card.id.id,
-      index = card.index,
+      position = card.position,
       spreadId = card.spreadId.id,
       title = card.title,
       photoId = coverPhotoId,

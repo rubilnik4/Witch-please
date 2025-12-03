@@ -48,17 +48,15 @@ object BotSession {
       pending = None,
       updatedAt = now)
       
-  def withCard(session: BotSession, index: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
+  def withCard(session: BotSession, position: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
     for {
       progress <- ZIO.fromOption(session.spreadProgress)
-        .orElseFail(new IllegalStateException(s"Cannot add card $index: spreadProgress is empty for userId=${session.userId}"))
+        .orElseFail(new IllegalStateException(s"Cannot add card $position: spreadProgress is empty for userId=${session.userId}"))
+      _ <- ZIO.fail(new IllegalArgumentException(s"Card position $position is out of bounds [0, ${progress.cardsCount - 1}]"))
+        .unless(position >= 0 && position < progress.cardsCount)
 
-      _ <- ZIO.fail(new IllegalArgumentException(s"Card index $index is out of bounds [0, ${progress.cardsCount - 1}]"))
-        .unless(index >= 0 && index < progress.cardsCount)
-
-      nextProgress = if (progress.createdIndices.contains(index)) progress
-        else progress.copy(
-          createdIndices = progress.createdIndices + index)
+      nextProgress = if (progress.createdPositions.contains(position)) progress
+        else progress.copy(createdPositions = progress.createdPositions + position)
     } yield session.copy(spreadProgress = Some(nextProgress), pending = None, updatedAt = now)
 
   def withDate(session: BotSession, date: LocalDate, now: Instant): BotSession =

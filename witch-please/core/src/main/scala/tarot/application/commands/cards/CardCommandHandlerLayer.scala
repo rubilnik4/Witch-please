@@ -7,6 +7,6 @@ import tarot.infrastructure.repositories.users.{UserProjectRepository, UserRepos
 import zio.ZLayer
 
 object CardCommandHandlerLayer {
-  val live: ZLayer[SpreadRepository & CardRepository, Nothing, CardCommandHandler] =
-    ZLayer.fromFunction(new CardCommandHandlerLive(_, _))
+  val live: ZLayer[CardRepository, Nothing, CardCommandHandler] =
+    ZLayer.fromFunction(new CardCommandHandlerLive(_))
 }

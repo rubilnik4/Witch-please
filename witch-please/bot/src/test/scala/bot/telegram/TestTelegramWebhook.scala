@@ -73,8 +73,8 @@ object TestTelegramWebhook {
   def selectSpreadsRequest(chatId: Long, spreadId: UUID, cardCount: Int): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.spreadSelect(spreadId, cardCount))
 
-  def createCardRequest(chatId: Long, index: Int): TelegramWebhookRequest =
-    textRequest(chatId, AuthorCommands.cardCreate(index))
+  def createCardRequest(chatId: Long, position: Int): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.cardCreate(position))
     
   def publishSpreadRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.spreadPublish(spreadId))

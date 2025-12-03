@@ -24,5 +24,5 @@ trait TarotApiService {
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]]
   def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int]
-  def createCard(request: CardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse]
+  def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse]
 }

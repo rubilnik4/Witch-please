@@ -102,11 +102,11 @@ object SpreadFlow {
 
       spread <- tarotApi.getSpread(spreadId, token)
       cards <- tarotApi.getCards(spreadId, token)
-      createdIndexes = cards.map(_.index).toSet
-      progress = SpreadProgress(cardCount, createdIndexes)
+      createdPosition = cards.map(_.position).toSet
+      progress = SpreadProgress(cardCount, createdPosition)
       _ <- sessionService.setSpread(context.chatId, spreadId, progress)
 
-      _ <- showSpread(context, spread, createdIndexes)(telegramApi)
+      _ <- showSpread(context, spread, createdPosition)(telegramApi)
     } yield ()
 
   def deleteSpread(context: TelegramContext)(
@@ -140,13 +140,13 @@ object SpreadFlow {
     _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
   } yield ()
     
-  private def showSpread(context: TelegramContext, spread: SpreadResponse, createdCardIndexes: Set[Int])
+  private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Set[Int])
       (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
     val summaryText =
       s""" Расклад: “${spread.title}”
          | Публикация: ${getScheduledText(spread)}
          | Карт по плану: ${spread.cardsCount}
-         | Создано карт: ${createdCardIndexes.size}
+         | Создано карт: ${cardsPositions.size}
          |
          |Выбери действие:
          |""".stripMargin

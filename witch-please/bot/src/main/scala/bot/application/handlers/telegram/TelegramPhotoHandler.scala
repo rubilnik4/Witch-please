@@ -19,8 +19,8 @@ object TelegramPhotoHandler {
       _ <- session.pending match {
         case Some(BotPendingAction.SpreadPhoto(spreadMode, title, cardCount)) =>
           SpreadFlow.setSpreadPhoto(context, spreadMode, title, cardCount, fileId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardPhoto(index, description)) =>
-          CardFlow.setCardPhoto(context, index, description, fileId)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.CardPhoto(position, description)) =>
+          CardFlow.setCardPhoto(context, position, description, fileId)(telegramApi, tarotApi, sessionService)
         case None | Some(BotPendingAction.SpreadTitle(_)) 
              | Some(BotPendingAction.SpreadCardCount(_,_)) | Some(BotPendingAction.CardTitle(_)) =>
           for {

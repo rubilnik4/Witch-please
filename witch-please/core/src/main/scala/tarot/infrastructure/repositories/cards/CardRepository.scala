@@ -8,11 +8,11 @@ import zio.ZIO
 
 import java.time.Instant
 
-
 trait CardRepository {
   def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]]
   def getCardIds(spreadId: SpreadId): ZIO[Any, TarotError, List[CardId]]
   def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long]
+  def existCardPosition(spreadId: SpreadId, position: Int): ZIO[Any, TarotError, Boolean]
   def createCard(card: Card): ZIO[Any, TarotError, CardId]
   def deleteCard(cardId: CardId): ZIO[Any, TarotError, Boolean]
 }

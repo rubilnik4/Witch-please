@@ -18,7 +18,7 @@ object CardPhotoEntity {
       coverPhoto <- PhotoEntity.toDomain(cardPhoto.coverPhoto)
       card = Card(
         id = CardId(cardPhoto.card.id),
-        index = cardPhoto.card.index,
+        position = cardPhoto.card.position,
         spreadId = SpreadId(cardPhoto.card.spreadId),
         title = cardPhoto.card.title,
         photo = coverPhoto,

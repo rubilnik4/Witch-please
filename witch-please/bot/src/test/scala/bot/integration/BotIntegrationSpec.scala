@@ -123,9 +123,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
 
-        _ <- ZIO.foreachDiscard(1 to cardCount) { index =>
+        _ <- ZIO.foreachDiscard(1 to cardCount) { position =>
           for {
-            _ <- CardFlow.startCard(app, chatId, index)
+            _ <- CardFlow.startCard(app, chatId, position)
             _ <- CardFlow.cardDescription(app, chatId, s"Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
             _ <- CommonFlow.expectNoPending(chatId)
@@ -136,8 +136,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(
         spreadProgress.cardsCount == cardCount,
-        spreadProgress.createdIndices.size == cardCount,
-        spreadProgress.createdIndices == (0 until cardCount).toSet,
+        spreadProgress.createdPositions.size == cardCount,
+        spreadProgress.createdPositions == (0 until cardCount).toSet,
         session.pending.isEmpty
       )
     },
@@ -161,8 +161,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(
         spreadProgress.cardsCount == cardCount,
-        spreadProgress.createdIndices.size == cardCount,
-        spreadProgress.createdIndices == (0 until cardCount).toSet,
+        spreadProgress.createdPositions.size == cardCount,
+        spreadProgress.createdPositions == (0 until cardCount).toSet,
         session.pending.isEmpty
       )
     },

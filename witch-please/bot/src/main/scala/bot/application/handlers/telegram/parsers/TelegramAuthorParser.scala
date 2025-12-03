@@ -48,10 +48,10 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
-      case AuthorCommands.CardCreate :: indexStr :: Nil =>
-        indexStr.toIntOption match {
-          case Some(index) =>
-            AuthorCommand.CreateCard(index - 1)
+      case AuthorCommands.CardCreate :: positionStr :: Nil =>
+        positionStr.toIntOption match {
+          case Some(position) =>
+            AuthorCommand.CreateCard(position - 1)
           case _ =>
             BotCommand.Unknown
         }

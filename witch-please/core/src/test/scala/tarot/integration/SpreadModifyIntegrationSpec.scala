@@ -21,18 +21,18 @@ import zio.test.*
 import zio.test.TestAspect.sequential
 
 object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
-  private final val cardCount = 3
+  private final val cardsCount = 3
   private final val clientId = "123456789"
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
 
-  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
+  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
     test("initialize test state") {
       for {
         photoId <- TarotTestFixtures.getPhoto
         userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        spreadId <- TarotTestFixtures.getSpread(userId, photoId)
-        _ <- TarotTestFixtures.getCards(spreadId, cardCount, photoId)
+        spreadId <- TarotTestFixtures.getSpread(userId, cardsCount, photoId)
+        _ <- TarotTestFixtures.getCards(spreadId, cardsCount, photoId)
         token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
@@ -54,16 +54,16 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadUpdateRequest(cardCount - 1, photoId)
+        spreadRequest = spreadUpdateRequest(cardsCount - 1, photoId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadUpdatePath("", spreadId), spreadRequest, token)
         _ <- app.runZIO(request)
 
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-        cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
+        spreadCardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
         spreadPhotoExist <- photoQueryHandler.existPhoto(previousSpread.photo.id)
       } yield assertTrue(
         spread.id.id == spreadId,
-        cardsCount == spread.cardsCount,
+        spreadCardsCount == previousSpread.cardsCount,
         spread.photo.sourceId == photoId,
         !spreadPhotoExist
       )

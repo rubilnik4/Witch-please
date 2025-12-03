@@ -4,5 +4,5 @@ enum BotPendingAction:
   case SpreadTitle(spreadMode: SpreadMode)
   case SpreadCardCount(spreadMode: SpreadMode, title: String)
   case SpreadPhoto(spreadMode: SpreadMode, title: String, cardCount: Int)
-  case CardTitle(index: Int)
-  case CardPhoto(index: Int, title: String)
+  case CardTitle(position: Int)
+  case CardPhoto(position: Int, title: String)

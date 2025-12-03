@@ -9,7 +9,7 @@ object CardResponseMapper {
   def toResponse(card: Card): CardResponse =
     CardResponse(
       id = card.id.id,
-      index = card.index,
+      position = card.position,
       spreadId = card.spreadId.id,
       description = card.title,
       photo = PhotoResponseMapper.toResponse(card.photo),

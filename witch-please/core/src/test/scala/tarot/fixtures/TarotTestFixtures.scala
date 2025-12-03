@@ -43,9 +43,9 @@ object TarotTestFixtures {
       token <- authService.issueToken(clientType, userId, clientSecret)
     } yield token.token
 
-  def getSpread(userId: UserId, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
+  def getSpread(userId: UserId, cardsCount: Int, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
     val photo = PhotoSource(FileSourceType.Telegram ,photoId)
-    val command = CreateSpreadCommand(userId, "Test spread", 1, photo)
+    val command = CreateSpreadCommand(userId, "Test spread", cardsCount, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
       spreadId <- spreadHandler.createSpread(command)
@@ -55,8 +55,8 @@ object TarotTestFixtures {
     val photo = PhotoSource(FileSourceType.Telegram, photoId)
     for {
       cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
-      cardIds <- ZIO.foreach(0 until cardCount) { index =>
-        val command = CreateCardCommand(index, spreadId, "Test card", photo)
+      cardIds <- ZIO.foreach(0 until cardCount) { position =>
+        val command = CreateCardCommand(position, spreadId, "Test card", photo)
         cardHandler.createCard(command)
       }
     } yield cardIds.toList

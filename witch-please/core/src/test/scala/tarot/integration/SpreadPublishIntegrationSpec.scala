@@ -37,7 +37,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       for {
         photoId <- TarotTestFixtures.getPhoto
         userId <- TarotTestFixtures.getUser(clientId, clientType, clientSecret)
-        spreadId <- TarotTestFixtures.getSpread(userId, photoId)
+        spreadId <- TarotTestFixtures.getSpread(userId, 2, photoId)
         token <- TarotTestFixtures.getToken(clientType, clientSecret, userId)
         
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]

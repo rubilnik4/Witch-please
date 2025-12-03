@@ -39,12 +39,12 @@ object CardFlow {
       cardsCount <- ZIO.fromOption(session.spreadProgress.map(_.cardsCount))
         .orElseFail(new RuntimeException(s"Cards count not found in session for chat ${context.chatId}"))
 
-      cardButtons = (1 to cardsCount).map { index =>
-        cards.find(_.index == index - 1) match {
+      cardButtons = (1 to cardsCount).map { position =>
+        cards.find(_.position == position - 1) match {
           case Some(card) =>
-            TelegramInlineKeyboardButton(s"$index. ${card.description}", Some(AuthorCommands.cardCreate(index)))
+            TelegramInlineKeyboardButton(s"$position. ${card.description}", Some(AuthorCommands.cardCreate(position)))
           case None =>
-            TelegramInlineKeyboardButton(s"$index. ➕ Создать карту", Some(AuthorCommands.cardCreate(index)))
+            TelegramInlineKeyboardButton(s"$position. ➕ Создать карту", Some(AuthorCommands.cardCreate(position)))
         }
       }.toList
       backToSpreadButton = TelegramInlineKeyboardButton(s"К раскладу", Some(AuthorCommands.spreadSelect(spreadId, cardsCount)))
@@ -52,27 +52,27 @@ object CardFlow {
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()
 
-  def createCard(context: TelegramContext, index: Int)(
+  def createCard(context: TelegramContext, position: Int)(
     telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Create card $index for chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Create card $position for chat ${context.chatId}")
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardTitle(index))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardTitle(position))
       _ <- telegramApi.sendReplyText(context.chatId, s"Напиши описание карты")
     } yield ()
 
-  def setCardTitle(context: TelegramContext, index: Int, title: String)(
+  def setCardTitle(context: TelegramContext, position: Int, title: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card title from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(index, title))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(position, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания карты")
     } yield ()
 
-  def setCardPhoto(context: TelegramContext, index: Int, title: String, fileId: String)(
+  def setCardPhoto(context: TelegramContext, position: Int, title: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
@@ -87,8 +87,8 @@ object CardFlow {
       
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
       request = CardCreateRequest(title, photo)
-      _ <- tarotApi.createCard(request, spreadId, index, token)
-      _ <- sessionService.setCard(context.chatId, index)
+      _ <- tarotApi.createCard(request, spreadId, position, token)
+      _ <- sessionService.setCard(context.chatId, position)
       _ <- telegramApi.sendText(context.chatId, s"Карта $title создана")
 
       cards <- tarotApi.getCards(spreadId, token)

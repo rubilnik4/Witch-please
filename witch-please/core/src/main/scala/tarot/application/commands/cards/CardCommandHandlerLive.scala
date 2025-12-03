@@ -2,6 +2,7 @@ package tarot.application.commands.cards
 
 import shared.models.files.FileStorage
 import tarot.application.commands.cards.commands.CreateCardCommand
+import tarot.application.commands.spreads.SpreadValidateHandler
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.PhotoSource
@@ -12,7 +13,6 @@ import zio.ZIO
 
 
 final class CardCommandHandlerLive(
-  spreadRepository: SpreadRepository, 
   cardRepository: CardRepository
 ) extends CardCommandHandler {
 
@@ -20,10 +20,19 @@ final class CardCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Executing create card ${command.title} command")
 
-      exists <- spreadRepository.existsSpread(command.spreadId)
-      _ <- ZIO.unless(exists) {
-        ZIO.logError(s"Spread ${command.spreadId} not found for card create") *>
-          ZIO.fail(TarotError.NotFound(s"Spread ${command.spreadId} not found"))
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(command.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
+
+      _ <- ZIO.when(command.position <= 0) {
+        ZIO.logError(s"Card position must be > 0, got ${command.position}") *>
+          ZIO.fail(TarotError.ValidationError(s"Card position must be > 0, got ${command.position}"))
+      }
+
+      existCardPosition <- cardRepository.existCardPosition(command.spreadId, command.position)
+      _ <- ZIO.when(existCardPosition) {
+        ZIO.logError(s"Card position ${command.position} already exists in spread ${command.spreadId}") *>
+          ZIO.fail(TarotError.ValidationError(s"Card position ${command.position} already exists in spread ${command.spreadId}"))
       }
 
       photoFile <- getPhotoSource(command.photo)

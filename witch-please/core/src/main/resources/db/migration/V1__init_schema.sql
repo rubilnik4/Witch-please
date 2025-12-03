@@ -38,12 +38,16 @@ CREATE INDEX idx_spreads_published_at
 
 CREATE TABLE cards (
     id UUID PRIMARY KEY,
-    index INT NOT NULL,
+    position INT NOT NULL,
     spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     photo_id UUID NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT uq_cards_spread_index UNIQUE (spread_id, position);
 );
+
+CREATE INDEX idx_cards_spread_id ON cards(spread_id);
 
 CREATE TABLE photos (
     id UUID PRIMARY KEY,

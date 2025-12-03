@@ -21,7 +21,7 @@ object PublishFlow {
 
       _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
 
-      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdIndices.size == p.cardsCount)) {
+      _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdPositions.size == p.cardsCount)) {
         telegramApi.sendText(context.chatId, s"Нельзя опубликовать: не все карты загружены") *>
           ZIO.logError("Can't publish. Not all cards uploaded") *>
           ZIO.fail(new RuntimeException("Can't publish. Not all cards uploaded"))

@@ -107,13 +107,13 @@ final class TarotApiServiceMock(
     }
   } yield spreads
 
-  override def createCard(request: CardCreateRequest, spreadId: UUID, index: Int, token: String): ZIO[Any, ApiError, IdResponse] =
+  override def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
-      _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"index must be positive")).when(index < 0)
+      _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"position must be positive")).when(position < 0)
 
       now <- DateTimeService.getDateTimeNow
       cardId = UUID.randomUUID()
-      card = getCardResponse(cardId, request, index, spreadId, now)
+      card = getCardResponse(cardId, request, position, spreadId, now)
       idResponse <- cardMap.modifyZIO { cards =>
         val spreadCards = cards.getOrElse(spreadId, Map.empty)
         val updatedSpreadCards = spreadCards.updated(cardId, card)
@@ -210,10 +210,10 @@ final class TarotApiServiceMock(
       publishedAt = spread.publishedAt
     )
 
-  private def getCardResponse(id: UUID, request: CardCreateRequest, index: Int, spreadId: UUID, now: Instant) =
+  private def getCardResponse(id: UUID, request: CardCreateRequest, position: Int, spreadId: UUID, now: Instant) =
     CardResponse(
       id = id,
-      index = index,
+      position = position,
       spreadId = spreadId,
       description = request.title,
       photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Card, id, 

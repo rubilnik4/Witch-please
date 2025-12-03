@@ -161,7 +161,7 @@ object SpreadEndpoint {
       
   private val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("index"))
+      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("position"))
       .in(jsonBody[CardCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(TapirError.tapirErrorOut)
@@ -169,11 +169,11 @@ object SpreadEndpoint {
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload => {
-        case (spreadId, index, request) =>
+        case (spreadId, position, request) =>
           (for {
-            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $index for spread $spreadId")
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $position for spread $spreadId")
             
-            externalCard <- CardCreateRequestMapper.fromRequest(request, index, spreadId)
+            externalCard <- CardCreateRequestMapper.fromRequest(request, position, spreadId)
             handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
             cardId <- handler.createCard(externalCard)
           } yield IdResponse(cardId.id)).mapResponseErrors

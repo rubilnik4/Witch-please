@@ -45,6 +45,15 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .mapError(e => DatabaseError(s"Failed to get cards count by spreadId $spreadId", e))
     } yield cardsCount
 
+  override def existCardPosition(spreadId: SpreadId, position: Int): ZIO[Any, TarotError, Boolean] =
+    for {
+      _ <- ZIO.logDebug(s"Checking card position $position exist by spreadId $spreadId")
+
+      cardsCount <- cardDao.existCardPosition(spreadId.id, position)
+        .tapError(e => ZIO.logErrorCause(s"Failed to check card position $position by spreadId $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to check card position $position by spreadId $spreadId", e))
+    } yield cardsCount
+    
   override def createCard(card: Card): ZIO[Any, TarotError, CardId] =
     for {
       _ <- ZIO.logDebug(s"Creating card $card")

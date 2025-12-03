@@ -13,7 +13,7 @@ import java.util.UUID
 
 final case class Card(
   id: CardId,
-  index: Int,
+  position: Int,
   spreadId: SpreadId,
   title: String,
   photo: Photo,
@@ -29,7 +29,7 @@ object Card {
       createdAt <- DateTimeService.getDateTimeNow
       card = Card(
         id = CardId(id),
-        index = command.index,
+        position = command.position,
         spreadId = command.spreadId,
         title = command.title,
         photo = photo,

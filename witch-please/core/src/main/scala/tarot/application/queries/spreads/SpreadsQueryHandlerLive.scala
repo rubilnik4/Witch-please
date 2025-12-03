@@ -2,7 +2,6 @@ package tarot.application.queries.spreads
 
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.UserId
-import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId}
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.repositories.users.UserProjectRepository
@@ -21,6 +20,7 @@ final class SpreadsQueryHandlerLive(
       
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
+        .tapError(_ => ZIO.logError(s"Spread $spreadId not found"))
     } yield spread
 
   override def getSpreads(userId: UserId): ZIO[TarotEnv, TarotError, List[Spread]] =
@@ -28,8 +28,8 @@ final class SpreadsQueryHandlerLive(
       _ <- ZIO.logInfo(s"Executing spreads query by userId $userId")
 
       projectIds <- userProjectRepository.getProjectIds(userId)
-      projectId <- ZIO.fromOption(projectIds.headOption)
-        .orElseFail(TarotError.NotFound(s"No project found for user $userId"))
+      projectId <- ZIO.fromOption(projectIds.headOption).orElseFail(TarotError.NotFound(s"No project found for user $userId"))
+        .tapError(_ => ZIO.logError(s"No project found for user $userId"))
       
       spreads <- spreadRepository.getSpreads(projectId)
     } yield spreads

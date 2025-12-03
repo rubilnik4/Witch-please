@@ -14,22 +14,22 @@ import zio.{IO, ZIO}
 import java.util.UUID
 
 object CardCreateRequestMapper {
-  def fromRequest(request: CardCreateRequest, index: Int, spreadId: UUID): IO[TarotError, CreateCardCommand] =
-    validate(request, index, spreadId) *> toDomain(request, index, spreadId)
+  def fromRequest(request: CardCreateRequest, position: Int, spreadId: UUID): IO[TarotError, CreateCardCommand] =
+    validate(request, position, spreadId) *> toDomain(request, position, spreadId)
   
-  private def toDomain(request: CardCreateRequest, index: Int, spreadId: UUID) =
+  private def toDomain(request: CardCreateRequest, position: Int, spreadId: UUID) =
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield CreateCardCommand(
-      index = index,
+      position = position,
       spreadId = SpreadId(spreadId),
       title = request.title,
       photo = photo
     )
 
-  private def validate(request: CardCreateRequest, index: Int, spreadId: UUID) = {
+  private def validate(request: CardCreateRequest, position: Int, spreadId: UUID) = {
     for {
-      _ <- ZIO.fail(ValidationError("index must be positive")).when(index < 0)
+      _ <- ZIO.fail(ValidationError("position must be positive")).when(position < 0)
       _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.title.trim.isEmpty)
     } yield ()
   }

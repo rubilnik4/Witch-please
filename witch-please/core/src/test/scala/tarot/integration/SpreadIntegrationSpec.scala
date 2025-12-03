@@ -27,7 +27,7 @@ import zio.test.TestAspect.sequential
 import java.util.UUID
 
 object SpreadIntegrationSpec extends ZIOSpecDefault {
-  private final val cardCount = 2
+  private final val cardsCount = 2
   private final val clientId = "123456789"
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
@@ -52,7 +52,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = spreadCreateRequest(cardCount, photoId)
+        spreadRequest = spreadCreateRequest(cardsCount, photoId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.spreadCreatePath(""), spreadRequest, token)
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -116,9 +116,9 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        cardIds <- ZIO.foreach(0 until cardCount) { index =>
+        cardIds <- ZIO.foreach(0 until cardsCount) { position =>
           val cardRequest = cardCreateRequest(photoId)
-          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, index), cardRequest, token)
+          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, position), cardRequest, token)
           for {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -140,7 +140,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         cards <- ZIOHttpClient.getResponse[List[CardResponse]](response)
       } yield assertTrue(
         cards.nonEmpty,
-        cards.length == cardCount)
+        cards.length == cardsCount)
     },
 
     test("should get cards count") {
@@ -155,7 +155,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         createdCardsCount <- ZIOHttpClient.getResponse[Int](response)
       } yield assertTrue(
-        createdCardsCount == cardCount)
+        createdCardsCount == cardsCount)
     },
 
     test("should publish spread") {
