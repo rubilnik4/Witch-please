@@ -124,6 +124,23 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(cardIds.forall(id => id.toString.nonEmpty))
     },
 
+    test("can't create existing card to current spread") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        cardRequest = TarotTestRequests.cardCreateRequest(photoId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, 0), cardRequest, token)
+        response <- app.runZIO(request)
+      } yield assertTrue(
+        response.status == Status.Conflict
+      )
+    },
+
     test("should get cards") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
