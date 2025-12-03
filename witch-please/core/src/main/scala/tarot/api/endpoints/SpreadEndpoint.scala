@@ -173,9 +173,9 @@ object SpreadEndpoint {
           (for {
             _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $position for spread $spreadId")
             
-            externalCard <- CardCreateRequestMapper.fromRequest(request, position, spreadId)
+            command <- CardCreateRequestMapper.fromRequest(request, position, spreadId)
             handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
-            cardId <- handler.createCard(externalCard)
+            cardId <- handler.createCard(command)
           } yield IdResponse(cardId.id)).mapResponseErrors
         }
       }

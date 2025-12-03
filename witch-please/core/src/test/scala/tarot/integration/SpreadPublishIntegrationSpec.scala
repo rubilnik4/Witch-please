@@ -28,6 +28,7 @@ import java.time.Instant
 import java.util.UUID
 
 object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
+  private final val cardsCount = 1
   private final val clientId = "123456789"
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
@@ -37,7 +38,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       for {
         photoId <- TarotTestFixtures.createPhoto
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
-        spreadId <- TarotTestFixtures.createSpread(userId, 2, photoId)
+        spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
         
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]

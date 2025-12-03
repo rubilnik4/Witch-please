@@ -32,7 +32,7 @@ final class CardCommandHandlerLive(
       existCardPosition <- cardRepository.existCardPosition(command.spreadId, command.position)
       _ <- ZIO.when(existCardPosition) {
         ZIO.logError(s"Card position ${command.position} already exists in spread ${command.spreadId}") *>
-          ZIO.fail(TarotError.ValidationError(s"Card position ${command.position} already exists in spread ${command.spreadId}"))
+          ZIO.fail(TarotError.Conflict(s"Card position ${command.position} already exists in spread ${command.spreadId}"))
       }
 
       photoFile <- getPhotoSource(command.photo)
