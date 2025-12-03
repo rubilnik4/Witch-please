@@ -4,11 +4,13 @@ import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.ClientType
+import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
+import tarot.integration.SpreadIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -97,7 +99,31 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         !spreadPhotoExist,
         !cardPhotoExist
       )
-    }
+    },
+
+    test("should schedule spread") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        publishRequest <- TarotTestRequests.spreadPublishRequest
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
+        _ <- app.runZIO(request)
+
+        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+        cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
+        cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
+      } yield assertTrue(
+        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.scheduledAt.contains(publishRequest.scheduledAt),
+        cardsCount == spread.cardsCount
+      )
+    },
+
+
   ).provideShared(
     Scope.default,
     TestTarotEnvLayer.testEnvLive,

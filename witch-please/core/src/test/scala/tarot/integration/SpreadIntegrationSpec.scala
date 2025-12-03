@@ -169,25 +169,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         createdCardsCount <- ZIOHttpClient.getResponse[Int](response)
       } yield assertTrue(
-        createdCardsCount == cardsCount)
-    },
-
-    test("should publish spread") {
-      for {
-        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishRequest <- TarotTestRequests.spreadPublishRequest
-        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
-        _ <- app.runZIO(request)
-
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-        spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-      } yield assertTrue(
-        spread.spreadStatus == SpreadStatus.Scheduled,
-        spread.scheduledAt.contains(publishRequest.scheduledAt)
+        createdCardsCount == cardsCount
       )
     }
   ).provideShared(
