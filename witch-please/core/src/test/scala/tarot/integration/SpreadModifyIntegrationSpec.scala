@@ -66,7 +66,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         spread.photo.sourceId == photoId,
         !spreadPhotoExist
       )
-    }
+    },
 
     test("should schedule spread") {
       for {
@@ -88,8 +88,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         spread.scheduledAt.contains(publishRequest.scheduledAt),
         cardsCount == spread.cardsCount
       )
-    },
-
+    }
 
   ).provideShared(
     Scope.default,
