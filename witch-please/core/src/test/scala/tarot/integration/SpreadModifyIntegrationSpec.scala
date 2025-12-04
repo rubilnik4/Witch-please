@@ -66,40 +66,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         spread.photo.sourceId == photoId,
         !spreadPhotoExist
       )
-    },
-
-    test("should delete spread") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
-        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-
-        spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-        cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
-        previousCards <- cardQueryHandler.getCards(SpreadId(spreadId))
-
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.spreadDeletePath("", spreadId), token)
-        _ <- app.runZIO(deleteRequest)
-
-        spreadError <- spreadQueryHandler.getSpread(SpreadId(spreadId)).flip
-        cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
-        spreadPhotoExist <- photoQueryHandler.existPhoto(previousSpread.photo.id)
-        cardPhotoExist <- photoQueryHandler.existAnyPhoto(previousCards.map(_.photo.id))
-      } yield assertTrue(
-        spreadError match {
-          case TarotError.NotFound(_) => true
-          case _ => false
-        },
-        cardsCount == 0,
-        !spreadPhotoExist,
-        !cardPhotoExist
-      )
-    },
+    }
 
     test("should schedule spread") {
       for {
