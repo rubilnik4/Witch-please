@@ -1,7 +1,7 @@
 package bot.infrastructure.services.tarot
 
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*

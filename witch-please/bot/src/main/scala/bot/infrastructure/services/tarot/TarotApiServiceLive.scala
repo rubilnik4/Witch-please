@@ -3,7 +3,7 @@ package bot.infrastructure.services.tarot
 import shared.api.dto.*
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*

@@ -110,11 +110,11 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
     for {
       _ <- ZIO.logDebug(s"Updating spread $spreadId")
 
-      spreadId <- quill.transaction {
+      _ <- quill.transaction {
         for {
           photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))         
-          spreadId <- spreadDao.updateSpread(spreadId.id, spread, photoId)
-        } yield spreadId
+          _ <- spreadDao.updateSpread(spreadId.id, spread, photoId)
+        } yield ()
       }
         .tapError(e => ZIO.logErrorCause(s"Failed to update spread $spreadId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to update spread $spreadId", e))

@@ -20,7 +20,7 @@ object AuthEndpoint {
   private val postAuthEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
-      .in(TarotApiRoutes.apiPath / "auth")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.auth)
       .in(jsonBody[AuthRequest])
       .out(jsonBody[AuthResponse])
       .errorOut(TapirError.tapirErrorOut)

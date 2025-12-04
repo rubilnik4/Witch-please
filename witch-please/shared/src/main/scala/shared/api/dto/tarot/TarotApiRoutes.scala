@@ -7,6 +7,11 @@ import java.util.UUID
 
 case object TarotApiRoutes {
   val apiPath = "api"
+  val spreads = "spreads"
+  val cards = "cards"
+  val authors = "authors"
+  val auth = "auth"
+  val users ="users"
 
   private def make(baseUrl: String, segments: String*): URL = {
     val base = baseUrl.stripSuffix("/")
@@ -17,41 +22,44 @@ case object TarotApiRoutes {
   }  
 
   def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
-    make(baseUrl, apiPath, "user", "by-client", clientId)
+    make(baseUrl, apiPath, users, "by-client", clientId)
 
   def authorCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "author")
+    make(baseUrl, apiPath, authors)
     
   def authorsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "author")   
+    make(baseUrl, apiPath, authors)   
 
   def spreadCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "spread")
+    make(baseUrl, apiPath, spreads)
 
   def spreadGetPath(baseUrl: String, spreadId: UUID): URL =    
-    make(baseUrl, apiPath, "spread", spreadId.toString)
+    make(baseUrl, apiPath, spreads, spreadId.toString)
     
   def spreadsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "spread")
+    make(baseUrl, apiPath, spreads)
 
   def spreadUpdatePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, "spread", spreadId.toString)
+    make(baseUrl, apiPath, spreads, spreadId.toString)
     
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, "spread", spreadId.toString, "publish")
+    make(baseUrl, apiPath, spreads, spreadId.toString, "publish")
 
   def spreadDeletePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, "spread", spreadId.toString)
+    make(baseUrl, apiPath, spreads, spreadId.toString)
     
-  def cardCreatePath(baseUrl: String, spreadId: UUID, position: Int): URL =
-    make(baseUrl, apiPath, "spread", spreadId.toString, "cards", position.toString)
+  def cardCreatePath(baseUrl: String, spreadId: UUID): URL =
+    make(baseUrl, apiPath, spreads, spreadId.toString, cards)
 
+  def cardUpdatePath(baseUrl: String, cardId: UUID): URL =
+    make(baseUrl, apiPath, spreads, cards, cardId.toString)
+    
   def cardsGetPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, "card", "by-spread", spreadId.toString)
+    make(baseUrl, apiPath, spreads, spreadId.toString, cards)
 
   def cardsCountGetPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, "card", "by-spread", spreadId.toString, "count")
+    make(baseUrl, apiPath, spreads, spreadId.toString, cards, "count")
     
   def tokenAuthPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, "auth")
+    make(baseUrl, apiPath, TarotApiRoutes.auth)
 }

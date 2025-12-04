@@ -8,6 +8,7 @@ import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
+import tarot.domain.models.cards.CardId
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.integration.SpreadIntegrationSpec.test
@@ -65,6 +66,34 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         spreadCardsCount == previousSpread.cardsCount,
         spread.photo.sourceId == photoId,
         !spreadPhotoExist
+      )
+    },
+
+    test("should update card") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+
+        cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
+        previousCard <- cardQueryHandler.getCards(SpreadId(spreadId))
+          .flatMap(cards => ZIO.fromOption(cards.headOption).orElseFail(TarotError.NotFound("card not set")))
+        cardId = previousCard.id.id
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        cardRequest = TarotTestRequests.cardUpdateRequest(photoId)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardUpdatePath("", cardId), cardRequest, token)
+        _ <- app.runZIO(request)
+
+        card <- cardQueryHandler.getCard(CardId(cardId))
+        cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
+      } yield assertTrue(
+        card.id.id == cardId,
+        card.photo.sourceId == photoId,
+        !cardPhotoExist
       )
     },
 

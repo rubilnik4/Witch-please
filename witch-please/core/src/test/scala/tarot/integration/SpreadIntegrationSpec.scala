@@ -114,8 +114,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         cardIds <- ZIO.foreach(0 until cardsCount) { position =>
-          val cardRequest = TarotTestRequests.cardCreateRequest(photoId)
-          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, position), cardRequest, token)
+          val cardRequest = TarotTestRequests.cardCreateRequest(position, photoId)
+          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId), cardRequest, token)
           for {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -133,8 +133,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        cardRequest = TarotTestRequests.cardCreateRequest(photoId)
-        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, 0), cardRequest, token)
+        cardRequest = TarotTestRequests.cardCreateRequest(0, photoId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId), cardRequest, token)
         response <- app.runZIO(request)
       } yield assertTrue(
         response.status == Status.Conflict

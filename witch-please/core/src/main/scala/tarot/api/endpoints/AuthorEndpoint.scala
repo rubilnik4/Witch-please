@@ -24,7 +24,7 @@ object AuthorEndpoint {
   private val getAuthorsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "author")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.authors)
       .out(jsonBody[List[AuthorResponse]])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)    
@@ -40,7 +40,7 @@ object AuthorEndpoint {
   private val postAuthorEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .post
-      .in(TarotApiRoutes.apiPath / "author")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.authors)
       .in(jsonBody[UserCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(TapirError.tapirErrorOut)

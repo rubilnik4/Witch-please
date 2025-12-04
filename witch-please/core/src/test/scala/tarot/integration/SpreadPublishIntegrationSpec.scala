@@ -1,6 +1,7 @@
 package tarot.integration
 
 import shared.api.dto.tarot.TarotApiRoutes
+import shared.api.dto.tarot.cards.CardCreateRequest
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
@@ -72,8 +73,8 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
         cardIds <- ZIO.foreach(0 until cardsCount) { position =>
-          val cardRequest = TarotTestRequests.cardCreateRequest(photoId)
-          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, position), cardRequest, token)
+          val cardRequest = TarotTestRequests.cardCreateRequest(position, photoId)
+          val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId), cardRequest, token)
           for {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
@@ -228,8 +229,8 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        cardRequest = cardCreateRequest(photoId)
-        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId, 0), cardRequest, token)
+        cardRequest = TarotTestRequests.cardCreateRequest(0, photoId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId), cardRequest, token)
         response <- app.runZIO(request)
       } yield assertTrue(
         response.status == Status.Conflict
@@ -275,19 +276,4 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
     ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
-    
-  private def spreadCreateRequest(cardCount: Int, photoId: String) =
-    SpreadCreateRequest(
-      title = "Spread integration test",
-      cardCount = cardCount,
-      photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-
-  private def cardCreateRequest(photoId: String) =
-    CardCreateRequest(
-      title = "Card integration test",
-      photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-
-
 }

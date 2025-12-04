@@ -2,7 +2,7 @@ package bot.mocks
 
 import bot.infrastructure.services.tarot.TarotApiService
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.spreads.*

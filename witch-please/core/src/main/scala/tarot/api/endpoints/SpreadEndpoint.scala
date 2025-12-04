@@ -1,7 +1,7 @@
 package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
-import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.spreads.*
 import shared.models.tarot.authorize.Role
@@ -14,6 +14,7 @@ import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.spreads.commands.ScheduleSpreadCommand
 import tarot.domain.models.authorize.UserId
+import tarot.domain.models.cards.CardId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -24,11 +25,12 @@ object SpreadEndpoint {
   import TapirError.*
   
   private final val tag = "spreads"
+  private final val spreads = "spreads"
 
   private val getSpreadsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "spread")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads)
       .out(jsonBody[List[SpreadResponse]])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
@@ -47,7 +49,7 @@ object SpreadEndpoint {
   private val getSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId"))
       .out(jsonBody[SpreadResponse])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
@@ -65,7 +67,7 @@ object SpreadEndpoint {
 
   private val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
-      .in(TarotApiRoutes.apiPath / "spread")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads)
       .in(jsonBody[SpreadCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(TapirError.tapirErrorOut)
@@ -85,7 +87,7 @@ object SpreadEndpoint {
 
   private val putSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.put
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId"))
       .in(jsonBody[SpreadUpdateRequest])
       .out(emptyOutput)
       .errorOut(TapirError.tapirErrorOut)
@@ -105,7 +107,7 @@ object SpreadEndpoint {
       
   private val deleteSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.delete
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId"))
       .out(emptyOutput)
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
@@ -124,7 +126,7 @@ object SpreadEndpoint {
   private val getCardsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "card" / "by-spread" / path[UUID]("spreadId"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / TarotApiRoutes.cards)
       .out(jsonBody[List[CardResponse]])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
@@ -143,7 +145,7 @@ object SpreadEndpoint {
   private val getCardsCountEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "card" / "by-spread" / path[UUID]("spreadId") / "count") 
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / TarotApiRoutes.cards / "count") 
       .out(jsonBody[Int])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)
@@ -161,7 +163,7 @@ object SpreadEndpoint {
       
   private val postCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.post
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "cards" / path[Int]("position"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / TarotApiRoutes.cards)
       .in(jsonBody[CardCreateRequest])
       .out(jsonBody[IdResponse])
       .errorOut(TapirError.tapirErrorOut)
@@ -169,20 +171,41 @@ object SpreadEndpoint {
       .securityIn(auth.bearer[String]())
       .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
       .serverLogic { tokenPayload => {
-        case (spreadId, position, request) =>
+        case (spreadId, request) =>
           (for {
-            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card number $position for spread $spreadId")
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to create card ${request.position} for spread $spreadId")
             
-            command <- CardCreateRequestMapper.fromRequest(request, position, spreadId)
+            command <- CardRequestMapper.fromRequest(request, SpreadId(spreadId))
             handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
             cardId <- handler.createCard(command)
           } yield IdResponse(cardId.id)).mapResponseErrors
         }
       }
 
+  private val putCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint.post
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.cards / path[UUID]("cardId"))
+      .in(jsonBody[CardUpdateRequest])
+      .out(emptyOutput)
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
+      .serverLogic { tokenPayload => {
+        case (cardId, request) =>
+          (for {
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to update card $cardId")
+
+            command <- CardRequestMapper.fromRequest(request, CardId(cardId))
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
+            _ <- handler.updateCard(command)
+          } yield ()).mapResponseErrors
+        }
+      }
+      
   private val publishSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.put
-      .in(TarotApiRoutes.apiPath / "spread" / path[UUID]("spreadId") / "publish")
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / "publish")
       .in(jsonBody[SpreadPublishRequest])
       .out(emptyOutput)
       .errorOut(TapirError.tapirErrorOut)
@@ -205,7 +228,7 @@ object SpreadEndpoint {
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(
       getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint, putSpreadEndpoint, deleteSpreadEndpoint,
-      getCardsEndpoint, getCardsCountEndpoint, postCardEndpoint,
+      getCardsEndpoint, getCardsCountEndpoint, postCardEndpoint, putCardEndpoint,
       publishSpreadEndpoint
     )
 }

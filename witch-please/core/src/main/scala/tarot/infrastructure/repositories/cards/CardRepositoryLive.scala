@@ -5,7 +5,7 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.cards.{Card, CardId}
+import tarot.domain.models.cards.{Card, CardId, CardUpdate}
 import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.repositories.photo.PhotoDao
 import zio.*
@@ -17,6 +17,16 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
 
+  override def getCard(cardId: CardId): ZIO[Any, TarotError, Option[Card]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting card by cardId $cardId")
+
+      cards <- cardDao.getCard(cardId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get card by cardId $cardId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get card by cardId $cardId", e))
+        .flatMap(cards => ZIO.foreach(cards)(CardPhotoEntity.toDomain))
+    } yield cards
+    
   override def getCards(spreadId: SpreadId): ZIO[Any, TarotError, List[Card]] =
     for {
       _ <- ZIO.logDebug(s"Getting cards by spreadId $spreadId")
@@ -68,6 +78,20 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .tapError(e => ZIO.logErrorCause(s"Failed to create card $card", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
     } yield CardId(cardId)
+
+  override def updateCard(cardId: CardId, card: CardUpdate): ZIO[Any, TarotError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Updating card $cardId")
+
+      _ <- quill.transaction {
+          for {
+            photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo))
+            _ <- cardDao.updateSpread(cardId.id, card, photoId)
+          } yield ()
+        }
+        .tapError(e => ZIO.logErrorCause(s"Failed to update card $cardId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to update card $cardId", e))
+    } yield ()
 
   override def deleteCard(cardId: CardId): ZIO[Any, TarotError, Boolean] =
     for {

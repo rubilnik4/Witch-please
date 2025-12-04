@@ -3,6 +3,7 @@ package tarot.infrastructure.repositories.cards
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.{CardEntity, CardPhotoEntity, PhotoEntity}
+import tarot.domain.models.cards.CardUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.photo.PhotoQuillMappings
 import zio.ZIO
@@ -14,6 +15,18 @@ import java.util.UUID
 final class CardDao(quill: Quill.Postgres[SnakeCase]) {
   import PhotoQuillMappings.given
   import quill.*
+
+  def getCard(cardId: UUID): ZIO[Any, SQLException, Option[CardPhotoEntity]] =
+    run(
+      quote {
+        cardTable
+          .join(photoTable)
+          .on((card, photo) => card.photoId == photo.id)
+          .filter { case (card, _) => card.id == lift(cardId) }
+          .take(1)
+          .map { case (card, photo) => CardPhotoEntity(card, photo) }
+      })
+      .map(_.headOption)
 
   def getCards(spreadId: UUID): ZIO[Any, SQLException, List[CardPhotoEntity]] =
     run(
@@ -59,6 +72,18 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .insertValue(lift(card))
           .returning(_.id)
       })
+
+  def updateSpread(cardId: UUID, card: CardUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardTable
+          .filter(_.id == lift(cardId))
+          .update(
+            _.title -> lift(card.title),
+            _.photoId -> lift(photoId)
+          )
+      }
+    )
 
   def deleteCard(cardId: UUID): ZIO[Any, SQLException, Long] =
     run(

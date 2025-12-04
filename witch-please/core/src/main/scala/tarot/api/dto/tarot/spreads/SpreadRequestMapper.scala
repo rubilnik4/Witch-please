@@ -18,12 +18,12 @@ import java.util.UUID
 
 object SpreadRequestMapper {
   def fromRequest(request: SpreadCreateRequest, userId: UserId): IO[TarotError, CreateSpreadCommand] =
-    validate(request) *> toDomain(request, userId)
+    validate(request) *> toDomainCreate(request, userId)
 
   def fromRequest(request: SpreadUpdateRequest, spreadId: SpreadId): IO[TarotError, UpdateSpreadCommand] =
-    validate(request) *> toDomain(request, spreadId)
+    validate(request) *> toDomainUpdate(request, spreadId)
     
-  private def toDomain(request: SpreadCreateRequest, userId: UserId) = 
+  private def toDomainCreate(request: SpreadCreateRequest, userId: UserId) = 
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield CreateSpreadCommand(
@@ -33,7 +33,7 @@ object SpreadRequestMapper {
         photo = photo
       )
 
-  private def toDomain(request: SpreadUpdateRequest, spreadId: SpreadId) =
+  private def toDomainUpdate(request: SpreadUpdateRequest, spreadId: SpreadId) =
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield UpdateSpreadCommand(

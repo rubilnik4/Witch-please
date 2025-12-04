@@ -6,9 +6,8 @@ import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
 import shared.api.dto.tarot.photo.PhotoRequest
-import shared.api.dto.tarot.spreads.CardCreateRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType

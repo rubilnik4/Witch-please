@@ -21,7 +21,7 @@ object UserEndpoint {
   private val getUserEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
-      .in(TarotApiRoutes.apiPath / "user" / "by-client" / path[String]("clientId"))
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.users / "by-client" / path[String]("clientId"))
       .out(jsonBody[UserResponse])
       .errorOut(TapirError.tapirErrorOut)
       .tag(tag)

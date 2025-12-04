@@ -1,7 +1,8 @@
 package tarot.fixtures
 
+import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.photo.PhotoRequest
-import shared.api.dto.tarot.spreads.{CardCreateRequest, SpreadCreateRequest, SpreadPublishRequest, SpreadUpdateRequest}
+import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.files.FileSourceType
 import tarot.layers.TarotEnv
@@ -25,14 +26,24 @@ object TarotTestRequests {
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
-  def cardCreateRequest(photoId: String): CardCreateRequest =
+  def cardCreateRequest(position: Int, photoId: String): CardCreateRequest =
     CardCreateRequest(
+      position = position,
       title = "Card integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
+  def cardUpdateRequest(photoId: String): CardUpdateRequest =
+    CardUpdateRequest(
+      title = "Card integration test",
+      photo = PhotoRequest(FileSourceType.Telegram, photoId)
+    )
+    
   def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Duration): SpreadPublishRequest =
-    SpreadPublishRequest(publishTime, cardOfDayDelayHours)
+    SpreadPublishRequest(
+      scheduledAt = publishTime, 
+      cardOfDayDelayHours = cardOfDayDelayHours
+    )
 
   def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
     for {

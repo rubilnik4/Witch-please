@@ -1,7 +1,7 @@
 package tarot.application.commands.cards
 
 import shared.models.files.FileStorage
-import tarot.application.commands.cards.commands.CreateCardCommand
+import tarot.application.commands.cards.commands.{CreateCardCommand, UpdateCardCommand}
 import tarot.application.commands.spreads.SpreadValidateHandler
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
@@ -16,9 +16,9 @@ final class CardCommandHandlerLive(
   cardRepository: CardRepository
 ) extends CardCommandHandler {
 
-  override def createCard(command: CreateCardCommand): ZIO[TarotEnv, TarotError, CardId] = {
+  override def createCard(command: CreateCardCommand): ZIO[TarotEnv, TarotError, CardId] =
     for {
-      _ <- ZIO.logInfo(s"Executing create card ${command.title} command")
+      _ <- ZIO.logInfo(s"Executing create card ${command.title} command for spread ${command.spreadId}")
 
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
       spread <- spreadQueryHandler.getSpread(command.spreadId)
@@ -39,7 +39,22 @@ final class CardCommandHandlerLive(
       card <- Card.toDomain(command, photoFile)
       cardId <- cardRepository.createCard(card)
     } yield cardId
-  }
+
+  override def updateCard(command: UpdateCardCommand): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing update card ${command.cardId} command")
+
+      cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+      card <- cardQueryHandler.getCard(command.cardId)
+
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(card.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
+
+      photoFile <- getPhotoSource(command.photo)
+      card <- CardUpdate.toDomain(command, photoFile)
+      _ <- cardRepository.updateCard(command.cardId, card)
+    } yield ()
 
   override def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit] =
     for {
@@ -51,10 +66,9 @@ final class CardCommandHandlerLive(
       _ <- photoCommandHandler.deletePhoto(card.photo.id, card.photo.fileId)
     } yield ()
     
-  private def getPhotoSource(photoFile: PhotoSource): ZIO[TarotEnv, TarotError, FileStorage] = {
+  private def getPhotoSource(photoFile: PhotoSource): ZIO[TarotEnv, TarotError, FileStorage] =
     for {
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(photoFile.sourceId)
     } yield photoFile
-  }
 }
