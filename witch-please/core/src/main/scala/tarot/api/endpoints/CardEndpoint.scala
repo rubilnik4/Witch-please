@@ -24,7 +24,7 @@ import java.util.UUID
 object CardEndpoint {
   import TapirError.*
   
-  private final val tag = "spreads"
+  private final val tag = "cards"
   
   private val getCardsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
