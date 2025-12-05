@@ -7,10 +7,8 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.PhotoSource
 import tarot.infrastructure.repositories.cards.CardRepository
-import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
-
 
 final class CardCommandHandlerLive(
   cardRepository: CardRepository
@@ -45,10 +43,10 @@ final class CardCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing update card ${command.cardId} command")
 
       cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-      card <- cardQueryHandler.getCard(command.cardId)
+      previousCard <- cardQueryHandler.getCard(command.cardId)
 
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
-      spread <- spreadQueryHandler.getSpread(card.spreadId)
+      spread <- spreadQueryHandler.getSpread(previousCard.spreadId)
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
 
       photoFile <- getPhotoSource(command.photo)
@@ -56,12 +54,26 @@ final class CardCommandHandlerLive(
       _ <- cardRepository.updateCard(command.cardId, card)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id, previousSpread.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(previousCard.photo.id, previousCard.photo.fileId)
     } yield ()
 
+  override def deleteCard(cardId: CardId): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing delete command for card $cardId")
+
+      cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+      card <- cardQueryHandler.getCard(cardId)
+
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(card.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
+      
+      _ <- deleteCard(card)
+    } yield ()
+    
   override def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Executing delete command for card ${card.id}")
+      _ <- ZIO.logInfo(s"Executing partial delete command for card ${card.id}")
 
       _ <- cardRepository.deleteCard(card.id)
       

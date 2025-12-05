@@ -10,5 +10,6 @@ import zio.ZIO
 trait CardCommandHandler {
   def createCard (command: CreateCardCommand): ZIO[TarotEnv, TarotError, CardId]
   def updateCard(command: UpdateCardCommand): ZIO[TarotEnv, TarotError, Unit]
+  def deleteCard(cardId: CardId): ZIO[TarotEnv, TarotError, Unit]
   def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit]
 }
