@@ -83,7 +83,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
           .flatMap(cards => ZIO.fromOption(cards.headOption).orElseFail(TarotError.NotFound("card not set")))
         cardId = previousCard.id.id
 
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
         cardRequest = TarotTestRequests.cardUpdateRequest(photoId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardUpdatePath("", cardId), cardRequest, token)
         _ <- app.runZIO(request)

@@ -49,7 +49,7 @@ object SpreadDeleteIntegrationSpec extends ZIOSpecDefault {
         previousCards <- cardQueryHandler.getCards(SpreadId(spreadId))
         card <- ZIO.fromOption(previousCards.lastOption).orElseFail(TarotError.NotFound("card not set"))
 
-        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
         deleteRequest = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.cardDeletePath("", card.id.id), token)
         _ <- app.runZIO(deleteRequest)
 

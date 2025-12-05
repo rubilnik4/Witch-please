@@ -143,7 +143,7 @@ object SpreadEndpoint {
           } yield ()).mapResponseErrors
         }
       }
-
+  
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(
       getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint,

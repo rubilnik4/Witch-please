@@ -3,7 +3,6 @@ package tarot.api.endpoints
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.IdResponse
-import shared.api.dto.tarot.spreads.*
 import shared.models.tarot.authorize.Role
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
@@ -12,8 +11,6 @@ import tarot.api.dto.tarot.cards.CardResponseMapper
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
-import tarot.application.commands.spreads.commands.ScheduleSpreadCommand
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
