@@ -130,7 +130,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending create card $position request: ${request.title}; for spread: $spreadId ")
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardCreatePath(baseUrl, spreadId, position))
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardCreatePath(baseUrl, spreadId))
       cardRequest = SttpClient.postAuthRequest(uri, request, token)
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, cardRequest)

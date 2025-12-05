@@ -85,7 +85,7 @@ object CardFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
-      request = CardCreateRequest(title, photo)
+      request = CardCreateRequest(position, title, photo)
       _ <- tarotApi.createCard(request, spreadId, position, token)
       _ <- sessionService.setCard(context.chatId, position)
       _ <- telegramApi.sendText(context.chatId, s"Карта $title создана")
