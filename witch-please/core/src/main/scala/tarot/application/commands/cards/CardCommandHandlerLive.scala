@@ -54,6 +54,9 @@ final class CardCommandHandlerLive(
       photoFile <- getPhotoSource(command.photo)
       card <- CardUpdate.toDomain(command, photoFile)
       _ <- cardRepository.updateCard(command.cardId, card)
+
+      photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
+      _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id, previousSpread.photo.fileId)
     } yield ()
 
   override def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit] =
