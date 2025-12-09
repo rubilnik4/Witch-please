@@ -55,6 +55,20 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
+      case AuthorCommands.CardEdit :: cardIdStr :: Nil =>
+        Try(UUID.fromString(cardIdStr)).toOption match {
+          case Some(cardId) =>
+            AuthorCommand.EditCard(cardId)
+          case _ =>
+            BotCommand.Unknown
+        }
+      case AuthorCommands.CardDelete :: cardIdStr :: Nil =>
+        Try(UUID.fromString(cardIdStr)).toOption match {
+          case Some(cardId) =>
+            AuthorCommand.DeleteCard(cardId)
+          case _ =>
+            BotCommand.Unknown
+        }
       case _ =>
         BotCommand.Unknown
     }

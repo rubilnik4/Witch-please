@@ -95,15 +95,33 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpreadProgress(session, now))
     } yield ()
 
-  override def setCard(chatId: Long, position: Int): ZIO[BotEnv, Throwable, Unit] =
+  override def setCardPositions(chatId: Long, position: Int): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logDebug(s"Set card $position for chat $chatId")
+      _ <- ZIO.logDebug(s"Set card position $position for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.withCard(session, position, now))
+      _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.withCardPositions(session, position, now))
       _ <- clearPending(chatId)
     } yield ()
 
+  override def setCard(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Set card $cardId for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withCard(session, cardId, now))
+      _ <- clearPending(chatId)
+    } yield ()
+
+  override def clearCard(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Clear card for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.clearCard(session, now))
+      _ <- clearPending(chatId)
+    } yield ()
+    
   override def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set date $date for chat $chatId")
@@ -135,4 +153,5 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       now <- DateTimeService.getDateTimeNow
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearDateTime(session, now))
     } yield ()
+
 }

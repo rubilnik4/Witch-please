@@ -12,6 +12,7 @@ final case class BotSession(
   pending: Option[BotPendingAction],
   spreadId: Option[UUID],
   spreadProgress: Option[SpreadProgress],
+  cardId: Option[UUID],
   date: Option[LocalDate],
   time: Option[LocalTime],
   cardOfDayDelay: Option[Duration],
@@ -20,7 +21,7 @@ final case class BotSession(
 
 object BotSession {
   def newSession(clientSecret: String, now: Instant): BotSession =
-    BotSession(clientSecret, None, None, None, None, None, None, None, None, now)
+    BotSession(clientSecret, None, None, None, None, None, None, None, None, None, now)
 
   def withUser(session: BotSession, userId: UUID, token: String, now: Instant): BotSession =
     session.copy(userId = Some(userId), token = Some(token), updatedAt = now)
@@ -48,7 +49,7 @@ object BotSession {
       pending = None,
       updatedAt = now)
       
-  def withCard(session: BotSession, position: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
+  def withCardPositions(session: BotSession, position: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
     for {
       progress <- ZIO.fromOption(session.spreadProgress)
         .orElseFail(new IllegalStateException(s"Cannot add card $position: spreadProgress is empty for userId=${session.userId}"))
@@ -59,6 +60,18 @@ object BotSession {
         else progress.copy(createdPositions = progress.createdPositions + position)
     } yield session.copy(spreadProgress = Some(nextProgress), pending = None, updatedAt = now)
 
+  def withCard(session: BotSession, cardId: UUID, now: Instant): BotSession =
+    session.copy(
+      cardId = Some(cardId),
+      pending = None,
+      updatedAt = now)
+
+  def clearCard(session: BotSession, now: Instant): BotSession =
+    session.copy(
+      cardId = None,
+      pending = None,
+      updatedAt = now)
+      
   def withDate(session: BotSession, date: LocalDate, now: Instant): BotSession =
     session.copy(     
       date = Some(date),

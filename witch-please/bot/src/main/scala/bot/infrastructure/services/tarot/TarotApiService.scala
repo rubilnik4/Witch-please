@@ -1,7 +1,7 @@
 package bot.infrastructure.services.tarot
 
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
+import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
@@ -22,7 +22,10 @@ trait TarotApiService {
   def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def deleteSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
+  def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse]
   def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]]
   def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int]
   def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse]
+  def updateCard(request: CardUpdateRequest, cardId: UUID, token: String): ZIO[Any, ApiError, Unit]
+  def deleteCard(cardId: UUID, token: String): ZIO[Any, ApiError, Unit]
 }

@@ -58,6 +58,10 @@ object TelegramRouterHandler {
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateCard(position) =>
             CardFlow.createCard(context, position)(telegramApi, sessionService)
+          case AuthorCommand.EditCard(cardId) =>
+            CardFlow.editCard(context, cardId)(telegramApi, sessionService)
+          case AuthorCommand.DeleteCard(cardId) =>
+            CardFlow.deleteCard(context, cardId)(telegramApi, tarotApi, sessionService)
         }
       } yield ()
 

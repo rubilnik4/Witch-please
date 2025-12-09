@@ -3,7 +3,7 @@ package bot.infrastructure.services.tarot
 import shared.api.dto.*
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*
@@ -121,6 +121,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Sending publish request for spread $spreadId")
+
       uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadPublishPath(baseUrl, spreadId))
       publishRequest = SttpClient.putAuthRequest(uri, request, token)
         .response(SttpClient.asJsonNoContent[TarotErrorResponse])
@@ -129,16 +130,48 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
 
   override def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
-      _ <- ZIO.logDebug(s"Sending create card $position request: ${request.title}; for spread: $spreadId ")
+      _ <- ZIO.logDebug(s"Sending create card $position request: ${request.title}; for spread: $spreadId")
+
       uri <- SttpClient.toSttpUri(TarotApiRoutes.cardCreatePath(baseUrl, spreadId))
       cardRequest = SttpClient.postAuthRequest(uri, request, token)
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, cardRequest)
     } yield response
 
+  override def updateCard(request: CardUpdateRequest, cardId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Sending update card $cardId request")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardUpdatePath(baseUrl, cardId))
+      cardRequest = SttpClient.putAuthRequest(uri, request, token)
+        .response(SttpClient.asJsonNoContent[TarotErrorResponse])
+      response <- SttpClient.sendJson(client, cardRequest)
+    } yield response
+
+  override def deleteCard(cardId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Sending delete card $cardId request")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardDeletePath(baseUrl, cardId))
+      cardRequest = SttpClient.deleteAuthRequest(uri, token)
+        .response(SttpClient.asJsonNoContent[TarotErrorResponse])
+      response <- SttpClient.sendJson(client, cardRequest)
+    } yield response
+
+  override def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get card request by cardId: $cardId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardGetPath(baseUrl, cardId))
+      cardRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, CardResponse])
+      response <- SttpClient.sendJson(client, cardRequest)
+    } yield response
+
   override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
     for {
-      _ <- ZIO.logDebug(s"Sending get card request by spreadId: $spreadId")
+      _ <- ZIO.logDebug(s"Sending get cards request by spreadId: $spreadId")
+
       uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsGetPath(baseUrl, spreadId))
       cardsRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, List[CardResponse]])
@@ -148,6 +181,7 @@ final class TarotApiServiceLive(baseUrl: String, client: SttpBackend[Task, Any])
   override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int] =
     for {
       _ <- ZIO.logDebug(s"Sending get card count request by spreadId: $spreadId")
+
       uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsCountGetPath(baseUrl, spreadId))
       cardsRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, Int])

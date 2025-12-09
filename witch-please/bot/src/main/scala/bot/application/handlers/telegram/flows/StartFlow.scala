@@ -32,10 +32,9 @@ object StartFlow {
 
       username <- ZIO.fromOption(context.username)
         .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
-      token <- setUser(context, username)(telegramApi, tarotApi, sessionService)     
+      token <- setUser(context, username)(telegramApi, tarotApi, sessionService)
 
-      spreads <- tarotApi.getSpreads(token)
-      _ <- SpreadFlow.showSpreads(context, spreads)(telegramApi, tarotApi, sessionService)
+      _ <- SpreadFlow.selectSpreads(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def handleClientStart(context: TelegramContext)(

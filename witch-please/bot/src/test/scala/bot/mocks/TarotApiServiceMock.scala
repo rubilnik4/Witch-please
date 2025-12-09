@@ -215,7 +215,7 @@ final class TarotApiServiceMock(
       id = id,
       position = position,
       spreadId = spreadId,
-      description = request.title,
+      title = request.title,
       photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Card, id, 
         request.photo.sourceType, request.photo.sourceId),
       createdAt = now

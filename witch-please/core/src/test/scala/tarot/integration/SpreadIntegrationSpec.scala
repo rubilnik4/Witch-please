@@ -37,7 +37,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), None))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), None, None))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -54,7 +54,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         spreadId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
 
-        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(token), Some(spreadId)))
+        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(token), Some(spreadId), None))
       } yield assertTrue(spreadId.toString.nonEmpty)
     },
 
@@ -120,7 +120,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
           } yield cardId
-        }
+        }.map(_.toList)
+        _ <- ref.set(TestSpreadState(Some(photoId), state.userId, Some(token), Some(spreadId), Some(cardIds)))
       } yield assertTrue(cardIds.forall(id => id.toString.nonEmpty))
     },
 
@@ -139,6 +140,21 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         response.status == Status.Conflict
       )
+    },
+
+    test("should get card") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+
+        app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardGetPath("", cardId), token)
+        response <- app.runZIO(request)
+        card <- ZIOHttpClient.getResponse[CardResponse](response)
+      } yield assertTrue(
+        card.id == cardId)
     },
 
     test("should get cards") {
@@ -179,5 +195,5 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))
 }

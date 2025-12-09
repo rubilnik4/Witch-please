@@ -56,7 +56,10 @@ case object TarotApiRoutes {
 
   def cardDeletePath(baseUrl: String, cardId: UUID): URL =
     make(baseUrl, apiPath, cards, cardId.toString)
-    
+
+  def cardGetPath(baseUrl: String, cardId: UUID): URL =
+    make(baseUrl, apiPath, cards, cardId.toString)
+
   def cardsGetPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, spreads, spreadId.toString, cards)
 

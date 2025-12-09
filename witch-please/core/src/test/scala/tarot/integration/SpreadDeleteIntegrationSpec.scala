@@ -31,7 +31,7 @@ object SpreadDeleteIntegrationSpec extends ZIOSpecDefault {
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id)))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id), None))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -100,5 +100,5 @@ object SpreadDeleteIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))
 }

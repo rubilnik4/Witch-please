@@ -22,7 +22,26 @@ object CardEndpoint {
   import TapirError.*
   
   private final val tag = "cards"
-  
+
+  private val getCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint
+      .get
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.cards / path[UUID]("cardId"))
+      .out(jsonBody[CardResponse])
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
+      .serverLogic { tokenPayload =>
+        cardId =>
+          (for {
+            _ <- ZIO.logInfo(s"Received request to get card by cardId $cardId")
+
+            handler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
+            card <- handler.getCard(CardId(cardId))
+          } yield CardResponseMapper.toResponse(card)).mapResponseErrors
+      }
+      
   private val getCardsEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint
       .get
@@ -122,7 +141,8 @@ object CardEndpoint {
       }
       
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
-    List(     
-      getCardsEndpoint, getCardsCountEndpoint, postCardEndpoint, putCardEndpoint, deleteCardEndpoint
+    List(
+      getCardEndpoint, getCardsEndpoint, getCardsCountEndpoint,
+      postCardEndpoint, putCardEndpoint, deleteCardEndpoint
     )
 }

@@ -16,8 +16,22 @@ import zio.ZIO
 
 import java.util.UUID
 
-object SpreadFlow {  
-  def showSpreads(context: TelegramContext, spreads: List[SpreadResponse])(
+object SpreadFlow {
+  def selectSpreads(context: TelegramContext)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Select spreads from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+      _ <- sessionService.clearSpread(context.chatId)
+      spreads <- tarotApi.getSpreads(token)
+      _ <- showSpreads(context, spreads)(telegramApi, tarotApi, sessionService)
+    } yield ()
+
+  private def showSpreads(context: TelegramContext, spreads: List[SpreadResponse])(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get spreads command for chat ${context.chatId}")
@@ -84,10 +98,21 @@ object SpreadFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
-      request = SpreadCreateRequest(title, cardCount, photo)
-      spreadId <- tarotApi.createSpread(request, token).map(_.id)     
+      spreadId <- spreadMode match {
+        case SpreadMode.Create =>
+          val request = SpreadCreateRequest(title, cardCount, photo)
+          for {
+            spreadId <- tarotApi.createSpread(request, token).map(_.id)
+            _ <- telegramApi.sendText(context.chatId, s"Расклад создан")
+          } yield spreadId
+        case SpreadMode.Edit(spreadId) =>
+          val request = SpreadUpdateRequest(title, cardCount, photo)
+          for {
+            _ <- tarotApi.updateSpread(request, spreadId, token)
+            _ <- telegramApi.sendText(context.chatId, s"Расклад обновлён")
+          } yield spreadId
+      }
 
-      _ <- telegramApi.sendText(context.chatId, s"Расклад $title создан")        
       _ <- selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
     } yield ()
 
@@ -119,17 +144,23 @@ object SpreadFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       _ <- ZIO.logInfo(s"Delete spread $spreadId for chat ${context.chatId}")
-      
+      _ <- validateModifySpread(context, spreadId, token)(telegramApi, tarotApi)
+
+      _ <- tarotApi.deleteSpread(spreadId, token)
+      _ <- telegramApi.sendText(context.chatId, s"Расклад удален")
+
+      _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
+    } yield ()
+
+  def validateModifySpread(context: TelegramContext, spreadId: UUID, token: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService): ZIO[BotEnv, Throwable, Unit] =
+    for {
       spread <- tarotApi.getSpread(spreadId, token)
-      _ <- ZIO.unless(spread.publishedAt.isDefined) {
+      _ <- ZIO.when(spread.publishedAt.isDefined) {
         telegramApi.sendText(context.chatId, s"Нельзя удалить опубликованный расклад") *>
           ZIO.logError(s"Can't delete published spread $spreadId") *>
           ZIO.fail(new RuntimeException("Can't delete published spread $spreadId"))
       }
-      
-      _ <- sessionService.clearSpread(context.chatId)
-      spreads <- tarotApi.getSpreads(token)
-      _ <- showSpreads(context, spreads)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   private def startSpreadPending(context: TelegramContext, spreadMode: SpreadMode)(
@@ -139,7 +170,7 @@ object SpreadFlow {
     _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadTitle(spreadMode))
     _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
   } yield ()
-    
+
   private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Set[Int])
       (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
     val summaryText =

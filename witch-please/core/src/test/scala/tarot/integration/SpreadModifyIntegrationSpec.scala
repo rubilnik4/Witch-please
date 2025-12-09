@@ -32,11 +32,11 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         photoId <- TarotTestFixtures.createPhoto
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)
-        _ <- TarotTestFixtures.createCards(spreadId, cardsCount, photoId)
+        cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id)))
+        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id), Some(cardIds.map(_.id))))
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -76,12 +76,11 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-
+        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+        
         cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
         photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousCard <- cardQueryHandler.getCards(SpreadId(spreadId))
-          .flatMap(cards => ZIO.fromOption(cards.headOption).orElseFail(TarotError.NotFound("card not set")))
-        cardId = previousCard.id.id
+        previousCard <- cardQueryHandler.getCard(CardId(cardId))        
 
         app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
         cardRequest = TarotTestRequests.cardUpdateRequest(photoId)
@@ -126,5 +125,5 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None)))  
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))  
 }

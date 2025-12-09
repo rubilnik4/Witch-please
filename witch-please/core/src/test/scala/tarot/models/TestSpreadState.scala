@@ -6,5 +6,6 @@ final case class TestSpreadState(
   photoId: Option[String],
   userId: Option[UUID],
   token: Option[String],                          
-  spreadId: Option[UUID]
+  spreadId: Option[UUID],
+  cardIds: Option[List[UUID]]
 )
