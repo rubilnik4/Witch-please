@@ -2,7 +2,7 @@ package bot.mocks
 
 import bot.infrastructure.services.tarot.TarotApiService
 import shared.api.dto.tarot.authorize.*
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse}
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.spreads.*
@@ -25,6 +25,7 @@ final class TarotApiServiceMock(
   spreadMap: Ref.Synchronized[Map[UUID, Map[UUID, SpreadResponse]]],
   cardMap: Ref.Synchronized[Map[UUID, Map[UUID, CardResponse]]]
 ) extends TarotApiService {
+
   override def createUser(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
     for {
       now <- DateTimeService.getDateTimeNow
@@ -107,9 +108,66 @@ final class TarotApiServiceMock(
     }
   } yield spreads
 
+  override def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse] =
+    cardMap.get.map(_.values.flatMap(_.get(cardId)).headOption).flatMap {
+      case Some(card) => ZIO.succeed(card)
+      case None => ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Card $cardId not found"))
+    }
+
+  override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+    cardMap.get.map(_.get(spreadId)).flatMap {
+      case Some(cards) => ZIO.succeed(cards.values.toList)
+      case None => ZIO.succeed(List.empty)
+    }
+
+  override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int] =
+    cardMap.get.map(_.get(spreadId)).flatMap {
+      case Some(cards) => ZIO.succeed(cards.size)
+      case None => ZIO.succeed(0)
+    }
+
+  override def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    ZIO.unit
+
+  override def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      now <- DateTimeService.getDateTimeNow
+      tokenPayload <- getTokenPayload(token)
+      _ <- spreadMap.modifyZIO { spreads =>
+        val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
+        userSpreads.get(spreadId) match {
+          case None =>
+            ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found for user ${tokenPayload.userId}"))
+          case Some(spread) =>
+            val updatedSpread = getSpreadResponse(request, spread)
+            val updatedUserSpreads = userSpreads.updated(spreadId, updatedSpread)
+            val updatedSpreads = spreads.updated(tokenPayload.userId, updatedUserSpreads)
+            ZIO.succeed((), updatedSpreads)
+        }
+      }
+    } yield ()
+
+  override def deleteSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      tokenPayload <- getTokenPayload(token)
+      _ <- spreadMap.modifyZIO { spreads =>
+        val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
+        userSpreads.get(spreadId) match {
+          case None =>
+            ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found for user ${tokenPayload.userId}"))
+          case Some(spread) =>
+            val deletedUserSpreads = userSpreads - spreadId
+            val deletedSpreads =
+              if (deletedUserSpreads.isEmpty) spreads - tokenPayload.userId
+              else spreads.updated(tokenPayload.userId, deletedUserSpreads)
+            ZIO.succeed((), deletedSpreads)
+        }
+      }
+    } yield ()
+
   override def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
-      _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code,"position must be positive")).when(position < 0)
+      _ <- ZIO.fail(ApiError.HttpCode(StatusCode.BadRequest.code, "position must be positive")).when(position < 0)
 
       now <- DateTimeService.getDateTimeNow
       cardId = UUID.randomUUID()
@@ -122,58 +180,44 @@ final class TarotApiServiceMock(
       }
     } yield idResponse
 
-  override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
-    cardMap.get.map(_.get(spreadId)).flatMap {
-      case Some(cards) => ZIO.succeed(cards.values.toList)
-      case None => ZIO.succeed(List.empty)
-    }
-
-  override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, RuntimeFlags] =
-    cardMap.get.map(_.get(spreadId)).flatMap {
-      case Some(cards) => ZIO.succeed(cards.size)
-      case None => ZIO.succeed(0)
-    }
-
-  override def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
-    ZIO.unit
-
-  override def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
-  for {
-    now <- DateTimeService.getDateTimeNow
-    tokenPayload <- getTokenPayload(token)
-    _ <- spreadMap.modifyZIO { spreads =>
-      val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
-      userSpreads.get(spreadId) match {
-        case None =>
-          ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Spread $spreadId not found for user ${tokenPayload.userId}"))
-        case Some(spread) =>
-          val updatedSpread = getSpreadResponse(request, spread)
-          val updatedUserSpreads = userSpreads.updated(spreadId, updatedSpread)
-          val updatedSpreads = spreads.updated(tokenPayload.userId, updatedUserSpreads)
-          ZIO.succeed((), updatedSpreads)
-      }
-    }
-  } yield ()
-
-  override def deleteSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+  override def updateCard(request: CardUpdateRequest, cardId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
-      tokenPayload <- getTokenPayload(token)
-      _ <- spreadMap.modifyZIO { spreads =>
-        val userSpreads = spreads.getOrElse(tokenPayload.userId, Map.empty)
-        userSpreads.get(spreadId) match {
-        case None =>
-          ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code,s"Spread $spreadId not found for user ${tokenPayload.userId}"))
-        case Some(spread) =>
-          val deletedUserSpreads = userSpreads - spreadId
-          val deletedSpreads =
-            if (deletedUserSpreads.isEmpty)
-              spreads - tokenPayload.userId
-            else
-              spreads.updated(tokenPayload.userId, deletedUserSpreads)
-          ZIO.succeed((), deletedSpreads)
+      now <- DateTimeService.getDateTimeNow
+      _ <- cardMap.modifyZIO { spreads =>
+        val cardsMaybe =
+          spreads.collectFirst {
+            case (spreadId, cards) if cards.contains(cardId) =>
+              val updated = getCardResponse(cards(cardId), request, now)
+              val updatedCards = cards.updated(cardId, updated)
+              val updatedSpreads = spreads.updated(spreadId, updatedCards)
+              updatedSpreads
+          }
+
+        cardsMaybe match
+          case Some(cards) =>
+            ZIO.succeed((), cards)
+          case None =>
+            ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Card $cardId not found"))
         }
-      }
     } yield ()
+
+  override def deleteCard(cardId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    cardMap.modifyZIO { spreads =>
+      val cardsMaybe =
+        spreads.collectFirst {
+          case (spreadId, cards) if cards.contains(cardId) =>
+            val deletedCards = cards - cardId
+            val deletedSpreads =
+              if (deletedCards.isEmpty) spreads - spreadId
+              else spreads.updated(spreadId, deletedCards)
+            deletedSpreads
+        }
+      cardsMaybe match
+        case Some(cards) =>
+          ZIO.succeed((), cards)
+        case None =>
+          ZIO.fail(ApiError.HttpCode(StatusCode.NotFound.code, s"Card $cardId not found"))
+    }
 
   private def getUserResponse(id: UUID, request: UserCreateRequest, now: Instant) =
     UserResponse(
@@ -217,6 +261,17 @@ final class TarotApiServiceMock(
       spreadId = spreadId,
       title = request.title,
       photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Card, id, 
+        request.photo.sourceType, request.photo.sourceId),
+      createdAt = now
+    )
+
+  private def getCardResponse(card: CardResponse, request: CardUpdateRequest, now: Instant) =
+    CardResponse(
+      id = card.id,
+      position = card.position,
+      spreadId = card.spreadId,
+      title = request.title,
+      photo = PhotoResponse(UUID.randomUUID(), UUID.randomUUID(), PhotoOwnerType.Card, card.id,
         request.photo.sourceType, request.photo.sourceId),
       createdAt = now
     )
