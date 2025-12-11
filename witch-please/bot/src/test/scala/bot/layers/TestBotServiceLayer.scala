@@ -8,7 +8,7 @@ import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServic
 import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer, TarotApiUrl}
 import mocks.TelegramApiServiceMock
 import shared.infrastructure.services.*
-import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer, TelegramWebhookLayer}
+import shared.infrastructure.services.telegram.{TelegramApiService, TelegramWebhookLayer}
 import zio.ZLayer
 
 object TestBotServiceLayer {

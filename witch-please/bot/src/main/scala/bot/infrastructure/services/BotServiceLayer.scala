@@ -18,7 +18,7 @@ object BotServiceLayer {
   val telegramConfigLayer: ZLayer[BotConfig, Throwable, TelegramConfig] =
     ZLayer.fromFunction((config: BotConfig) => config.telegram)
 
-  val telegramTokenLayer: ZLayer[BotConfig, Throwable, String] =
+  private val telegramTokenLayer: ZLayer[BotConfig, Throwable, String] =
     ZLayer.fromFunction((config: BotConfig) => config.telegram.token)
     
   private val tarotUrlLayer: ZLayer[BotConfig, Nothing, TarotApiUrl] =
