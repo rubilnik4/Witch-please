@@ -12,7 +12,7 @@ object BotServerLayer {
   private val tracingLayer: ZLayer[BotEnv, Nothing, Tracing] =
     ZLayer.fromFunction((env: BotEnv) => env.telemetryTracing.tracing)
 
-  val serverLive: ZLayer[BotEnv & Routes[BotEnv, Response], Throwable, Server] =
+  val live: ZLayer[BotEnv & Routes[BotEnv, Response], Throwable, Server] =
     ZLayer.scoped {
       for {
         config <- ZIO.serviceWith[BotEnv](_.config)

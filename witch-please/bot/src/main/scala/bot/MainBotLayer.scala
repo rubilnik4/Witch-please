@@ -22,7 +22,7 @@ object MainBotLayer {
     val combinedLayers =
       TelemetryMeterLayer.live ++
         TelemetryTracingLayer.live ++
-        BotServiceLayer.botServiceLive ++
+        BotServiceLayer.live ++
         BotCommandHandlerLayer.botCommandHandlerLive
     combinedLayers >>> BotEnvLayer.envLive
   }
@@ -31,7 +31,7 @@ object MainBotLayer {
     BotConfigLayer.configLive >>>
       ((BotTelemetryLayer.telemetryConfigLayer >>> TelemetryLayer.telemetryLive) >>>
         (envLive >>>
-          (BotRoutesLayer.apiRoutesLive >>> (BotServerLayer.serverLive ++ TelegramWebhookLaunch.launch))))
+          (BotRoutesLayer.apiRoutesLive >>> (BotServerLayer.live ++ TelegramWebhookLaunch.launch))))
 
   def run: ZIO[Any, Throwable, Nothing] =
     ZIO.logInfo("Starting witch bot application...") *>

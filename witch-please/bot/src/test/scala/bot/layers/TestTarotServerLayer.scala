@@ -1,20 +1,25 @@
-package tarot.layers
+package bot.layers
 
+import bot.infrastructure.services.tarot.TarotApiUrl
 import shared.infrastructure.telemetry.StubTelemetryLayer
 import shared.infrastructure.telemetry.logging.LoggerLayer
 import shared.infrastructure.telemetry.metrics.TelemetryMeterLayer
 import shared.infrastructure.telemetry.tracing.TelemetryTracingLayer
-import tarot.application.commands.{TarotCommandHandler, TarotCommandHandlerLayer}
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import tarot.api.routes.TarotRoutesLayer
+import tarot.application.commands.*
 import tarot.application.configurations.TarotConfig
 import tarot.application.jobs.TarotJobLayer
-import tarot.application.queries.{TarotQueryHandler, TarotQueryHandlerLayer}
+import tarot.application.queries.*
 import tarot.infrastructure.services.TarotService
 import tarot.infrastructure.telemetry.TarotTelemetryLayer
+import tarot.layers.*
 import zio.ZLayer
+import zio.http.Server
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-object TestTarotEnvLayer {
+object TestTarotServerLayer {
   private val repositoryLayers: ZLayer[TarotConfig, Throwable, TarotService & TarotCommandHandler & TarotQueryHandler] =
     (TestTarotRepositoryLayer.live ++ ZLayer.environment[TarotConfig]) >>>
       (TestTarotServiceLayer.live ++ TarotCommandHandlerLayer.live ++ TarotQueryHandlerLayer.live)
@@ -23,9 +28,19 @@ object TestTarotEnvLayer {
     (TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++ TarotJobLayer.live ++ repositoryLayers) >>>
       TarotEnvLayer.envLive
 
-  val testEnvLive: ZLayer[Any, Throwable, TarotEnv] =
+  private val testEnvLive: ZLayer[Any, Throwable, TarotEnv] =
     TestTarotConfigLayer.testTarotConfigLive >>>
-      (TarotTelemetryLayer.telemetryConfigLayer >>> 
+      (TarotTelemetryLayer.telemetryConfigLayer >>>
         (StubTelemetryLayer.telemetryLive ++ LoggerLayer.consoleLoggerLive) >>>
         envLive)
+
+  val live: ZLayer[Any, Throwable, TarotApiUrl] =
+    (Server.default ++ testEnvLive) >>>
+      ZLayer.scoped {
+        val httpApp = ZioHttpInterpreter().toHttp(TarotRoutesLayer.endpoints)
+        for {
+          port <- Server.install(httpApp)
+          baseUrl = s"http://localhost:$port"
+        } yield TarotApiUrl(baseUrl)
+      }
 }

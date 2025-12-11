@@ -5,5 +5,5 @@ import zio.ZLayer
 
 object TarotJobLayer {
   val live: ZLayer[Any, Nothing, TarotJob] =
-    SpreadJobLayer.spreadJobLive >>> ZLayer.fromFunction(TarotJobLive.apply)
+    SpreadJobLayer.live >>> ZLayer.fromFunction(TarotJobLive.apply)
 }

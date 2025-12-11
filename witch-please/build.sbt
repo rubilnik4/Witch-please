@@ -22,5 +22,8 @@ lazy val core = project
   .in(file("core"))
 
 lazy val bot = project
-  .dependsOn(core, shared)
+  .dependsOn(
+    core   % "compile->compile;test->test",
+    shared % "compile->compile"
+  )
   .in(file("bot"))

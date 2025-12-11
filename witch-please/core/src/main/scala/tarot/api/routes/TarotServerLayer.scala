@@ -12,7 +12,7 @@ object TarotServerLayer {
   private val tracingLayer: ZLayer[TarotEnv, Nothing, Tracing] =
     ZLayer.fromFunction((env: TarotEnv) => env.telemetryTracing.tracing)
     
-  val serverLive: ZLayer[TarotEnv & Routes[TarotEnv, Response], Throwable, Server] =
+  val live: ZLayer[TarotEnv & Routes[TarotEnv, Response], Throwable, Server] =
     ZLayer.scoped {
       for {
         config <- ZIO.serviceWith[TarotEnv](_.config)

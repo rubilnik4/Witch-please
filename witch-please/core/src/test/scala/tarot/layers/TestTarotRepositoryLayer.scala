@@ -4,12 +4,8 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.testcontainers.utility.DockerImageName
 import tarot.application.configurations.TarotConfig
-import tarot.infrastructure.database.Migration
 import tarot.infrastructure.repositories.TarotRepositoryLayer
 import tarot.infrastructure.repositories.TarotRepositoryLayer.Repositories
-import tarot.infrastructure.repositories.projects.ProjectRepositoryLayer
-import tarot.infrastructure.repositories.spreads.SpreadRepositoryLayer
-import tarot.infrastructure.repositories.users.{UserProjectRepositoryLayer, UserRepositoryLayer}
 import zio.{ZIO, ZLayer}
 
 import javax.sql.DataSource

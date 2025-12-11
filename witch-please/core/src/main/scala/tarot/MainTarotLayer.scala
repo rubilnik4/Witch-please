@@ -32,7 +32,7 @@ object MainTarotLayer {
     TarotConfigLayer.appConfigLive >>> 
       (TarotTelemetryLayer.telemetryConfigLayer >>> TelemetryLayer.telemetryLive >>>
         (envLive >>>
-          (TarotRoutesLayer.apiRoutesLive >>> TarotServerLayer.serverLive)))
+          (TarotRoutesLayer.live >>> TarotServerLayer.live)))
 
   def run: ZIO[Any, Throwable, Nothing] =
     ZIO.logInfo("Starting witch core application...") *>

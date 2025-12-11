@@ -4,7 +4,7 @@ import tarot.layers.TarotEnv
 import zio.{ZIO, ZLayer}
 
 object SpreadJobLayer {
-  val spreadJobLive: ZLayer[Any, Nothing, SpreadJob] =
+  val live: ZLayer[Any, Nothing, SpreadJob] =
     ZLayer.succeed(new SpreadJobLive)
 
   val runner: ZLayer[TarotEnv, Nothing, Unit] =
