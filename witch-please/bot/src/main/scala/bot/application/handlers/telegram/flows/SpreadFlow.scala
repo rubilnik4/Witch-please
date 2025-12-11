@@ -186,7 +186,8 @@ object SpreadFlow {
     val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadEdit(spread.id)))
     val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
-    val buttons = List(cardsButton, publishButton, editButton, deleteButton)
+    val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.Start))
+    val buttons = List(cardsButton, publishButton, editButton, deleteButton, backButton)
 
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)

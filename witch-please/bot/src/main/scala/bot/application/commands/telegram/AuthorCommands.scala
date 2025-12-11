@@ -14,6 +14,7 @@ object AuthorCommands {
   final val CardCreate = s"${Prefix}_card_create"
   final val CardEdit = s"${Prefix}_card_edit"
   final val CardDelete = s"${Prefix}_card_delete"
+  final val CardSelect = s"${Prefix}_card_select"
 
   def spreadEdit(spreadId: UUID): String =
     s"$SpreadEdit $spreadId"
@@ -38,4 +39,7 @@ object AuthorCommands {
 
   def cardDelete(cardId: UUID): String =
     s"$CardDelete $cardId"
+
+  def cardSelect(cardId: UUID): String =
+    s"$CardSelect $cardId"
 }

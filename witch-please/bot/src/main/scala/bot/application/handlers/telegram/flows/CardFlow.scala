@@ -2,14 +2,13 @@ package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.AuthorCommands
 import bot.application.handlers.telegram.flows.SpreadFlow.validateModifySpread
-import bot.domain.models.session.{BotPendingAction, CardMode, SpreadMode}
+import bot.domain.models.session.{BotPendingAction, CardMode}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.photo.PhotoRequest
-import shared.api.dto.tarot.spreads.{SpreadCreateRequest, SpreadUpdateRequest}
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
@@ -44,7 +43,7 @@ object CardFlow {
       cardButtons = (1 to cardsCount).map { position =>
         cards.find(_.position == position - 1) match {
           case Some(card) =>
-            TelegramInlineKeyboardButton(s"$position. ${card.title}", Some(AuthorCommands.cardCreate(position)))
+            TelegramInlineKeyboardButton(s"$position. ${card.title}", Some(AuthorCommands.cardSelect(card.id)))
           case None =>
             TelegramInlineKeyboardButton(s"$position. ➕ Создать карту", Some(AuthorCommands.cardCreate(position)))
         }
@@ -112,8 +111,6 @@ object CardFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
-//
-//
       _ <- cardMode match {
         case CardMode.Create(position) =>
           val request = CardCreateRequest(position, title, photo)

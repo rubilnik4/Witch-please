@@ -26,6 +26,7 @@ object AuthorCommand {
   final case class CreateCard(position: Int) extends AuthorCommand
   final case class EditCard(cardId: UUID) extends AuthorCommand
   final case class DeleteCard(cardId: UUID) extends AuthorCommand
+  final case class SelectCard(cardId: UUID) extends AuthorCommand
 }
 
 object ClientCommand {
