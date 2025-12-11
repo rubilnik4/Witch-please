@@ -6,6 +6,7 @@ import bot.infrastructure.services.*
 import bot.infrastructure.services.BotServiceLayer.telegramConfigLayer
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
 import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer, TarotApiUrl}
+import mocks.TelegramApiServiceMock
 import shared.infrastructure.services.*
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer, TelegramWebhookLayer}
 import zio.ZLayer
@@ -13,7 +14,7 @@ import zio.ZLayer
 object TestBotServiceLayer {
   val live: ZLayer[BotConfig & TarotApiUrl, Throwable, BotService] =
     (
-      (BotServiceLayer.telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive) ++
+      TelegramApiServiceMock.live ++
       (BotServiceLayer.telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       BotServiceLayer.storageLayer ++
       TarotApiServiceLayer.live ++

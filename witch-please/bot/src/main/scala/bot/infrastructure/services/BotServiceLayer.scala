@@ -26,7 +26,7 @@ object BotServiceLayer {
 
   val live: ZLayer[BotConfig, Throwable, BotService] =
     (
-      (telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive) ++
+      (telegramTokenLayer >>> TelegramApiServiceLayer.live) ++
       (telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       (tarotUrlLayer >>> TarotApiServiceLayer.live) ++
       storageLayer ++

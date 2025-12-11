@@ -1,10 +1,10 @@
-package tarot.mocks
+package mocks
 
 import shared.api.dto.telegram.*
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.api.ApiError
 import shared.models.telegram.TelegramFile
-import zio.{Ref, UIO, ULayer, ZIO, ZLayer}
+import zio.{ULayer, ZIO, ZLayer}
 
 final class TelegramApiServiceMock extends TelegramApiService {
   override def sendPhoto(chatId: Long, fileId: String): ZIO[Any, ApiError, String] =
@@ -39,6 +39,6 @@ final class TelegramApiServiceMock extends TelegramApiService {
 }
 
 object TelegramApiServiceMock {
-  def telegramApiServiceLive: ULayer[TelegramApiServiceMock] =
+  val live: ULayer[TelegramApiServiceMock] =
     ZLayer.succeed(new TelegramApiServiceMock())
 }

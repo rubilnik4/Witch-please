@@ -17,8 +17,7 @@ object TestBotEnvLayer {
       TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++
       (TestTarotServerLayer.live >>> TestBotServiceLayer.live) ++
       BotCommandHandlerLayer.botCommandHandlerLive
-    ) >>> BotEnvLayer.envLive
-  
+    ) >>> BotEnvLayer.envLive  
   
   val testEnvLive: ZLayer[Any, Throwable, BotEnv] =
     TestBotConfigLayer.testBotConfigLive >>>

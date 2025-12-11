@@ -15,7 +15,7 @@ object TarotServiceLayer {
     ZLayer.fromFunction((config: TarotConfig) => config.telegram.token)
     
   private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramApiService] =
-    telegramTokenLayer >>> TelegramApiServiceLayer.telegramChannelServiceLive
+    telegramTokenLayer >>> TelegramApiServiceLayer.live
 
   private val storageLayer: ZLayer[TarotConfig, Throwable, FileStorageService] =
     LocalFileStorageLayer.storageLayer >>> FileStorageServiceLayer.localFileStorageServiceLive

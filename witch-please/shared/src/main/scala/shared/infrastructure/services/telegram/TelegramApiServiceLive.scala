@@ -20,6 +20,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendText(chatId: Long, text: String): ZIO[Any, ApiError, Long] = {
     for {
       _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
+      
       request = getSendTextRequest(chatId, text)
       response <- SttpClient.sendJson(client, request)
       textResponse <- TelegramApi.getTelegramResponse(response)
@@ -29,6 +30,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendReplyText(chatId: Long, text: String): ZIO[Any, ApiError, Long] = {
     for {
       _ <- ZIO.logDebug(s"Sending reply text message to chat $chatId: $text")
+      
       request = getSendMarkupRequest(chatId, text, TelegramForceReply())
       response <- SttpClient.sendJson(client, request)
       textResponse <- TelegramApi.getTelegramResponse(response)
@@ -41,6 +43,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendButtons(chatId: Long, text: String, buttons: List[TelegramKeyboardButton]): ZIO[Any, ApiError, Long] = {
     for {
       _ <- ZIO.logDebug(s"Sending button message to chat $chatId: $text")
+      
       markup = TelegramReplyKeyboardMarkup(List(buttons))
       request = getSendMarkupRequest(chatId, text, markup)
       response <- SttpClient.sendJson(client, request)
@@ -57,6 +60,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendInlineGroupButtons(chatId: Long, text: String, buttons: List[List[TelegramInlineKeyboardButton]]): ZIO[Any, ApiError, Long] =
     for {
       _ <- ZIO.logDebug(s"Sending inline button message to chat $chatId: $text")
+      
       markup = TelegramInlineKeyboardMarkup(buttons)
       request = getSendMarkupRequest(chatId, text, markup)
       response <- SttpClient.sendJson(client, request)
@@ -66,12 +70,14 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     for {
       _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
+      
       fileRequest = getFileRequest(fileId)
       fileResponse <- SttpClient.sendJson(client, fileRequest)
       telegramFile <- TelegramApi.getTelegramResponse(fileResponse)
       fileName = telegramFile.filePath.split("/").lastOption.getOrElse(s"${telegramFile.fileId}.jpg")
 
       _ <- ZIO.logDebug(s"Downloading telegram image from path: $telegramFile.filePath")
+      
       imageRequest = getDownloadImageRequest(telegramFile.filePath)
       telegramImage <- SttpClient.sendJsonForBytes(client, imageRequest)
     } yield TelegramFile(fileName, telegramImage)
@@ -79,6 +85,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendPhoto(chatId: Long, fileId: String): ZIO[Any, ApiError, String] = {
     for {
       _ <- ZIO.logDebug(s"Sending existing photo fileId=$fileId to chat $chatId")
+      
       photoRequest = getSendPhotoRequest(chatId, fileId)
       response <- SttpClient.sendJson(client, photoRequest)
       telegramMessage <- TelegramApi.getTelegramResponse(response)
@@ -89,6 +96,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   override def sendPhoto(chatId: Long, photo: TelegramFile): ZIO[Any, ApiError, String] = {
     for {
       _ <- ZIO.logDebug(s"Sending telegram file ${photo.fileName} to chat $chatId")
+      
       photoRequest = getSendPhotoRequest(chatId, photo)
       response <- SttpClient.sendJson(client, photoRequest)
       telegramMessage <- TelegramApi.getTelegramResponse(response)
