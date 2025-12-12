@@ -16,6 +16,7 @@ final case class Card(
   position: Int,
   spreadId: SpreadId,
   title: String,
+  description: String,
   photo: Photo,
   createdAt: Instant
 )
@@ -32,6 +33,7 @@ object Card {
         position = command.position,
         spreadId = command.spreadId,
         title = command.title,
+        description = command.description,
         photo = photo,
         createdAt = createdAt)
     } yield card

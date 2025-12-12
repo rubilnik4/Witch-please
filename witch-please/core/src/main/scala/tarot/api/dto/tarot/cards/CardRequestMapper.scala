@@ -1,23 +1,17 @@
-package tarot.api.dto.tarot.spreads
+package tarot.api.dto.tarot.cards
 
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardUpdateRequest}
-import shared.api.dto.tarot.spreads.*
+import shared.api.dto.tarot.cards.*
 import tarot.api.dto.tarot.photo.PhotoRequestMapper
 import tarot.application.commands.cards.commands.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.CardId
-import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.SpreadId
-import zio.json.*
-import zio.schema.*
 import zio.{IO, ZIO}
-
-import java.util.UUID
 
 object CardRequestMapper {
   def fromRequest(request: CardCreateRequest, spreadId: SpreadId): IO[TarotError, CreateCardCommand] =
-    validate(request) *> toDomainCreate(request, spreadId)
+    validateCreate(request) *> toDomainCreate(request, spreadId)
 
   def fromRequest(request: CardUpdateRequest, cardId: CardId): IO[TarotError, UpdateCardCommand] =
     validate(request) *> toDomainUpdate(request, cardId)
@@ -29,6 +23,7 @@ object CardRequestMapper {
       position = request.position,
       spreadId = spreadId,
       title = request.title,
+      description = request.description,
       photo = photo
     )
 
@@ -38,19 +33,21 @@ object CardRequestMapper {
     } yield UpdateCardCommand(
       cardId = cardId,
       title = request.title,
+      description = request.description,
       photo = photo
     )
     
-  private def validate(request: CardCreateRequest) = {
+  private def validateCreate(request: CardCreateRequest) = {
     for {
       _ <- ZIO.fail(ValidationError("position must be positive")).when(request.position < 0)
-      _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
+      _ <- validate(request)
     } yield ()
   }
 
-  private def validate(request: CardUpdateRequest) = {
+  private def validate(request: CardRequest) = {
     for {
       _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
+      _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
     } yield ()
   }
 }

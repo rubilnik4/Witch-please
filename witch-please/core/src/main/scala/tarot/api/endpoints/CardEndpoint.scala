@@ -7,7 +7,7 @@ import shared.models.tarot.authorize.Role
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
-import tarot.api.dto.tarot.cards.CardResponseMapper
+import tarot.api.dto.tarot.cards.{CardRequestMapper, CardResponseMapper}
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator

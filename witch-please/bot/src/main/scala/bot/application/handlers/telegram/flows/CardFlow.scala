@@ -93,11 +93,22 @@ object CardFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(cardMode, title))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания карты")
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardDescription(cardMode, title))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты")
     } yield ()
 
-  def setCardPhoto(context: TelegramContext, cardMode: CardMode, title: String, fileId: String)(
+  def setCardDescription(context: TelegramContext, cardMode: CardMode, title: String, description: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle card description from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(cardMode, title, description))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты")
+    } yield ()
+
+  def setCardPhoto(context: TelegramContext, cardMode: CardMode, title: String, description: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
@@ -113,14 +124,14 @@ object CardFlow {
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
       _ <- cardMode match {
         case CardMode.Create(position) =>
-          val request = CardCreateRequest(position, title, photo)
+          val request = CardCreateRequest(position, title, description, photo)
           for {
             cardId <- tarotApi.createCard(request, spreadId, position, token)
             _ <- sessionService.setCardPositions(context.chatId, position)
             _ <- telegramApi.sendText(context.chatId, s"Карта создана")
           } yield cardId
         case CardMode.Edit(cardId) =>
-          val request = CardUpdateRequest(title, photo)
+          val request = CardUpdateRequest(title, description, photo)
           for {
             _ <- tarotApi.updateCard(request, cardId, token)
             _ <- telegramApi.sendText(context.chatId, s"Карта обновлёна")

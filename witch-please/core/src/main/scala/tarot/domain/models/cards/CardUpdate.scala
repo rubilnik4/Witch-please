@@ -13,6 +13,7 @@ import java.util.UUID
 
 final case class CardUpdate(
   title: String,
+  description: String,
   photo: Photo
 )
 
@@ -24,6 +25,7 @@ object CardUpdate {
       createdAt <- DateTimeService.getDateTimeNow
       card = CardUpdate(
         title = command.title,
+        description = command.description,
         photo = photo
       )
     } yield card

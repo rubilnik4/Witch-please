@@ -6,5 +6,6 @@ import zio.schema.*
 
 final case class CardUpdateRequest(
   title: String,
+  description: String,
   photo: PhotoRequest
-) derives JsonCodec, Schema
+) extends CardRequest derives JsonCodec, Schema

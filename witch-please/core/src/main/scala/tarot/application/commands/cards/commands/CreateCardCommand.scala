@@ -7,5 +7,6 @@ final case class CreateCardCommand(
   position: Int,
   spreadId: SpreadId,
   title: String,
+  description: String,
   photo: PhotoSource
 )

@@ -32,19 +32,15 @@ object TarotTestRequests {
     CardCreateRequest(
       position = position,
       title = "Card integration test",
+      description =  "Card integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
   def cardUpdateRequest(photoId: String): CardUpdateRequest =
     CardUpdateRequest(
       title = "Card integration test",
+      description =  "Card integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
-    )
-    
-  def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Duration): SpreadPublishRequest =
-    SpreadPublishRequest(
-      scheduledAt = publishTime, 
-      cardOfDayDelayHours = cardOfDayDelayHours
     )
 
   def spreadPublishRequest: ZIO[TarotEnv, Nothing, SpreadPublishRequest] =
@@ -52,5 +48,11 @@ object TarotTestRequests {
       now <- DateTimeService.getDateTimeNow
       publishTime = now.plus(10.minute)
       cardOfDayDelayHours = 2.hours
-    } yield SpreadPublishRequest(publishTime, cardOfDayDelayHours)
+    } yield spreadPublishRequest(publishTime, cardOfDayDelayHours)
+
+  def spreadPublishRequest(publishTime: Instant, cardOfDayDelayHours: Duration): SpreadPublishRequest =
+    SpreadPublishRequest(
+      scheduledAt = publishTime,
+      cardOfDayDelayHours = cardOfDayDelayHours
+    )
 }

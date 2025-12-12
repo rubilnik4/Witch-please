@@ -86,7 +86,7 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
       _ <- quill.transaction {
           for {
             photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo))
-            _ <- cardDao.updateSpread(cardId.id, card, photoId)
+            _ <- cardDao.updateCard(cardId.id, card, photoId)
           } yield ()
         }
         .tapError(e => ZIO.logErrorCause(s"Failed to update card $cardId", Cause.fail(e)))

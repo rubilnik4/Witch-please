@@ -2,7 +2,7 @@ package bot.integration
 
 import bot.api.BotApiRoutes
 import bot.api.endpoints.*
-import bot.domain.models.session.{BotPendingAction, SpreadMode}
+import bot.domain.models.session.*
 import bot.integration.flows.*
 import bot.layers.BotEnv
 import bot.layers.TestBotEnvLayer
@@ -120,14 +120,15 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-
+        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))       
+        
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)        
         _ <- ZIO.foreachDiscard(1 to cardCount) { position =>
-          for {
-            _ <- CardFlow.startCard(app, chatId, position)
-            _ <- CardFlow.cardDescription(app, chatId, s"Test card")
+          val cardMode = CardMode.Create(position)
+          for {           
+            _ <- CardFlow.startCard(app, chatId, cardMode, position)
+            _ <- CardFlow.cardTitle(app, chatId, cardMode, "Test card")
+            _ <- CardFlow.cardDescription(app, chatId, cardMode, "Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()

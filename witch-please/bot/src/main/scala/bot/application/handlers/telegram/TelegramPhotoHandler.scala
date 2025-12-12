@@ -19,11 +19,12 @@ object TelegramPhotoHandler {
       _ <- session.pending match {
         case Some(BotPendingAction.SpreadPhoto(spreadMode, title, cardCount, description)) =>
           SpreadFlow.setSpreadPhoto(context, spreadMode, title, cardCount, description, fileId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardPhoto(position, description)) =>
-          CardFlow.setCardPhoto(context, position, description, fileId)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.CardPhoto(position, title, description)) =>
+          CardFlow.setCardPhoto(context, position,  title, description, fileId)(telegramApi, tarotApi, sessionService)
         case None 
              | Some(BotPendingAction.SpreadTitle(_)) | Some(BotPendingAction.SpreadCardsCount(_,_)) 
-             | Some(BotPendingAction.SpreadDescription(_,_,_)) | Some(BotPendingAction.CardTitle(_)) =>
+             | Some(BotPendingAction.SpreadDescription(_,_,_)) 
+             | Some(BotPendingAction.CardTitle(_)) | Some(BotPendingAction.CardDescription(_,_)) =>
           for {
             _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")
             _ <- telegramApi.sendText(context.chatId, "Неизвестная команда отправки фото")

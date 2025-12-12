@@ -7,5 +7,6 @@ import tarot.domain.models.spreads.SpreadId
 final case class UpdateCardCommand(
   cardId: CardId,
   title: String,
+  description: String,
   photo: PhotoSource
 )

@@ -73,13 +73,14 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def updateSpread(cardId: UUID, card: CardUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
+  def updateCard(cardId: UUID, card: CardUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {
         cardTable
           .filter(_.id == lift(cardId))
           .update(
             _.title -> lift(card.title),
+            _.description -> lift(card.description),
             _.photoId -> lift(photoId)
           )
       }

@@ -42,5 +42,6 @@ object SpreadRequestMapper {
     for {
       _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
       _ <- ZIO.fail(ValidationError("cardCount must be > 0")).when(request.cardCount <= 0)
+      _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
     } yield ()
 }

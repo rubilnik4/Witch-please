@@ -10,6 +10,7 @@ final case class CardEntity(
   position: Int,
   spreadId: UUID,
   title: String,
+  description: String,
   photoId: UUID,
   createdAt: Instant
 )
@@ -21,6 +22,7 @@ object CardEntity {
       position = card.position,
       spreadId = card.spreadId.id,
       title = card.title,
+      description = card.description,
       photoId = coverPhotoId,
       createdAt = card.createdAt
     )

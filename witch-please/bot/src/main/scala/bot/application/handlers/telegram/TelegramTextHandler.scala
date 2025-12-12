@@ -30,7 +30,9 @@ object TelegramTextHandler {
           SpreadFlow.setSpreadDescription(context, spreadMode, title, cardsCount, text)(telegramApi, tarotApi, sessionService)  
         case Some(BotPendingAction.CardTitle(position)) =>
           CardFlow.setCardTitle(context, position, text)(telegramApi, tarotApi, sessionService)
-        case None | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_, _)) =>
+        case Some(BotPendingAction.CardDescription(position, title)) =>
+          CardFlow.setCardDescription(context, position, title, text)(telegramApi, tarotApi, sessionService)  
+        case None | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)

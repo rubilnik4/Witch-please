@@ -55,7 +55,7 @@ object TarotTestFixtures {
     for {
       cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
       cardIds <- ZIO.foreach(0 until cardCount) { position =>
-        val command = CreateCardCommand(position, spreadId, "Test card", photo)
+        val command = getCardCommand(position, spreadId, cardCount, photo)
         cardHandler.createCard(command)
       }
     } yield cardIds.toList
@@ -80,4 +80,12 @@ object TarotTestFixtures {
       cardsCount = cardsCount,
       description = "Test spread",
       photo = photo)
+      
+  private def getCardCommand(position: Int, spreadId: SpreadId, cardCount: Int, photo: PhotoSource) =
+    CreateCardCommand(
+      position = position,
+      spreadId = spreadId, 
+      title = "Test card", 
+      description = "Test card",
+      photo = photo)  
 }
