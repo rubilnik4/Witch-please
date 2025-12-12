@@ -42,6 +42,7 @@ CREATE TABLE cards (
     position INT NOT NULL,
     spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
+    description TEXT NOT NULL,
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
 
