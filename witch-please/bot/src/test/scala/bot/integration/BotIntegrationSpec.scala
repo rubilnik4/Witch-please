@@ -120,12 +120,12 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))       
-        
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)        
+        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ZIO.foreachDiscard(1 to cardCount) { position =>
-          val cardMode = CardMode.Create(position)
-          for {           
+          val cardMode = CardMode.Create(position - 1)
+          for {
             _ <- CardFlow.startCard(app, chatId, cardMode, position)
             _ <- CardFlow.cardTitle(app, chatId, cardMode, "Test card")
             _ <- CardFlow.cardDescription(app, chatId, cardMode, "Test card")
