@@ -16,6 +16,7 @@ object TarotTestRequests {
     SpreadCreateRequest(
       title = "Spread integration test",
       cardCount = cardCount,
+      description = "Spread integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 
@@ -23,6 +24,7 @@ object TarotTestRequests {
     SpreadUpdateRequest(
       title = "Spread integration test",
       cardCount = cardCount,
+      description = "Spread integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
 

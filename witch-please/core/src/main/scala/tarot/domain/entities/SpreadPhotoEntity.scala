@@ -19,6 +19,7 @@ object SpreadPhotoEntity {
         projectId = ProjectId(spreadPhoto.spread.projectId),
         title = spreadPhoto.spread.title,
         cardsCount = spreadPhoto.spread.cardCount,
+        description = spreadPhoto.spread.description,
         spreadStatus = spreadPhoto.spread.spreadStatus,
         photo = photo,
         createdAt = spreadPhoto.spread.createdAt,

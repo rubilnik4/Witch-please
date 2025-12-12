@@ -11,5 +11,6 @@ final case class UpdateSpreadCommand(
   spreadId: SpreadId,
   title: String,
   cardCount: Int,
+  description: String,
   photo: PhotoSource
 )

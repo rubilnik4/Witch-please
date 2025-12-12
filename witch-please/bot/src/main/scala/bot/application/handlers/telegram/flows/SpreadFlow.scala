@@ -72,22 +72,33 @@ object SpreadFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadCardCount(spreadMode, title))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadCardsCount(spreadMode, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи количество карт в раскладе")
     } yield ()
 
-  def setSpreadCardCount(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int)(
+  def setSpreadCardsCount(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Handle spread card count from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Handle spread cards count from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadPhoto(spreadMode, title, cardCount))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для создания расклада")
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadDescription(spreadMode, title, cardCount))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание расклада")
     } yield ()
 
-  def setSpreadPhoto(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int, fileId: String)(
+  def setSpreadDescription(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int, description: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle spread description from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadPhoto(spreadMode, title, cardCount, description))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для расклада")
+    } yield ()
+
+  def setSpreadPhoto(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int, description: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")
@@ -100,13 +111,13 @@ object SpreadFlow {
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
       spreadId <- spreadMode match {
         case SpreadMode.Create =>
-          val request = SpreadCreateRequest(title, cardCount, photo)
+          val request = SpreadCreateRequest(title, cardCount, description, photo)
           for {
             spreadId <- tarotApi.createSpread(request, token).map(_.id)
             _ <- telegramApi.sendText(context.chatId, s"Расклад создан")
           } yield spreadId
         case SpreadMode.Edit(spreadId) =>
-          val request = SpreadUpdateRequest(title, cardCount, photo)
+          val request = SpreadUpdateRequest(title, cardCount, description, photo)
           for {
             _ <- tarotApi.updateSpread(request, spreadId, token)
             _ <- telegramApi.sendText(context.chatId, s"Расклад обновлён")

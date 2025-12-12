@@ -9,6 +9,7 @@ CREATE TABLE spreads (
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     card_count INT NOT NULL,
+    description TEXT NOT NULL,
     spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'PreviewPublished', 'Published', 'Archived')),
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,

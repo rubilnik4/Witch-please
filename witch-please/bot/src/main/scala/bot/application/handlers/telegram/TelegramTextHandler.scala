@@ -19,16 +19,18 @@ object TelegramTextHandler {
       _ <- session.pending match {
         case Some(BotPendingAction.SpreadTitle(spreadMode)) =>
           SpreadFlow.setSpreadTitle(context, spreadMode, text)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.SpreadCardCount(spreadMode, title)) =>
+        case Some(BotPendingAction.SpreadCardsCount(spreadMode, title)) =>
           text.toIntOption match {
             case Some(cardCount) =>
-              SpreadFlow.setSpreadCardCount(context, spreadMode, title, cardCount)(telegramApi, tarotApi, sessionService)
+              SpreadFlow.setSpreadCardsCount(context, spreadMode, title, cardCount)(telegramApi, tarotApi, sessionService)
             case None =>
               telegramApi.sendText(context.chatId, "Введи число карт числом")
           }
+        case Some(BotPendingAction.SpreadDescription(spreadMode, title, cardsCount)) =>
+          SpreadFlow.setSpreadDescription(context, spreadMode, title, cardsCount, text)(telegramApi, tarotApi, sessionService)  
         case Some(BotPendingAction.CardTitle(position)) =>
           CardFlow.setCardTitle(context, position, text)(telegramApi, tarotApi, sessionService)
-        case None | Some(BotPendingAction.SpreadPhoto(_,_,_)) | Some(BotPendingAction.CardPhoto(_, _)) =>
+        case None | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_, _)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)

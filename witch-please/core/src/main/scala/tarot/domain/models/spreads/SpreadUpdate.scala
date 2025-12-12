@@ -13,6 +13,7 @@ import java.util.UUID
 final case class SpreadUpdate(
   title: String,
   cardCount: Int,
+  description: String,
   photo: Photo
 )
 
@@ -25,6 +26,7 @@ object SpreadUpdate {
       spread = SpreadUpdate(
         title = command.title,
         cardCount = command.cardCount,      
+        description = command.description,
         photo = photo
       )
     } yield spread

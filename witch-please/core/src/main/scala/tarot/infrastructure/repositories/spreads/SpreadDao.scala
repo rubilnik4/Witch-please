@@ -142,6 +142,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .update(
             _.title -> lift(spread.title),
             _.cardCount -> lift(spread.cardCount),
+            _.description -> lift(spread.description),
             _.photoId -> lift(photoId)
           )
       }

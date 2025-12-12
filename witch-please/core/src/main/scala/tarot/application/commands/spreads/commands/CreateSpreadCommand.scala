@@ -6,6 +6,7 @@ import tarot.domain.models.photo.PhotoSource
 final case class CreateSpreadCommand(
   userId: UserId,
   title: String,
-  cardCount: Integer,
+  cardsCount: Integer,
+  description: String,
   photo: PhotoSource
 )

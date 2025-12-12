@@ -6,15 +6,8 @@ import tarot.application.commands.spreads.commands.{CreateSpreadCommand, UpdateS
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.authorize.UserId
-import tarot.domain.models.photo.PhotoSource
-import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.SpreadId
-import zio.json.*
-import zio.schema.*
 import zio.{IO, ZIO}
-
-import java.time.{Duration, Instant}
-import java.util.UUID
 
 object SpreadRequestMapper {
   def fromRequest(request: SpreadCreateRequest, userId: UserId): IO[TarotError, CreateSpreadCommand] =
@@ -29,7 +22,8 @@ object SpreadRequestMapper {
     } yield CreateSpreadCommand(
         userId = userId,
         title = request.title,
-        cardCount = request.cardCount,
+        cardsCount = request.cardCount,
+        description = request.description,
         photo = photo
       )
 
@@ -40,6 +34,7 @@ object SpreadRequestMapper {
       spreadId = spreadId,
       title = request.title,
       cardCount = request.cardCount,
+      description = request.description,
       photo = photo
     )
     

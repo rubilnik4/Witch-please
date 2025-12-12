@@ -30,22 +30,21 @@ object TarotTestFixtures {
     } yield photoId
 
   def createUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =
-    val user = CreateAuthorCommand(clientId, clientType, clientSecret, "test user")
+    val author = getAuthorCommand(clientId, clientType, clientSecret)
     for {
       userHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.userCommandHandler)
-      userId <- userHandler.createAuthor(user)
+      userId <- userHandler.createAuthor(author)
     } yield userId
 
-  def createToken(clientType: ClientType, clientSecret: String, userId: UserId)
-  : ZIO[TarotEnv, TarotError, String] =
+  def createToken(clientType: ClientType, clientSecret: String, userId: UserId): ZIO[TarotEnv, TarotError, String] =
     for {
       authService <- ZIO.serviceWith[TarotEnv](_.services.authService)
       token <- authService.issueToken(clientType, userId, clientSecret)
     } yield token.token
 
   def createSpread(userId: UserId, cardsCount: Int, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
-    val photo = PhotoSource(FileSourceType.Telegram ,photoId)
-    val command = CreateSpreadCommand(userId, "Test spread", cardsCount, photo)
+    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    val command = getSpreadCommand(userId, cardsCount, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
       spreadId <- spreadHandler.createSpread(command)
@@ -66,4 +65,19 @@ object TarotTestFixtures {
       telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
       chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(TarotError.NotFound("chatId not set"))
     } yield chatId
+    
+  private def getAuthorCommand(clientId: String, clientType: ClientType, clientSecret: String) =
+    CreateAuthorCommand(
+      clientId = clientId,
+      clientType = clientType,
+      clientSecret = clientSecret,
+      name = "test user")
+  
+  private def getSpreadCommand(userId: UserId, cardsCount: Int, photo: PhotoSource) =
+    CreateSpreadCommand(
+      userId = userId,
+      title = "Test spread",
+      cardsCount = cardsCount,
+      description = "Test spread",
+      photo = photo)
 }

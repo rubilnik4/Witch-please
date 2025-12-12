@@ -99,8 +99,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
           
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)        
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
-        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread", spreadMode)
-        _ <- SpreadFlow.spreadCardCount(app, chatId, cardCount, spreadMode)
+        _ <- SpreadFlow.spreadTitle(app, chatId, spreadMode, "Test spread")
+        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadMode, cardCount)
+        _ <- SpreadFlow.spreadDescription(app, chatId, spreadMode, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
