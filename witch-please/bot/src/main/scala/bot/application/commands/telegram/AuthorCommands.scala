@@ -19,8 +19,8 @@ object AuthorCommands {
   def spreadEdit(spreadId: UUID): String =
     s"$SpreadEdit $spreadId"
     
-  def spreadSelect(spreadId: UUID, cardCount: Int): String =
-    s"$SpreadSelect $spreadId $cardCount"
+  def spreadSelect(spreadId: UUID): String =
+    s"$SpreadSelect $spreadId"
 
   def spreadCardsSelect(spreadId: UUID): String =
     s"$SpreadCardsSelect $spreadId"

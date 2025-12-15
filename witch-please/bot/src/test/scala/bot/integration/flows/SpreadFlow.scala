@@ -49,8 +49,8 @@ object SpreadFlow {
       }
     } yield ()
     
-  def selectSpread(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.selectSpreadsRequest(chatId, spreadId, cardCount)
+  def selectSpread(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.selectSpreadRequest(chatId, spreadId)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       response <- app.runZIO(request)

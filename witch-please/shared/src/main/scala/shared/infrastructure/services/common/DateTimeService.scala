@@ -11,14 +11,23 @@ object DateTimeService {
     Clock.instant
 
   def getOffset: UIO[ZoneOffset] =
-    getDateTimeNow.map(Zone.getRules.getOffset)   
+    getDateTimeNow.map(Zone.getRules.getOffset)
+
+  def getLocalTime(dateTime: Instant, zone: ZoneId = Zone): LocalDateTime =
+    ZonedDateTime.ofInstant(dateTime, zone).toLocalDateTime
 
   def currentLocalDateTime(zone: ZoneId = Zone): UIO[LocalDateTime] =
-    getDateTimeNow.map(i => ZonedDateTime.ofInstant(i, zone).toLocalDateTime)  
+    getDateTimeNow.map(i => getLocalTime(i, zone))
+
+  def getLocalDate(dateTime: Instant, zone: ZoneId = Zone): LocalDate =
+    ZonedDateTime.ofInstant(dateTime, zone).toLocalDate
     
   def currentLocalDate(zone: ZoneId = Zone): UIO[LocalDate] =
-    getDateTimeNow.map(i => ZonedDateTime.ofInstant(i, zone).toLocalDate)
+    getDateTimeNow.map(i => getLocalDate(i, zone))
+
+  def getYearMonth(dateTime: Instant, zone: ZoneId = Zone): YearMonth =
+    YearMonth.from(ZonedDateTime.ofInstant(dateTime, zone))
 
   def currentYearMonth(zone: ZoneId = Zone): UIO[YearMonth] =
-    getDateTimeNow.map(i => YearMonth.from(ZonedDateTime.ofInstant(i, zone)))
+    getDateTimeNow.map(i => getYearMonth(i, zone))
 }

@@ -41,7 +41,7 @@ object SpreadFlow {
         .zipWithIndex
         .map { case (spread, index) =>
           val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
-          val command = AuthorCommands.spreadSelect(spread.id, spread.cardsCount)
+          val command = AuthorCommands.spreadSelect(spread.id)
           TelegramInlineKeyboardButton(label, Some(command))
         }
       createButton = TelegramInlineKeyboardButton("➕ Создать новый", Some(AuthorCommands.SpreadCreate))
@@ -124,10 +124,10 @@ object SpreadFlow {
           } yield spreadId
       }
 
-      _ <- selectSpread(context, spreadId, cardCount)(telegramApi, tarotApi, sessionService)
+      _ <- selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  def selectSpread(context: TelegramContext, spreadId: UUID, cardCount: Int)
+  def selectSpread(context: TelegramContext, spreadId: UUID)
         (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get spread settings command by spreadId $spreadId for chat ${context.chatId}")
@@ -139,7 +139,7 @@ object SpreadFlow {
       spread <- tarotApi.getSpread(spreadId, token)
       cards <- tarotApi.getCards(spreadId, token)
       createdPosition = cards.map(_.position).toSet
-      progress = SpreadProgress(cardCount, createdPosition)
+      progress = SpreadProgress(spread.cardsCount, createdPosition)
       _ <- sessionService.setSpread(context.chatId, spreadId, progress)
 
       _ <- showSpread(context, spread, createdPosition)(telegramApi)

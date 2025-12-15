@@ -9,6 +9,8 @@ import bot.layers.TestBotEnvLayer
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.infrastructure.services.common.DateTimeService
+import shared.models.tarot.spreads.SpreadStatus
 import shared.models.telegram.TelegramFile
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import zio.http.*
@@ -144,7 +146,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("select card flow") {
+    test("select spread flow") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
@@ -157,7 +159,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         _ <- botSessionService.clearSpreadProgress(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- SpreadFlow.selectSpread(app, chatId, spreadId, cardCount)
+        _ <- SpreadFlow.selectSpread(app, chatId, spreadId)
 
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
@@ -169,26 +171,35 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-//    test("publish spread command") {
-//      for {
-//        botSessionService <- ZIO.serviceWith[BotEnv](_.botService.botSessionService)
-//        chatId <- getChatId
-//
-//        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-//        now <- DateTimeService.getDateTimeNow
-//        publishTime = now.plus(10.minute)
-//        publishSpreadRequest = TestTelegramWebhook.publishSpreadRequest(chatId, publishTime)
-//        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), publishSpreadRequest)
-//        response <- app.runZIO(request)
-//
-//        session <- botSessionService.get(chatId)
-//      } yield assertTrue(
-//        response.status == Status.Ok,
-//        session.spreadId.isEmpty,
-//        session.pending.isEmpty,
-//        session.spreadProgress.isEmpty
-//      )
-//    }
+    test("publish spread flow") {
+      for {
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+        tarotApiService <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
+        chatId <- getChatId
+        session <- botSessionService.get(chatId)
+        token <- ZIO.fromOption(session.token).orElseFail(new RuntimeException("token not set"))
+        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+
+        now <- DateTimeService.getDateTimeNow
+        publishTime = now.plus(1.day)
+        cardOdDayDelay = 1.hour
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        _ <- PublishFlow.startPublish(app, chatId, spreadId)
+        _ <- PublishFlow.selectMonth(app, chatId, publishTime)
+        _ <- PublishFlow.selectDate(app, chatId, publishTime)
+        _ <- PublishFlow.selectTime(app, chatId, publishTime)
+        _ <- PublishFlow.selectCardOdDayDelay(app, chatId, cardOdDayDelay)
+        _ <- PublishFlow.confirm(app, chatId)
+
+        sessionError <- botSessionService.get(chatId).flip
+        spread <- tarotApiService.getSpread(spreadId, token)
+      } yield assertTrue(
+        Option(sessionError).isDefined,
+        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.scheduledAt.contains(publishTime)
+      )
+    }
   ).provideShared(
     Scope.default,
     TestBotEnvLayer.testEnvLive,

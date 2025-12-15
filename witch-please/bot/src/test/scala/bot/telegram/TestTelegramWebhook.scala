@@ -1,9 +1,9 @@
 package bot.telegram
 
 import bot.api.dto.*
-import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
+import bot.application.commands.telegram.*
 
-import java.time.Instant
+import java.time.*
 import java.util.UUID
 
 object TestTelegramWebhook {
@@ -70,12 +70,27 @@ object TestTelegramWebhook {
   def createSpreadRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, s"${AuthorCommands.SpreadCreate}")
 
-  def selectSpreadsRequest(chatId: Long, spreadId: UUID, cardCount: Int): TelegramWebhookRequest =
-    textRequest(chatId, AuthorCommands.spreadSelect(spreadId, cardCount))
+  def selectSpreadRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.spreadSelect(spreadId))
 
   def createCardRequest(chatId: Long, position: Int): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.cardCreate(position))
     
   def publishSpreadRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.spreadPublish(spreadId))
+    
+  def scheduleSelectMonth(chatId: Long, month: YearMonth): TelegramWebhookRequest =
+    textRequest(chatId, SchedulerCommands.selectMonth(month))
+
+  def scheduleSelectDate(chatId: Long, date: LocalDate): TelegramWebhookRequest =
+    textRequest(chatId, SchedulerCommands.selectDate(date))
+
+  def scheduleSelectTime(chatId: Long, time: LocalTime): TelegramWebhookRequest =
+    textRequest(chatId, SchedulerCommands.selectTime(time))
+
+  def scheduleSelectCardOfDayDelay(chatId: Long, delay: Duration): TelegramWebhookRequest =
+    textRequest(chatId, SchedulerCommands.selectCardOfDayDelay(delay))
+
+  def scheduleConfirm(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, SchedulerCommands.Confirm)
 }

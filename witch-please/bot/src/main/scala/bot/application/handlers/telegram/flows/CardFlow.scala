@@ -48,7 +48,7 @@ object CardFlow {
             TelegramInlineKeyboardButton(s"$position. ➕ Создать карту", Some(AuthorCommands.cardCreate(position)))
         }
       }.toList
-      backButton = TelegramInlineKeyboardButton(s"К раскладу", Some(AuthorCommands.spreadSelect(spreadId, cardsCount)))
+      backButton = TelegramInlineKeyboardButton(s"К раскладу", Some(AuthorCommands.spreadSelect(spreadId)))
       buttons = cardButtons :+ backButton
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()

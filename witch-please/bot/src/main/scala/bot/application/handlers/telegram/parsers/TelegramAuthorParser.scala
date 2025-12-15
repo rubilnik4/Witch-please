@@ -20,10 +20,10 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
-      case AuthorCommands.SpreadSelect :: spreadIdStr :: cardCountStr :: Nil =>
-        (Try(UUID.fromString(spreadIdStr)).toOption, cardCountStr.toIntOption) match {
-          case (Some(spreadId), Some(cardCount)) =>
-            AuthorCommand.SelectSpread(spreadId, cardCount)
+      case AuthorCommands.SpreadSelect :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case (Some(spreadId)) =>
+            AuthorCommand.SelectSpread(spreadId)
           case _ =>
             BotCommand.Unknown
         }
