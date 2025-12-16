@@ -2,7 +2,7 @@ package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.AuthorCommands
 import bot.application.handlers.telegram.flows.SpreadFlow.validateModifySpread
-import bot.domain.models.session.{BotPendingAction, CardMode}
+import bot.domain.models.session.{BotPendingAction, CardMode, CardPosition}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -127,7 +127,7 @@ object CardFlow {
           val request = CardCreateRequest(position, title, description, photo)
           for {
             cardId <- tarotApi.createCard(request, spreadId, position, token)
-            _ <- sessionService.setCardPositions(context.chatId, position)
+            _ <- sessionService.setCardPosition(context.chatId, CardPosition(position, cardId.id))
             _ <- telegramApi.sendText(context.chatId, s"Карта создана")
           } yield cardId
         case CardMode.Edit(cardId) =>
@@ -156,7 +156,8 @@ object CardFlow {
       _ <- tarotApi.deleteCard(cardId, token)
       _ <- telegramApi.sendText(context.chatId, s"Карта удалена")
       _ <- sessionService.clearCard(context.chatId)
-
+      _ <- sessionService.deleteCardPosition(context.chatId, cardId)
+      
       _ <- selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 

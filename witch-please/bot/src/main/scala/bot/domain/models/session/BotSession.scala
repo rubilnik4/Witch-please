@@ -49,17 +49,27 @@ object BotSession {
       pending = None,
       updatedAt = now)
       
-  def withCardPositions(session: BotSession, position: Int, now: Instant): ZIO[Any, Throwable, BotSession] =
+  def withCardPosition(session: BotSession, cardPosition: CardPosition, now: Instant): ZIO[Any, Throwable, BotSession] =
     for {
       progress <- ZIO.fromOption(session.spreadProgress)
-        .orElseFail(new IllegalStateException(s"Cannot add card $position: spreadProgress is empty for userId=${session.userId}"))
-      _ <- ZIO.fail(new IllegalArgumentException(s"Card position $position is out of bounds [0, ${progress.cardsCount - 1}]"))
-        .unless(position >= 0 && position < progress.cardsCount)
+        .orElseFail(new IllegalStateException(s"Cannot add card $cardPosition: spreadProgress is empty for userId=${session.userId}"))
+      _ <- ZIO.fail(new IllegalArgumentException(s"Card position $cardPosition is out of bounds [0, ${progress.cardsCount - 1}]"))
+        .unless(cardPosition.position >= 0 && cardPosition.position < progress.cardsCount)
 
-      nextProgress = if (progress.createdPositions.contains(position)) progress
-        else progress.copy(createdPositions = progress.createdPositions + position)
+      nextProgress = if (progress.createdPositions.contains(cardPosition)) progress
+        else progress.copy(createdPositions = progress.createdPositions + cardPosition)
     } yield session.copy(spreadProgress = Some(nextProgress), pending = None, updatedAt = now)
 
+  def deleteCardPosition(session: BotSession, cardId: UUID, now: Instant): ZIO[Any, Throwable, BotSession] =
+    for {
+      progress <- ZIO.fromOption(session.spreadProgress)
+        .orElseFail(new IllegalStateException(s"Cannot delete card $cardId: spreadProgress is empty for userId=${session.userId}"))
+      cardPosition <- ZIO.fromOption(progress.createdPositions.find(_.cardId == cardId))
+        .orElseFail(new IllegalArgumentException(s"Card $cardId is not in spreadProgress"))
+
+      nextProgress = progress.copy(createdPositions = progress.createdPositions - cardPosition)
+    } yield session.copy(spreadProgress = Some(nextProgress), pending = None, updatedAt = now)
+    
   def withCard(session: BotSession, cardId: UUID, now: Instant): BotSession =
     session.copy(
       cardId = Some(cardId),

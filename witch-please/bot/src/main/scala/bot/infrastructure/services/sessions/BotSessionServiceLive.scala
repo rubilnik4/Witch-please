@@ -95,15 +95,24 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpreadProgress(session, now))
     } yield ()
 
-  override def setCardPositions(chatId: Long, position: Int): ZIO[BotEnv, Throwable, Unit] =
+  override def setCardPosition(chatId: Long, position: CardPosition): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set card position $position for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.withCardPositions(session, position, now))
+      _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.withCardPosition(session, position, now))
       _ <- clearPending(chatId)
     } yield ()
 
+  override def deleteCardPosition(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Delete card position $cardId for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.deleteCardPosition(session, cardId, now))
+      _ <- clearPending(chatId)
+    } yield ()
+    
   override def setCard(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set card $cardId for chat $chatId")

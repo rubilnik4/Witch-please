@@ -1,6 +1,7 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
+import bot.domain.models.session.CardMode
 import bot.domain.models.session.{BotPendingAction, CardMode}
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
@@ -12,8 +13,13 @@ import java.util.UUID
 
 
 object CardFlow {
-  def startCard(app: Routes[BotEnv, Response], chatId: Long, cardMode: CardMode, position: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.createCardRequest(chatId, position)
+  def startCard(app: Routes[BotEnv, Response], chatId: Long, cardMode: CardMode): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = cardMode match {
+      case CardMode.Create(position) =>
+        TestTelegramWebhook.createCardRequest(chatId, position + 1)
+      case CardMode.Edit(cardId) =>
+        TestTelegramWebhook.updateSpreadRequest(chatId, cardId)
+    }
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)

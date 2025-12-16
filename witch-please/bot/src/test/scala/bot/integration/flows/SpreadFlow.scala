@@ -13,7 +13,12 @@ import java.util.UUID
 
 object SpreadFlow {
   def startSpread(app: Routes[BotEnv, Response], chatId: Long, spreadMode: SpreadMode): ZIO[Scope & BotEnv, Throwable, Unit] =
-    val postRequest = TestTelegramWebhook.createSpreadRequest(chatId)
+    val postRequest = spreadMode match {
+      case SpreadMode.Create =>
+        TestTelegramWebhook.createSpreadRequest(chatId)
+      case SpreadMode.Edit(spreadId) =>
+        TestTelegramWebhook.updateSpreadRequest(chatId, spreadId)
+    }
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
