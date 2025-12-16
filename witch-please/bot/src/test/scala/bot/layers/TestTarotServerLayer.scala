@@ -35,7 +35,7 @@ object TestTarotServerLayer {
         envLive)
 
   val live: ZLayer[Any, Throwable, TarotApiUrl] =
-    (Server.default ++ testEnvLive) >>>
+    (Server.defaultWith(_.port(0)) ++ testEnvLive) >>>
       ZLayer.scoped {
         val httpApp = ZioHttpInterpreter().toHttp(TarotRoutesLayer.endpoints)
         for {
