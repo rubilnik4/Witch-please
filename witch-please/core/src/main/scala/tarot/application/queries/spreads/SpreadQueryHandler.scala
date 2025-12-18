@@ -12,5 +12,4 @@ trait SpreadQueryHandler {
   def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread]
   def getSpreads(userId: UserId): ZIO[TarotEnv, TarotError, List[Spread]]
   def getScheduledSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]
-  def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]]
 }

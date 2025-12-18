@@ -9,6 +9,7 @@ case object TarotApiRoutes {
   val apiPath = "api"
   val spreads = "spreads"
   val cards = "cards"
+  val cardOfDay = "card_of_day"
   val authors = "authors"
   val auth = "auth"
   val users ="users"

@@ -17,12 +17,11 @@ final case class Spread(
   projectId: ProjectId,
   title: String,
   cardsCount: Int,
-  description: String, 
-  spreadStatus: SpreadStatus,
+  description: String,
+  status: SpreadStatus,
   photo: Photo,
   createdAt: Instant,
   scheduledAt: Option[Instant],
-  cardOfDayDelay: Option[Duration],
   publishedAt: Option[Instant]
 )
 
@@ -39,23 +38,10 @@ object Spread {
         title = command.title,
         cardsCount = command.cardsCount,
         description = command.description,
-        spreadStatus = SpreadStatus.Draft,
+        status = SpreadStatus.Draft,
         photo = photo,
         createdAt = createdAt,
         scheduledAt = None,
-        cardOfDayDelay = None,
         publishedAt = None)
     } yield spread
-
-  def getCardOfDayAt(scheduledAt: Option[Instant], cardOfDayDelay: Option[Duration]): Option[Instant] =
-    for {
-      scheduled <- scheduledAt
-      delay <- cardOfDayDelay
-    } yield scheduled.plus(delay)
-
-  def getCardOfDayDelay(scheduledAt: Option[Instant], cardOfDayAt: Option[Instant]): Option[Duration] =
-    for {
-      scheduled <- scheduledAt
-      cardOfDay <- cardOfDayAt
-    } yield Duration.between(scheduled, cardOfDay)
 }

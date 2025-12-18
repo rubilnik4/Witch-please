@@ -5,6 +5,7 @@ import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.database.Migration
+import tarot.infrastructure.repositories.cardOfDay.{CardOfDayRepository, CardOfDayRepositoryLayer}
 import tarot.infrastructure.repositories.cards.{CardRepository, CardRepositoryLayer}
 import tarot.infrastructure.repositories.photo.{PhotoRepository, PhotoRepositoryLayer}
 import tarot.infrastructure.repositories.projects.*
@@ -16,7 +17,8 @@ import javax.sql.DataSource
 
 object TarotRepositoryLayer {
   type Repositories =
-    UserRepository & UserProjectRepository & ProjectRepository & SpreadRepository & CardRepository & PhotoRepository
+    UserRepository & UserProjectRepository & ProjectRepository & SpreadRepository 
+      & CardRepository & CardOfDayRepository & PhotoRepository
 
   private val dataSourceLayer: ZLayer[TarotConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
@@ -54,6 +56,7 @@ object TarotRepositoryLayer {
     migrationLayer ++ quillLayer >>>
       SpreadRepositoryLayer.live ++
       CardRepositoryLayer.live ++
+      CardOfDayRepositoryLayer.live ++
       ProjectRepositoryLayer.live ++
       UserRepositoryLayer.live ++
       UserProjectRepositoryLayer.live ++

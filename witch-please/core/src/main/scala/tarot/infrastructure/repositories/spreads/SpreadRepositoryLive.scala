@@ -40,23 +40,13 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
     } yield spreads
 
-  override def getScheduleSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
+  override def getScheduledSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
     for {
       _ <- ZIO.logDebug(s"Getting scheduled spreads by deadline $deadline")
 
       spreads <- spreadDao.getScheduledSpreads(deadline, limit)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get ready spreads by deadline $deadline", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get ready spreads by deadline $deadline", e))
-        .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
-    } yield spreads
-
-  override def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[Spread]] =
-    for {
-      _ <- ZIO.logDebug(s"Getting preview spreads by deadline $deadline")
-
-      spreads <- spreadDao.getPreviewSpreads(deadline, limit)
-        .tapError(e => ZIO.logErrorCause(s"Failed to get preview spreads by deadline $deadline", Cause.fail(e)))
-        .mapError(e => DatabaseError(s"Failed to get preview spreads by deadline $deadline", e))
+        .tapError(e => ZIO.logErrorCause(s"Failed to get scheduled spreads by deadline $deadline", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get scheduled spreads by deadline $deadline", e))
         .flatMap(spreads => ZIO.foreach(spreads)(SpreadPhotoEntity.toDomain))
     } yield spreads
 
@@ -71,7 +61,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
 
   override def createSpread(spread: Spread): ZIO[Any, TarotError, SpreadId] =
     for {
-      _ <- ZIO.logDebug(s"Creating spread $spread")
+      _ <- ZIO.logDebug(s"Creating spread ${spread.id}")
 
       spreadId <- quill.transaction {
         for {
@@ -80,7 +70,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
           spreadId <- spreadDao.insertSpread(spreadEntity)
         } yield spreadId
       }
-        .tapError(e => ZIO.logErrorCause(s"Failed to create spread $spread", Cause.fail(e)))
+        .tapError(e => ZIO.logErrorCause(s"Failed to create spread ${spread.id}", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
     } yield SpreadId(spreadId)
 
@@ -89,10 +79,8 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       _ <- ZIO.logDebug(s"Updating spread status $spreadStatusUpdate")
 
       result <- (spreadStatusUpdate match {
-        case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, cardOfDayAt, expectedAt) =>
-          spreadDao.updateToSchedule(spreadId.id, scheduledAt, cardOfDayAt, expectedAt)
-        case SpreadStatusUpdate.PreviewPublished(spreadId) =>
-          spreadDao.updateToPreviewPublish(spreadId.id)
+        case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, expectedAt) =>
+          spreadDao.updateToSchedule(spreadId.id, scheduledAt, expectedAt)
         case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
           spreadDao.updateToPublish(spreadId.id, publishedAt)
       })

@@ -1,9 +1,9 @@
 package tarot.application.jobs
 
-import tarot.application.jobs.spreads.SpreadJobLayer
+import tarot.application.jobs.spreads.{PublishJobLayer, PublishJobLive}
 import zio.ZLayer
 
 object TarotJobLayer {
   val live: ZLayer[Any, Nothing, TarotJob] =
-    SpreadJobLayer.live >>> ZLayer.fromFunction(TarotJobLive.apply)
+    PublishJobLayer.live >>> ZLayer.fromFunction(TarotJobLive.apply)
 }

@@ -6,5 +6,5 @@ import zio.ZLayer
 
 object CardRepositoryLayer {
   val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, CardRepository] =
-    ZLayer.fromFunction(quill => new CardRepositoryLive(quill))
+    ZLayer.fromFunction(CardRepositoryLive(_))
 }

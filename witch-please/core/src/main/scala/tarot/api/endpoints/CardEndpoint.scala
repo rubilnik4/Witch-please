@@ -1,12 +1,13 @@
 package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardOfDayCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.IdResponse
 import shared.models.tarot.authorize.Role
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
+import tarot.api.dto.tarot.cardOfDay.CardOfDayRequestMapper
 import tarot.api.dto.tarot.cards.{CardRequestMapper, CardResponseMapper}
 import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
@@ -100,7 +101,7 @@ object CardEndpoint {
           } yield IdResponse(cardId.id)).mapResponseErrors
         }
       }
-
+      
   private val putCardEndpoint: ZServerEndpoint[TarotEnv, Any] =
     endpoint.put
       .in(TarotApiRoutes.apiPath / TarotApiRoutes.cards / path[UUID]("cardId"))

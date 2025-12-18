@@ -5,5 +5,5 @@ import zio.ZLayer
 
 object CardQueryHandlerLayer {
   val live: ZLayer[CardRepository, Nothing, CardQueryHandler] =
-    ZLayer.fromFunction(new CardQueryHandlerLive(_))
+    ZLayer.fromFunction(CardQueryHandlerLive(_))
 }

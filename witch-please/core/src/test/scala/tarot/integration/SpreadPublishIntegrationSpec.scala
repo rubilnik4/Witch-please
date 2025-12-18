@@ -9,7 +9,6 @@ import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
-import tarot.application.jobs.spreads.SpreadPublishType
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
@@ -153,7 +152,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(
-        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishRequest.scheduledAt)
       )
     },
@@ -184,7 +183,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
       } yield assertTrue(
-        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishRequest.scheduledAt)
       )
     },
@@ -197,8 +196,8 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
 
         result <- spreadJob.publishSpreads()
-        previewResult = result.filter(_.publishType == SpreadPublishType.PreviewPublished).map(_.id)
-        publishResult = result.filter(_.publishType == SpreadPublishType.Published).map(_.id)
+        previewResult = result.filter(_.publishType == PublishJobType.SpreadPublish).map(_.id)
+        publishResult = result.filter(_.publishType == PublishJobType.CardOfDayPublish).map(_.id)
       } yield assertTrue(
         previewResult.map(_.id).contains(spreadId),
         publishResult.isEmpty
@@ -245,8 +244,8 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
 
         result <- spreadJob.publishSpreads()
-        previewResult = result.filter(_.publishType == SpreadPublishType.PreviewPublished).map(_.id)
-        publishedResult = result.filter(_.publishType == SpreadPublishType.Published).map(_.id)
+        previewResult = result.filter(_.publishType == PublishJobType.SpreadPublish).map(_.id)
+        publishedResult = result.filter(_.publishType == PublishJobType.CardOfDayPublish).map(_.id)
       } yield assertTrue(
         previewResult.isEmpty,
         publishedResult.map(_.id).contains(spreadId)

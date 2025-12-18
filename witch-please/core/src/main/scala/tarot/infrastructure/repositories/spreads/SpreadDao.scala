@@ -48,7 +48,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
           .filter { case (spread, _) =>
-            spread.spreadStatus == lift(SpreadStatus.Scheduled) &&
+            spread.status == lift(SpreadStatus.Scheduled) &&
             spread.scheduledAt.exists(_ <= lift(deadline))
           }
           .sortBy { case (spread, _) => spread.scheduledAt }(Ord.asc)
@@ -56,21 +56,6 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
       })
 
-  def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
-    run(
-      quote {
-        spreadTable
-          .join(photoTable)
-          .on((spread, photo) => spread.photoId == photo.id)
-          .filter { case (spread, _) =>
-            spread.spreadStatus == lift(SpreadStatus.PreviewPublished) &&
-            spread.cardOfDayAt.exists(_ <= lift(deadline))
-          }
-          .sortBy { case (spread, _) => spread.cardOfDayAt }(Ord.asc)
-          .take(lift(limit))
-          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
-      })
-      
   def existsSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
     run(
       quote {
@@ -88,9 +73,8 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def updateToSchedule(spreadId: UUID, scheduleAt: Instant, cardOfDayAt: Instant, expectedScheduledAt: Option[Instant])
-    : ZIO[Any, SQLException, Long] =
-    expectedScheduledAt match {
+  def updateToSchedule(spreadId: UUID, scheduleAt: Instant, expectedAt: Option[Instant]): ZIO[Any, SQLException, Long] =
+    expectedAt match {
       case Some(expected) =>
         run(quote {
           spreadTable
@@ -98,9 +82,8 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
               spread.id == lift(spreadId) && isScheduleStatus(spread) &&
               spread.scheduledAt.contains(lift(expected)))
             .update(
-              _.spreadStatus -> lift(SpreadStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt)),
-              _.cardOfDayAt -> lift(Option(cardOfDayAt))
+              _.status -> lift(SpreadStatus.Scheduled),
+              _.scheduledAt -> lift(Option(scheduleAt))
             )
         })
       case None =>
@@ -108,28 +91,18 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           spreadTable
             .filter(spread => spread.id == lift(spreadId) && isScheduleStatus(spread))
             .update(
-              _.spreadStatus -> lift(SpreadStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt)),
-              _.cardOfDayAt -> lift(Option(cardOfDayAt))
+              _.status -> lift(SpreadStatus.Scheduled),
+              _.scheduledAt -> lift(Option(scheduleAt))
             )
         })
     }
-
-  def updateToPreviewPublish(spreadId: UUID): ZIO[Any, SQLException, Long] =
-    run(quote {
-      spreadTable
-        .filter(spread => spread.id == lift(spreadId) && isPreviewPublishStatus(spread))
-        .update(
-          _.spreadStatus -> lift(SpreadStatus.PreviewPublished)
-        )
-    })
 
   def updateToPublish(spreadId: UUID, publishedAt: Instant): ZIO[Any, SQLException, Long] =
     run(quote {
       spreadTable
         .filter(spread => spread.id == lift(spreadId) && isPublishStatus(spread))
         .update(
-          _.spreadStatus -> lift(SpreadStatus.Published),
+          _.status -> lift(SpreadStatus.Published),
           _.publishedAt -> lift(Option(publishedAt))
         )
     })
@@ -157,13 +130,10 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       })
 
   private inline def isScheduleStatus(spread: SpreadEntity) =
-    quote(spread.spreadStatus == lift(SpreadStatus.Draft) || spread.spreadStatus == lift(SpreadStatus.Scheduled))
-
-  private inline def isPreviewPublishStatus(spread: SpreadEntity) =
-    quote(spread.spreadStatus == lift(SpreadStatus.Scheduled) && spread.publishedAt.isEmpty)
+    quote(spread.status == lift(SpreadStatus.Draft) || spread.status == lift(SpreadStatus.Scheduled))
 
   private inline def isPublishStatus(spread: SpreadEntity) =
-    quote(spread.spreadStatus == lift(SpreadStatus.PreviewPublished) && spread.publishedAt.isEmpty)
+    quote(spread.status == lift(SpreadStatus.Scheduled) && spread.publishedAt.isEmpty)
     
   private inline def spreadTable =
     quote(querySchema[SpreadEntity](TarotTableNames.spreads))

@@ -1,6 +1,7 @@
 package tarot.application.queries
 
 import tarot.application.queries.cards.CardQueryHandler
+import tarot.application.queries.cardsOfDay.CardOfDayQueryHandler
 import tarot.application.queries.photos.PhotoQueryHandler
 import tarot.application.queries.projects.ProjectQueryHandler
 import tarot.application.queries.spreads.SpreadQueryHandler
@@ -11,5 +12,6 @@ final case class TarotQueryHandlerLive(
   projectQueryHandler: ProjectQueryHandler,
   spreadQueryHandler: SpreadQueryHandler,
   cardQueryHandler: CardQueryHandler,
+  cardOfDayQueryHandler: CardOfDayQueryHandler,
   photoQueryHandler: PhotoQueryHandler                                  
 ) extends TarotQueryHandler

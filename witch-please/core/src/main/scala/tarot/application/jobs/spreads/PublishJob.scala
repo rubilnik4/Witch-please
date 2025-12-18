@@ -4,7 +4,7 @@ import tarot.domain.models.TarotError
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-trait SpreadJob {
+trait PublishJob {
   def run: ZIO[TarotEnv, Nothing, Unit]
-  def publishSpreads(): ZIO[TarotEnv, TarotError, List[SpreadPublishResult]]
+  def publish(): ZIO[TarotEnv, TarotError, List[PublishJobResult]]
 }

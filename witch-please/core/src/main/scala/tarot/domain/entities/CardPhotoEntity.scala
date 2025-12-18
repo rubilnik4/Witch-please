@@ -9,20 +9,20 @@ import java.util.UUID
 
 final case class CardPhotoEntity(
   card: CardEntity,
-  coverPhoto: PhotoEntity
+  photo: PhotoEntity
 )
 
 object CardPhotoEntity {
   def toDomain(cardPhoto: CardPhotoEntity): ZIO[Any, TarotError, Card] =
     for {
-      coverPhoto <- PhotoEntity.toDomain(cardPhoto.coverPhoto)
+      photo <- PhotoEntity.toDomain(cardPhoto.photo)
       card = Card(
         id = CardId(cardPhoto.card.id),
         position = cardPhoto.card.position,
         spreadId = SpreadId(cardPhoto.card.spreadId),
         title = cardPhoto.card.title,
         description = cardPhoto.card.description,
-        photo = coverPhoto,
+        photo = photo,
         createdAt = cardPhoto.card.createdAt)
     } yield card
 }

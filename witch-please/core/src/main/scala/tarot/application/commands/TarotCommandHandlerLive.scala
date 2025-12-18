@@ -1,5 +1,6 @@
 package tarot.application.commands
 
+import tarot.application.commands.cardOfDay.CardOfDayCommandHandler
 import tarot.application.commands.cards.CardCommandHandler
 import tarot.application.commands.photos.PhotoCommandHandler
 import tarot.application.commands.projects.*
@@ -11,5 +12,6 @@ final case class TarotCommandHandlerLive(
   projectCommandHandler: ProjectCommandHandler,
   spreadCommandHandler: SpreadCommandHandler,
   cardCommandHandler: CardCommandHandler,
+  cardOfDayCommandHandler: CardOfDayCommandHandler,
   photoCommandHandler: PhotoCommandHandler
 ) extends TarotCommandHandler 

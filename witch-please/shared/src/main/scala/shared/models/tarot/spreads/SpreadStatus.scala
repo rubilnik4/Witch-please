@@ -6,7 +6,6 @@ import zio.json.JsonCodec
 enum SpreadStatus derives JsonCodec, Schema {
   case Draft
   case Scheduled
-  case PreviewPublished
   case Published
   case Archived
 }

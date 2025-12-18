@@ -112,7 +112,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         spread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
         cardsCount <- cardQueryHandler.getCardsCount(SpreadId(spreadId))
       } yield assertTrue(
-        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishRequest.scheduledAt),
         cardsCount == spread.cardsCount
       )

@@ -6,5 +6,5 @@ import zio.ZLayer
 
 object SpreadRepositoryLayer {
   val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, SpreadRepository] =
-    ZLayer.fromFunction(quill => new SpreadRepositoryLive(quill))
+    ZLayer.fromFunction(new SpreadRepositoryLive(_))
 }

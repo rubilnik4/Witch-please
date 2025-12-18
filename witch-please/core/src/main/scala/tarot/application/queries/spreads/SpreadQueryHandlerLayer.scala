@@ -6,5 +6,5 @@ import zio.ZLayer
 
 object SpreadQueryHandlerLayer {
   val live: ZLayer[SpreadRepository & UserProjectRepository, Nothing, SpreadQueryHandler] =
-    ZLayer.fromFunction(new SpreadsQueryHandlerLive(_,_))
+    ZLayer.fromFunction(SpreadsQueryHandlerLive(_,_))
 }

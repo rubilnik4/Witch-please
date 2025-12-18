@@ -1,5 +1,6 @@
 package tarot.application.commands
 
+import tarot.application.commands.cardOfDay.CardOfDayCommandHandlerLayer
 import tarot.application.commands.cards.CardCommandHandlerLayer
 import tarot.application.commands.photos.PhotoCommandHandlerLayer
 import tarot.application.commands.projects.*
@@ -15,7 +16,8 @@ object TarotCommandHandlerLayer {
       UserCommandHandlerLayer.live ++
       ProjectCommandHandlerLayer.live ++
       SpreadCommandHandlerLayer.live ++
-      CardCommandHandlerLayer.live ++ 
+      CardCommandHandlerLayer.live ++
+      CardOfDayCommandHandlerLayer.live ++
       PhotoCommandHandlerLayer.live
     ) >>> ZLayer.fromFunction(TarotCommandHandlerLive.apply)
 }

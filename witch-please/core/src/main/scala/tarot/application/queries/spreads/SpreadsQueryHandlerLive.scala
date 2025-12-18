@@ -14,6 +14,7 @@ final class SpreadsQueryHandlerLive(
   spreadRepository: SpreadRepository,
   userProjectRepository: UserProjectRepository                                 
 ) extends SpreadQueryHandler {
+  
   override def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread] =
     for {
       _ <- ZIO.logInfo(s"Executing spread query by spreadId $spreadId")
@@ -36,15 +37,8 @@ final class SpreadsQueryHandlerLive(
 
   override def getScheduledSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
     for {
-      _ <- ZIO.logInfo(s"Executing ready spreads query by deadline $deadline")      
+      _ <- ZIO.logInfo(s"Executing ready to publish spreads query by deadline $deadline")      
       
-      spreads <- spreadRepository.getScheduleSpreads(deadline, limit)
-    } yield spreads
-
-  override def getPreviewSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
-    for {
-      _ <- ZIO.logInfo(s"Executing preview spreads query by deadline $deadline")
-
-      spreads <- spreadRepository.getPreviewSpreads(deadline, limit)
+      spreads <- spreadRepository.getScheduledSpreads(deadline, limit)
     } yield spreads
 }

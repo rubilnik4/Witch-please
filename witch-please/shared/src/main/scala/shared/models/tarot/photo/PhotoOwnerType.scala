@@ -4,4 +4,4 @@ import zio.json._
 import sttp.tapir.Schema
 
 enum PhotoOwnerType derives JsonCodec, Schema:
-  case Spread, Card
+  case Spread, Card, CardOfDay

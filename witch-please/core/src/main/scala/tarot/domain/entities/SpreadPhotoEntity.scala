@@ -20,11 +20,10 @@ object SpreadPhotoEntity {
         title = spreadPhoto.spread.title,
         cardsCount = spreadPhoto.spread.cardCount,
         description = spreadPhoto.spread.description,
-        spreadStatus = spreadPhoto.spread.spreadStatus,
+        status = spreadPhoto.spread.status,
         photo = photo,
         createdAt = spreadPhoto.spread.createdAt,
         scheduledAt = spreadPhoto.spread.scheduledAt,
-        cardOfDayDelay = Spread.getCardOfDayDelay(spreadPhoto.spread.scheduledAt, spreadPhoto.spread.cardOfDayAt),
         publishedAt = spreadPhoto.spread.publishedAt)
     } yield spread
   }

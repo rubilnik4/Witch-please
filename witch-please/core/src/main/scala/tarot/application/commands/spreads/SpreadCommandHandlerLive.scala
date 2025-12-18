@@ -7,6 +7,7 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
+import tarot.infrastructure.repositories.cardOfDay.CardOfDayRepository
 import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
@@ -16,7 +17,8 @@ import java.time.{Duration, Instant}
 
 final class SpreadCommandHandlerLive(
   spreadRepository: SpreadRepository,
-  cardRepository: CardRepository
+  cardRepository: CardRepository,
+  cardOfDayRepository: CardOfDayRepository                                  
 ) extends SpreadCommandHandler {
   
   override def createSpread(command: CreateSpreadCommand) : ZIO[TarotEnv, TarotError, SpreadId] =
@@ -53,17 +55,12 @@ final class SpreadCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing schedule spread command for spread ${command.spreadId}")
 
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
       spread <- spreadQueryHandler.getSpread(command.spreadId)
-      _ <- validatePublishing(spread)
-      _ <- schedulePublish(spread, command.scheduledAt, command.cardOfDayDelayHours)
-    } yield ()
-
-  override def publishPreviewSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit] =
-    for {  
-      _ <- ZIO.logInfo(s"Executing publish preview command for spread $spreadId")
+      cardOfDay <- cardOfDayQueryHandler.getCardOfDay(command.spreadId)
       
-      spreadStatusUpdate = SpreadStatusUpdate.PreviewPublished(spreadId)
-      _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
+      _ <- validatePublishing(spread)
+      _ <- scheduleSpread(spread, command.scheduledAt, command.cardOfDayDelayHours)
     } yield ()
 
   override def publishSpread(spreadId: SpreadId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
@@ -101,9 +98,9 @@ final class SpreadCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
-      _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.spreadStatus)) {
-        ZIO.logError(s"Spread $spread.id is not in Draft status") *>
-          ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft status"))
+      _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.status)) {
+        ZIO.logError(s"Spread $spread.id is not in Draft or Scheduled status") *>
+          ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft or Scheduled status"))
       }   
 
       cardCount <- cardRepository.getCardsCount(spread.id)
@@ -113,10 +110,11 @@ final class SpreadCommandHandlerLive(
       }
     } yield ()
 
-  private def schedulePublish(spread: Spread, scheduledAt: Instant, cardOfDayDelayHours: Duration) =
-    for {      
-      config <- ZIO.serviceWith[TarotEnv](_.config.publish)
+  private def scheduleSpread(spread: Spread, scheduledAt: Instant, cardOfDayDelayHours: Duration) =
+    for {
+      _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")
 
+      config <- ZIO.serviceWith[TarotEnv](_.config.publish)
       now <- DateTimeService.getDateTimeNow
       hardPastTime = now.minus(config.hardPastTime)
       maxTime = now.plus(config.maxFutureTime)
@@ -128,15 +126,30 @@ final class SpreadCommandHandlerLive(
         ZIO.logError(s"scheduledAt must be after creation time ${spread.createdAt}")
           *> ZIO.fail(ValidationError(s"scheduledAt must be after creation time ${spread.createdAt}"))
       }
-      
-      cardOfDayAt = scheduledAt.plus(cardOfDayDelayHours)
+
+      spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, spread.scheduledAt)
+      _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
+
+      _ <- deleteCardsOnPublish(spread)
+    } yield ()
+
+  private def scheduleCardOfDay(scheduledAt: Instant, cardOfDayDelayHours: Duration) =
+    for {
+      _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")
+
+      config <- ZIO.serviceWith[TarotEnv](_.config.publish)
+
+      now <- DateTimeService.getDateTimeNow
+
+
       _ <- ZIO.when(cardOfDayDelayHours > config.maxCardOfDayDelay) {
         ZIO.logError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelay} hours") *>
           ZIO.fail(TarotError.ValidationError(s"Card of day delay shouldn't be more than ${config.maxCardOfDayDelay} hours"))
       }
-      
+
+      cardOfDayAt = scheduledAt.plus(cardOfDayDelayHours)
       _ <- ZIO.logInfo(s"Schedule spread ${spread.id} to publishing")
-      spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, cardOfDayAt, spread.scheduledAt)
+      spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, spread.scheduledAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
 
       _ <- deleteCardsOnPublish(spread)
