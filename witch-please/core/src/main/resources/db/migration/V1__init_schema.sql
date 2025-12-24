@@ -10,18 +10,16 @@ CREATE TABLE spreads (
     title TEXT NOT NULL,
     card_count INT NOT NULL,
     description TEXT NOT NULL,
-    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'PreviewPublished', 'Published', 'Archived')),
+    spread_status TEXT NOT NULL CHECK (spread_status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
     photo_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
-    card_of_day_at TIMESTAMPTZ,
     published_at TIMESTAMPTZ,
 
     CONSTRAINT chk_spread_status_times CHECK (
-        (spread_status = 'Draft' AND scheduled_at IS NULL AND card_of_day_at IS NULL AND published_at IS NULL) OR
-        (spread_status = 'Scheduled' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NULL) OR
-        (spread_status = 'PreviewPublished' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NULL) OR
-        (spread_status = 'Published' AND scheduled_at IS NOT NULL AND card_of_day_at IS NOT NULL AND published_at IS NOT NULL) OR
+        (spread_status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
+        (spread_status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+        (spread_status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
         (spread_status = 'Archived')
     )
 );
@@ -30,9 +28,6 @@ CREATE INDEX idx_spreads_project_id ON spreads(project_id);
 CREATE INDEX idx_spreads_scheduled_at
     ON spreads(scheduled_at)
     WHERE spread_status = 'Scheduled';
-CREATE INDEX idx_spreads_preview_published_at
-    ON spreads(card_of_day_at)
-    WHERE spread_status = 'PreviewPublished';
 CREATE INDEX idx_spreads_published_at
     ON spreads(published_at)
     WHERE spread_status = 'Published';
@@ -50,6 +45,35 @@ CREATE TABLE cards (
 );
 
 CREATE INDEX idx_cards_spread_id ON cards(spread_id);
+
+CREATE TABLE card_of_day (
+    id UUID PRIMARY KEY,
+    spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
+    card_id UUID NOT NULL REFERENCES cards(id)   ON DELETE CASCADE,
+    photo_id UUID NOT NULL REFERENCES photos(id),
+    description TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
+    created_at   TIMESTAMPTZ NOT NULL,
+    scheduled_at TIMESTAMPTZ,
+    published_at TIMESTAMPTZ,
+
+    CONSTRAINT uq_card_of_day_spread UNIQUE (spread_id),
+
+    CONSTRAINT chk_card_of_day_status_times CHECK (
+         (status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
+         (status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+         (status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
+         (status = 'Archived')
+    )
+);
+
+CREATE INDEX idx_card_of_day_spread_id ON card_of_day(spread_id);
+CREATE INDEX idx_card_of_day_scheduled_at
+    ON card_of_day(scheduled_at)
+    WHERE status = 'Scheduled';
+CREATE INDEX idx_card_of_day_published_at
+    ON card_of_day(published_at)
+    WHERE status = 'Published';
 
 CREATE TABLE photos (
     id UUID PRIMARY KEY,

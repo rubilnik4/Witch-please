@@ -187,7 +187,25 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         createdCardsCount == cardsCount
       )
-    }
+    },
+
+    test("should create card of day") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+
+        app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
+        cardOfDayRequest = TarotTestRequests.cardOfDayCreateRequest(cardId, photoId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardOfDayCreatePath("", spreadId), cardOfDayRequest, token)
+        response <- app.runZIO(request)
+        cardOfDayId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
+        
+      } yield assertTrue(cardOfDayId.toString.nonEmpty)
+    },
   ).provideShared(
     Scope.default,
     TestTarotEnvLayer.testEnvLive,

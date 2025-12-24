@@ -1,8 +1,10 @@
 package tarot.domain.models.spreads
 
 import shared.models.tarot.spreads.SpreadStatus
+import tarot.domain.models.cardOfDay.CardOfDayId
+
 import java.time.Instant
 
 enum SpreadStatusUpdate:
-  case Scheduled(spreadId: SpreadId, scheduledAt: Instant, expectedAt: Option[Instant])
+  case Scheduled(spreadId: SpreadId, scheduledAt: Instant, cardOfDayId: CardOfDayId, cardOfDayAt: Instant)
   case Published(spreadId: SpreadId, publishedAt: Instant)

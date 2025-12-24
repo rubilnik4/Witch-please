@@ -1,6 +1,6 @@
 package tarot.application.jobs
 
-import tarot.application.jobs.spreads.{PublishJobLayer, PublishJobLive}
+import tarot.application.jobs.publish.{PublishJobLayer, PublishJobLive}
 import zio.ZLayer
 
 object TarotJobLayer {

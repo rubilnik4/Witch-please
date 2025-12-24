@@ -63,29 +63,15 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def updateToSchedule(cardOfDayId: UUID, scheduleAt: Instant, expectedAt: Option[Instant]): ZIO[Any, SQLException, Long] =
-    expectedAt match {
-      case Some(expected) =>
-        run(quote {
-          cardOfDayTable
-            .filter(cardOfDay =>
-              cardOfDay.id == lift(cardOfDayId) && isScheduleStatus(cardOfDay) &&
-                cardOfDay.scheduledAt.contains(lift(expected)))
-            .update(
-              _.status -> lift(CardOfDayStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt))
-            )
-        })
-      case None =>
-        run(quote {
-          cardOfDayTable
-            .filter(cardOfDay => cardOfDay.id == lift(cardOfDayId) && isScheduleStatus(cardOfDay))
-            .update(
-              _.status -> lift(CardOfDayStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt))
-            )
-        })
-    }
+  def updateToSchedule(cardOfDayId: UUID, scheduleAt: Instant): ZIO[Any, SQLException, Long] =
+    run(quote {
+      cardOfDayTable
+        .filter(cardOfDay => cardOfDay.id == lift(cardOfDayId) && isScheduleStatus(cardOfDay))
+        .update(
+          _.status -> lift(CardOfDayStatus.Scheduled),
+          _.scheduledAt -> lift(Option(scheduleAt))
+        )
+    })
 
   def updateToPublish(cardOfDayId: UUID, publishedAt: Instant): ZIO[Any, SQLException, Long] =
     run(quote {

@@ -10,6 +10,7 @@ import zio.ZIO
 import zio.*
 
 import java.time.Instant
+import java.util.UUID
 
 object TarotTestRequests {
   def spreadCreateRequest(cardCount: Int, photoId: String): SpreadCreateRequest =
@@ -55,4 +56,12 @@ object TarotTestRequests {
       scheduledAt = publishTime,
       cardOfDayDelayHours = cardOfDayDelayHours
     )
+
+  def cardOfDayCreateRequest(cardId: UUID, photoId: String): CardOfDayCreateRequest =
+    CardOfDayCreateRequest(
+      cardId = cardId,     
+      description = "Card of day integration test",
+      photo = PhotoRequest(FileSourceType.Telegram, photoId)
+    )
+
 }

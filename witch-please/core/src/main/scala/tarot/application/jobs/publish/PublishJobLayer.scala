@@ -1,4 +1,4 @@
-package tarot.application.jobs.spreads
+package tarot.application.jobs.publish
 
 import tarot.layers.TarotEnv
 import zio.{ZIO, ZLayer}

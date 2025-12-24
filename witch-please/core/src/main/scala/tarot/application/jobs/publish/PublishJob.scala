@@ -1,4 +1,4 @@
-package tarot.application.jobs.spreads
+package tarot.application.jobs.publish
 
 import tarot.domain.models.TarotError
 import tarot.layers.TarotEnv

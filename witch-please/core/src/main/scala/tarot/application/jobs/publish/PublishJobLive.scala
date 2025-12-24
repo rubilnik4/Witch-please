@@ -1,4 +1,4 @@
-package tarot.application.jobs.spreads
+package tarot.application.jobs.publish
 
 import shared.infrastructure.services.common.DateTimeService
 import tarot.domain.models.TarotError

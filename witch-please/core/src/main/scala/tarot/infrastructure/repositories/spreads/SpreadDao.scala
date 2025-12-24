@@ -73,29 +73,15 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def updateToSchedule(spreadId: UUID, scheduleAt: Instant, expectedAt: Option[Instant]): ZIO[Any, SQLException, Long] =
-    expectedAt match {
-      case Some(expected) =>
-        run(quote {
-          spreadTable
-            .filter(spread =>
-              spread.id == lift(spreadId) && isScheduleStatus(spread) &&
-              spread.scheduledAt.contains(lift(expected)))
-            .update(
-              _.status -> lift(SpreadStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt))
-            )
-        })
-      case None =>
-        run(quote {
-          spreadTable
-            .filter(spread => spread.id == lift(spreadId) && isScheduleStatus(spread))
-            .update(
-              _.status -> lift(SpreadStatus.Scheduled),
-              _.scheduledAt -> lift(Option(scheduleAt))
-            )
-        })
-    }
+  def updateToSchedule(spreadId: UUID, scheduleAt: Instant): ZIO[Any, SQLException, Long] =
+    run(quote {
+      spreadTable
+        .filter(spread => spread.id == lift(spreadId) && isScheduleStatus(spread))
+        .update(
+          _.status -> lift(SpreadStatus.Scheduled),
+          _.scheduledAt -> lift(Option(scheduleAt))
+        )
+    })
 
   def updateToPublish(spreadId: UUID, publishedAt: Instant): ZIO[Any, SQLException, Long] =
     run(quote {

@@ -66,6 +66,9 @@ case object TarotApiRoutes {
 
   def cardsCountGetPath(baseUrl: String, spreadId: UUID): URL =
     make(baseUrl, apiPath, spreads, spreadId.toString, cards, "count")
+
+  def cardOfDayCreatePath(baseUrl: String, spreadId: UUID): URL =
+    make(baseUrl, apiPath, spreads, spreadId.toString, cardOfDay)  
     
   def tokenAuthPath(baseUrl: String): URL =
     make(baseUrl, apiPath, TarotApiRoutes.auth)

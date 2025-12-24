@@ -9,6 +9,7 @@ import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.spreads.SpreadStatus
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
+import tarot.application.jobs.publish.PublishJobResult
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
@@ -159,11 +160,11 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
     test("shouldn't take spreads after deadline") {
       for {
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
+        publishJob <- ZIO.serviceWith[TarotEnv](_.jobs.publishJob)
 
-        spreadIds <- spreadJob.publishSpreads().map(_.map(_.id))
+        results <- publishJob.publish()
       } yield assertTrue(
-        spreadIds.isEmpty
+        results.isEmpty
       )
     },
 
@@ -193,14 +194,14 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
+        publishJob <- ZIO.serviceWith[TarotEnv](_.jobs.publishJob)
 
-        result <- spreadJob.publishSpreads()
-        previewResult = result.filter(_.publishType == PublishJobType.SpreadPublish).map(_.id)
-        publishResult = result.filter(_.publishType == PublishJobType.CardOfDayPublish).map(_.id)
+        result <- publishJob.publish()
+        spreadResults = result.collect { case spread @ PublishJobResult.Spread(_,_) => spread }
+        cardOfDayResults = result.collect { case cardOfDay @ PublishJobResult.CardOfDay(_,_) => cardOfDay }
       } yield assertTrue(
-        previewResult.map(_.id).contains(spreadId),
-        publishResult.isEmpty
+        spreadResults.map(_.id).contains(spreadId),
+        cardOfDayResults.isEmpty
       )
     },
 
@@ -241,14 +242,14 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
-        spreadJob <- ZIO.serviceWith[TarotEnv](_.jobs.spreadJob)
+        publishJob <- ZIO.serviceWith[TarotEnv](_.jobs.publishJob)
 
-        result <- spreadJob.publishSpreads()
-        previewResult = result.filter(_.publishType == PublishJobType.SpreadPublish).map(_.id)
-        publishedResult = result.filter(_.publishType == PublishJobType.CardOfDayPublish).map(_.id)
+        result <- publishJob.publish()
+        spreadResults = result.collect { case spread @ PublishJobResult.Spread(_,_) => spread }
+        cardOfDayResults = result.collect { case cardOfDay @ PublishJobResult.CardOfDay(_,_) => cardOfDay }
       } yield assertTrue(
-        previewResult.isEmpty,
-        publishedResult.map(_.id).contains(spreadId)
+        spreadResults.isEmpty,
+        cardOfDayResults.map(_.id).contains(spreadId)
       )
     },
 
