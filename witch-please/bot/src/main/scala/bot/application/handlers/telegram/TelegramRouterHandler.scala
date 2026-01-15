@@ -56,6 +56,8 @@ object TelegramRouterHandler {
             CardOfDayFlow.selectSpreadCardOfDay(context, spreadId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.DeleteSpread(spreadId) =>
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.PublishSpread(spreadId) =>
+            PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateCard(position) =>
             CardFlow.createCard(context, position)(telegramApi, sessionService)
           case AuthorCommand.EditCard(cardId) =>
@@ -64,8 +66,12 @@ object TelegramRouterHandler {
             CardFlow.deleteCard(context, cardId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectCard(cardId) =>
             CardFlow.selectCard(context, cardId)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.PublishSpread(spreadId) =>
-            PublishFlow.publishSpread(context)(telegramApi, tarotApi, sessionService)  
+          case AuthorCommand.CreateCardOfDay =>
+            CardOfDayFlow.createCardOfDay(context)(telegramApi, sessionService)
+          case AuthorCommand.EditCardOfDay(cardOfDayId) =>
+            CardOfDayFlow.editCardOfDay(context, cardOfDayId)(telegramApi, sessionService)
+          case AuthorCommand.DeleteCardOfDay(cardOfDayId) =>
+            CardOfDayFlow.deleteCardOfDay(context, cardOfDayId)(telegramApi, tarotApi, sessionService)  
         }
       } yield ()
 

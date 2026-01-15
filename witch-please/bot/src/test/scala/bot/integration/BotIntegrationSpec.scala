@@ -145,6 +145,33 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
+    test("create card of day flow") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+        chatId <- BotTestFixtures.getChatId
+        session <- botSessionService.get(chatId)
+        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("SpreadProgress not set"))
+        cardPosition = spreadProgress.createdPositions.head
+        cardOfDayMode = CardOfDayMode.Create
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
+        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CommonFlow.sendPhoto(app, chatId, photoId)
+        _ <- CommonFlow.expectNoPending(chatId)
+
+        session <- botSessionService.get(chatId)
+      } yield assertTrue(
+        session.cardOfDayId.nonEmpty,
+        session.pending.isEmpty
+      )
+    },
+
     test("publish spread flow") {
       for {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)

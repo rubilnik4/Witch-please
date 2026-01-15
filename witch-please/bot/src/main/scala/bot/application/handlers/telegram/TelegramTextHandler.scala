@@ -35,7 +35,7 @@ object TelegramTextHandler {
         case Some(BotPendingAction.CardOfDayCardId(cardOfDayMode)) =>
           text.toIntOption match {
             case Some(position) if position > 0 =>
-              CardOfDayFlow.setCardOfDayCardId(context, cardOfDayMode, position)(telegramApi, tarotApi, sessionService)
+              CardOfDayFlow.setCardOfDayCardId(context, cardOfDayMode, position - 1)(telegramApi, tarotApi, sessionService)
             case _ =>
               telegramApi.sendText(context.chatId, "Введи номер карты числом и больше 0")
           }

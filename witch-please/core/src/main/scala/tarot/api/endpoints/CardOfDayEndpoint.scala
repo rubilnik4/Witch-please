@@ -122,6 +122,7 @@ object CardOfDayEndpoint {
       
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(
-      getCardOfDayEndpoint, postCardOfDayEndpoint, putCardOfDayEndpoint, deleteCardOfDayEndpoint
+      getCardOfDayEndpoint, getCardOfDayBySpreadEndpoint,
+      postCardOfDayEndpoint, putCardOfDayEndpoint, deleteCardOfDayEndpoint
     )
 }

@@ -7,14 +7,11 @@ import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.photo.PhotoRequest
-import shared.api.dto.tarot.spreads.SpreadResponse
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
-import tarot.domain.models.spreads.SpreadId
 import zio.ZIO
 
 import java.util.UUID
@@ -44,11 +41,12 @@ object CardOfDayFlow {
     for {
       session <- sessionService.get(context.chatId)
       token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))     
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      _ <- sessionService.setCardOfDay(context.chatId, cardOfDay.id)
       _ <- showCardOfDay(context, cardOfDay, spreadId)(telegramApi, sessionService)
     } yield ()
 
-  private def createCardOfDay(context: TelegramContext)(
+  def createCardOfDay(context: TelegramContext)(
     telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Create card of day for chat ${context.chatId}")

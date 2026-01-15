@@ -216,7 +216,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         cardOfDayId <- ZIO.fromOption(state.cardOfDayId).orElseFail(TarotError.NotFound("cardOfDayId not set"))
 
-        app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
+        app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
         request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardOfDayGetPath("", cardOfDayId), token)
         response <- app.runZIO(request)
         cardOfDay <- ZIOHttpClient.getResponse[CardOfDayResponse](response)
@@ -232,7 +232,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
-        app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
+        app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
         request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardOfDayBySpreadGetPath("", spreadId), token)
         response <- app.runZIO(request)
         cardOfDay <- ZIOHttpClient.getResponse[Option[CardOfDayResponse]](response)

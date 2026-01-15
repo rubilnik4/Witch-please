@@ -18,7 +18,7 @@ object CardFlow {
       case CardMode.Create(position) =>
         TestTelegramWebhook.createCardRequest(chatId, position + 1)
       case CardMode.Edit(cardId) =>
-        TestTelegramWebhook.updateSpreadRequest(chatId, cardId)
+        TestTelegramWebhook.updateCardRequest(chatId, cardId)
     }
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {

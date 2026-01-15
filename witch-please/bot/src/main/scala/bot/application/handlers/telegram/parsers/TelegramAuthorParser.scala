@@ -22,7 +22,7 @@ object TelegramAuthorParser {
         }
       case AuthorCommands.SpreadSelect :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
-          case (Some(spreadId)) =>
+          case Some(spreadId) =>
             AuthorCommand.SelectSpread(spreadId)
           case _ =>
             BotCommand.Unknown
@@ -83,6 +83,22 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
+      case List(AuthorCommands.CardOfDayCreate) =>
+        AuthorCommand.CreateCardOfDay
+      case AuthorCommands.CardOfDayEdit :: cardOfDayIdStr :: Nil =>
+        Try(UUID.fromString(cardOfDayIdStr)).toOption match {
+          case Some(cardOfDayId) =>
+            AuthorCommand.EditCardOfDay(cardOfDayId)
+          case _ =>
+            BotCommand.Unknown
+        }
+      case AuthorCommands.CardOfDayDelete :: cardOfDayIdStr :: Nil =>
+        Try(UUID.fromString(cardOfDayIdStr)).toOption match {
+          case Some(cardOfDayId) =>
+            AuthorCommand.DeleteCardOfDay(cardOfDayId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case _ =>
         BotCommand.Unknown
     }
