@@ -88,7 +88,7 @@ object SchedulerFlow {
     for {
       _ <- ZIO.logInfo(s"Select card of day delay $delay from chat ${context.chatId}")
 
-      _ <- sessionService.setCardOdDayDelay(context.chatId, delay)
+      _ <- sessionService.setCardOfDayDelay(context.chatId, delay)
 
       session <- sessionService.get(context.chatId)
       date <- ZIO.fromOption(session.date)

@@ -1,4 +1,4 @@
-package shared.api.dto.tarot.cards
+package shared.api.dto.tarot.cardsOfDay
 
 import shared.api.dto.tarot.photo.PhotoRequest
 import zio.json.*
@@ -10,4 +10,4 @@ final case class CardOfDayCreateRequest(
   cardId: UUID,
   description: String,           
   photo: PhotoRequest
-) derives JsonCodec, Schema
+) extends CardOfDayRequest derives JsonCodec, Schema

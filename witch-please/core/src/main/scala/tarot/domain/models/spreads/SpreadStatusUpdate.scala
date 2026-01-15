@@ -1,7 +1,7 @@
 package tarot.domain.models.spreads
 
 import shared.models.tarot.spreads.SpreadStatus
-import tarot.domain.models.cardOfDay.CardOfDayId
+import tarot.domain.models.cardsOfDay.CardOfDayId
 
 import java.time.Instant
 

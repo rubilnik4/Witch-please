@@ -9,7 +9,7 @@ case object TarotApiRoutes {
   val apiPath = "api"
   val spreads = "spreads"
   val cards = "cards"
-  val cardOfDay = "card_of_day"
+  val cardsOfDay = "cards-of-day"
   val authors = "authors"
   val auth = "auth"
   val users ="users"
@@ -68,8 +68,20 @@ case object TarotApiRoutes {
     make(baseUrl, apiPath, spreads, spreadId.toString, cards, "count")
 
   def cardOfDayCreatePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cardOfDay)  
+    make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
+
+  def cardOfDayUpdatePath(baseUrl: String, cardOfDayId: UUID): URL =
+    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
+
+  def cardOfDayDeletePath(baseUrl: String, cardOfDayId: UUID): URL =
+    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
+
+  def cardOfDayGetPath(baseUrl: String, cardOfDayId: UUID): URL =
+    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
     
+  def cardOfDayBySpreadGetPath(baseUrl: String, spreadId: UUID): URL =
+    make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
+
   def tokenAuthPath(baseUrl: String): URL =
     make(baseUrl, apiPath, TarotApiRoutes.auth)
 }

@@ -4,6 +4,7 @@ import shared.api.dto.*
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
 import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
+import shared.api.dto.tarot.cardsOfDay.{CardOfDayCreateRequest, CardOfDayResponse, CardOfDayUpdateRequest}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*
@@ -128,6 +129,36 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       _ <- SttpClient.sendNoContent(client, publishRequest)
     } yield()
 
+  override def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get card request by cardId: $cardId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardGetPath(apiUrl.url, cardId))
+      cardRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, CardResponse])
+      response <- SttpClient.sendJson(client, cardRequest)
+    } yield response
+
+  override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get cards request by spreadId: $spreadId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsGetPath(apiUrl.url, spreadId))
+      cardsRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, List[CardResponse]])
+      response <- SttpClient.sendJson(client, cardsRequest)
+    } yield response
+
+  override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get card count request by spreadId: $spreadId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsCountGetPath(apiUrl.url, spreadId))
+      cardsRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, Int])
+      response <- SttpClient.sendJson(client, cardsRequest)
+    } yield response
+
   override def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending create card $position request: ${request.title}; for spread: $spreadId")
@@ -158,33 +189,43 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       response <- SttpClient.sendJson(client, cardRequest)
     } yield response
 
-  override def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse] =
+  override def getCardOfDayBySpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Option[CardOfDayResponse]] =
     for {
-      _ <- ZIO.logDebug(s"Sending get card request by cardId: $cardId")
+      _ <- ZIO.logDebug(s"Sending get card of day request by spread: $spreadId")
 
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardGetPath(apiUrl.url, cardId))
-      cardRequest = SttpClient.getAuthRequest(uri, token)
-        .response(asJsonEither[TarotErrorResponse, CardResponse])
-      response <- SttpClient.sendJson(client, cardRequest)
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardOfDayBySpreadGetPath(apiUrl.url, spreadId))
+      cardOfDayRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, Option[CardOfDayResponse]])
+      response <- SttpClient.sendJson(client, cardOfDayRequest)
     } yield response
 
-  override def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]] =
+  override def createCardOfDay(request: CardOfDayCreateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, IdResponse] =
     for {
-      _ <- ZIO.logDebug(s"Sending get cards request by spreadId: $spreadId")
+      _ <- ZIO.logDebug(s"Sending create card of day to card position ${request.cardId} for spread: $spreadId")
 
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsGetPath(apiUrl.url, spreadId))
-      cardsRequest = SttpClient.getAuthRequest(uri, token)
-        .response(asJsonEither[TarotErrorResponse, List[CardResponse]])
-      response <- SttpClient.sendJson(client, cardsRequest)
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardOfDayCreatePath(apiUrl.url, spreadId))
+      cardOfDayRequest = SttpClient.postAuthRequest(uri, request, token)
+        .response(asJsonEither[TarotErrorResponse, IdResponse])
+      response <- SttpClient.sendJson(client, cardOfDayRequest)
     } yield response
 
-  override def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int] =
+  override def updateCardOfDay(request: CardOfDayUpdateRequest, cardOfDayId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
-      _ <- ZIO.logDebug(s"Sending get card count request by spreadId: $spreadId")
+      _ <- ZIO.logDebug(s"Sending update card of day $cardOfDayId request")
 
-      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardsCountGetPath(apiUrl.url, spreadId))
-      cardsRequest = SttpClient.getAuthRequest(uri, token)
-        .response(asJsonEither[TarotErrorResponse, Int])
-      response <- SttpClient.sendJson(client, cardsRequest)
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardOfDayUpdatePath(apiUrl.url, cardOfDayId))
+      cardOfDayRequest = SttpClient.putAuthRequest(uri, request, token)
+        .response(SttpClient.asJsonNoContent[TarotErrorResponse])
+      response <- SttpClient.sendJson(client, cardOfDayRequest)
+    } yield response
+
+  override def deleteCardOfDay(cardOfDayId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Sending delete card of day $cardOfDayId request")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.cardOfDayDeletePath(apiUrl.url, cardOfDayId))
+      cardOfDayRequest = SttpClient.deleteAuthRequest(uri, token)
+        .response(SttpClient.asJsonNoContent[TarotErrorResponse])
+      response <- SttpClient.sendJson(client, cardOfDayRequest)
     } yield response
 }

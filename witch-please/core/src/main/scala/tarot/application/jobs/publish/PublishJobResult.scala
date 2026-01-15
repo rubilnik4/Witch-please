@@ -1,7 +1,7 @@
 package tarot.application.jobs.publish
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.cardOfDay.CardOfDayId
+import tarot.domain.models.cardsOfDay.CardOfDayId
 import tarot.domain.models.spreads.SpreadId
 
 sealed trait PublishJobResult {

@@ -1,4 +1,4 @@
-package tarot.domain.models.cardOfDay
+package tarot.domain.models.cardsOfDay
 
 import shared.models.tarot.cardOfDay.CardOfDayStatus
 import shared.models.tarot.spreads.SpreadStatus

@@ -4,11 +4,13 @@ import shared.models.files.FileSourceType
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.cards.commands.CreateCardCommand
+import tarot.application.commands.cardsOfDay.commands.CreateCardOfDayCommand
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.*
 import tarot.domain.models.authorize.*
 import tarot.domain.models.cards.CardId
+import tarot.domain.models.cardsOfDay.CardOfDayId
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
 import tarot.layers.TarotEnv
@@ -60,6 +62,14 @@ object TarotTestFixtures {
       }
     } yield cardIds.toList
 
+  def createCardOfDay(cardId: CardId, spreadId: SpreadId, photoId: String): ZIO[TarotEnv, TarotError, CardOfDayId] =
+    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    for {
+      cardOfDayCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardOfDayCommandHandler)
+      command = getCardOfDayCommand(cardId, spreadId, photo)
+      cardOfDayId <- cardOfDayCommandHandler.createCardOfDay(command)
+    } yield cardOfDayId
+
   def getChatId: ZIO[TarotEnv, TarotError, Long] =
     for {
       telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
@@ -87,5 +97,12 @@ object TarotTestFixtures {
       spreadId = spreadId, 
       title = "Test card", 
       description = "Test card",
-      photo = photo)  
+      photo = photo)
+
+  private def getCardOfDayCommand(cardId: CardId, spreadId: SpreadId, photo: PhotoSource) =
+    CreateCardOfDayCommand(
+      cardId = cardId,
+      spreadId = spreadId,
+      description = "Test card of day",
+      photo = photo)
 }

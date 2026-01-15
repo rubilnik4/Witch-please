@@ -5,7 +5,7 @@ import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.database.Migration
-import tarot.infrastructure.repositories.cardOfDay.{CardOfDayRepository, CardOfDayRepositoryLayer}
+import tarot.infrastructure.repositories.cardsOfDay.{CardOfDayRepository, CardOfDayRepositoryLayer}
 import tarot.infrastructure.repositories.cards.{CardRepository, CardRepositoryLayer}
 import tarot.infrastructure.repositories.photo.{PhotoRepository, PhotoRepositoryLayer}
 import tarot.infrastructure.repositories.projects.*

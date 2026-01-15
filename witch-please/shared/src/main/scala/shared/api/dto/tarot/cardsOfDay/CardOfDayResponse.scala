@@ -1,18 +1,19 @@
-package shared.api.dto.tarot.spreads
+package shared.api.dto.tarot.cardsOfDay
 
 import shared.api.dto.tarot.photo.PhotoResponse
-import shared.models.tarot.spreads.SpreadStatus
+import shared.models.tarot.cardOfDay.CardOfDayStatus
 import zio.json.*
 import zio.schema.*
 
 import java.time.Instant
 import java.util.UUID
 
-final case class SpreadResponse(
+final case class CardOfDayResponse(
   id: UUID,
-  title: String,
-  cardsCount: Int,
-  status: SpreadStatus,
+  cardId: UUID,
+  spreadId: UUID,
+  description: String,
+  status: CardOfDayStatus,
   photo: PhotoResponse,
   createdAt: Instant,
   scheduledAt: Option[Instant],

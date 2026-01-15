@@ -1,4 +1,4 @@
-package tarot.infrastructure.repositories.cardOfDay
+package tarot.infrastructure.repositories.cardsOfDay
 
 import io.getquill.*
 import io.getquill.extras.InstantOps
@@ -6,6 +6,7 @@ import io.getquill.jdbczio.*
 import shared.models.tarot.cardOfDay.CardOfDayStatus
 import tarot.domain.entities.{CardEntity, CardOfDayEntity, CardOfDayPhotoEntity, PhotoEntity, SpreadPhotoEntity}
 import tarot.domain.models.cards.CardUpdate
+import tarot.domain.models.cardsOfDay.CardOfDayUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.photo.PhotoQuillMappings
 import zio.ZIO
@@ -19,7 +20,19 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
   import CardOfDayQuillMappings.given
   import quill.*
 
-  def getCardOfDay(spreadId: UUID): ZIO[Any, SQLException, Option[CardOfDayPhotoEntity]] =
+  def getCardOfDay(cardOfDayId: UUID): ZIO[Any, SQLException, Option[CardOfDayPhotoEntity]] =
+    run(
+      quote {
+        cardOfDayTable
+          .join(photoTable)
+          .on((cardOfDay, photo) => cardOfDay.photoId == photo.id)
+          .filter { case (cardOfDay, _) => cardOfDay.id == lift(cardOfDayId) }
+          .take(1)
+          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+      })
+      .map(_.headOption)
+      
+  def getCardOfDayBySpread(spreadId: UUID): ZIO[Any, SQLException, Option[CardOfDayPhotoEntity]] =
     run(
       quote {
         cardOfDayTable
@@ -55,7 +68,7 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
           .nonEmpty
       })
   
-  def insertCard(cardOfDay: CardOfDayEntity): ZIO[Any, SQLException, UUID] =
+  def insertCardOfDay(cardOfDay: CardOfDayEntity): ZIO[Any, SQLException, UUID] =
     run(
       quote {
         cardOfDayTable
@@ -73,6 +86,19 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         )
     })
 
+  def updateCardOfDay(cardOfDayId: UUID, cardOfDay: CardOfDayUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardOfDayTable
+          .filter(_.id == lift(cardOfDayId))
+          .update(
+            _.cardId -> lift(cardOfDay.cardId.id),
+            _.description -> lift(cardOfDay.description),
+            _.photoId -> lift(photoId)
+          )
+      }
+    )
+    
   def updateToPublish(cardOfDayId: UUID, publishedAt: Instant): ZIO[Any, SQLException, Long] =
     run(quote {
       cardOfDayTable
@@ -83,6 +109,14 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         )
     })
 
+  def deleteCardOfDay(cardOfDayId: UUID): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        cardOfDayTable
+          .filter(_.id == lift(cardOfDayId))
+          .delete
+      })
+      
   private inline def isScheduleStatus(cardOfDay: CardOfDayEntity) =
     quote(cardOfDay.status == lift(CardOfDayStatus.Draft) || cardOfDay.status == lift(CardOfDayStatus.Scheduled))
 

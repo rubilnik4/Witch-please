@@ -1,5 +1,6 @@
 package tarot.fixtures
 
+import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
@@ -60,6 +61,13 @@ object TarotTestRequests {
   def cardOfDayCreateRequest(cardId: UUID, photoId: String): CardOfDayCreateRequest =
     CardOfDayCreateRequest(
       cardId = cardId,     
+      description = "Card of day integration test",
+      photo = PhotoRequest(FileSourceType.Telegram, photoId)
+    )
+
+  def cardOfDayUpdateRequest(cardId: UUID, photoId: String): CardOfDayUpdateRequest =
+    CardOfDayUpdateRequest(     
+      cardId = cardId,
       description = "Card of day integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )

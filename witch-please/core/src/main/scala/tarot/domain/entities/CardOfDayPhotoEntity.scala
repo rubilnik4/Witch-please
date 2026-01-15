@@ -1,7 +1,7 @@
 package tarot.domain.entities
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.cardOfDay.{CardOfDay, CardOfDayId}
+import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId}
 import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.spreads.SpreadId
 import zio.ZIO

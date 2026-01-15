@@ -1,4 +1,4 @@
-package tarot.application.commands.cardOfDay.commands
+package tarot.application.commands.cardsOfDay.commands
 
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.photo.PhotoSource

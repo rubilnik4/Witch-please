@@ -7,10 +7,10 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.*
-import tarot.infrastructure.repositories.cardOfDay.CardOfDayDao
+import tarot.infrastructure.repositories.cardsOfDay.CardOfDayDao
 import tarot.infrastructure.repositories.cards.CardDao
 import tarot.infrastructure.repositories.photo.PhotoDao
-import zio.{ZIO, *}
+import zio.*
 
 import java.sql.SQLException
 import java.time.Instant

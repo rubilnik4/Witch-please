@@ -51,7 +51,9 @@ object TelegramRouterHandler {
           case AuthorCommand.SelectSpread(spreadId) =>
             SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectSpreadCards(spreadId) =>
-            CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)         
+            CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.SelectSpreadCardOfDay(spreadId) =>
+            CardOfDayFlow.selectSpreadCardOfDay(context, spreadId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.DeleteSpread(spreadId) =>
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateCard(position) =>

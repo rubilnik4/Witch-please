@@ -1,4 +1,4 @@
-package tarot.infrastructure.repositories.cardOfDay
+package tarot.infrastructure.repositories.cardsOfDay
 
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill

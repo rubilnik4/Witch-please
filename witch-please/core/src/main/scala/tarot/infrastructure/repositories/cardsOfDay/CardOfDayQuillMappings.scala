@@ -1,4 +1,4 @@
-package tarot.infrastructure.repositories.cardOfDay
+package tarot.infrastructure.repositories.cardsOfDay
 
 import io.getquill.MappedEncoding
 import shared.models.tarot.cardOfDay.CardOfDayStatus

@@ -9,13 +9,17 @@ object AuthorCommands {
   final val SpreadEdit = s"${Prefix}_spread_edit"
   final val SpreadSelect = s"${Prefix}_spread_select"
   final val SpreadCardsSelect = s"${Prefix}_spread_cards_select"
+  final val SpreadCardOfDaySelect = s"${Prefix}_spread_card_of_day_select"
   final val SpreadPublish = s"${Prefix}_spread_publish"
   final val SpreadDelete = s"${Prefix}_spread_delete"
   final val CardCreate = s"${Prefix}_card_create"
   final val CardEdit = s"${Prefix}_card_edit"
   final val CardDelete = s"${Prefix}_card_delete"
   final val CardSelect = s"${Prefix}_card_select"
-
+  final val CardOfDayCreate = s"${Prefix}_card_of_day_create"
+  final val CardOfDayEdit = s"${Prefix}_card_of_day_edit"
+  final val CardOfDayDelete = s"${Prefix}_card_of_day_delete"
+  
   def spreadEdit(spreadId: UUID): String =
     s"$SpreadEdit $spreadId"
     
@@ -24,6 +28,9 @@ object AuthorCommands {
 
   def spreadCardsSelect(spreadId: UUID): String =
     s"$SpreadCardsSelect $spreadId"
+
+  def spreadCardOfDaySelect(spreadId: UUID): String =
+    s"$SpreadCardOfDaySelect $spreadId"
 
   def spreadPublish(spreadId: UUID): String =
     s"$SpreadPublish $spreadId"
@@ -39,6 +46,12 @@ object AuthorCommands {
 
   def cardDelete(cardId: UUID): String =
     s"$CardDelete $cardId"
+
+  def cardOfDayEdit(cardOfDayId: UUID): String =
+    s"$CardOfDayEdit $cardOfDayId"
+
+  def cardOfDayDelete(cardOfDayId: UUID): String =
+    s"$CardOfDayDelete $cardOfDayId"  
 
   def cardSelect(cardId: UUID): String =
     s"$CardSelect $cardId"

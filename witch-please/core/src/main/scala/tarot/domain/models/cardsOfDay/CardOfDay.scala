@@ -1,10 +1,10 @@
-package tarot.domain.models.cardOfDay
+package tarot.domain.models.cardsOfDay
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.files.FileStorage
 import shared.models.tarot.cardOfDay.CardOfDayStatus
 import shared.models.tarot.photo.PhotoOwnerType
-import tarot.application.commands.cardOfDay.commands.CreateCardOfDayCommand
+import tarot.application.commands.cardsOfDay.commands.CreateCardOfDayCommand
 import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.photo.Photo

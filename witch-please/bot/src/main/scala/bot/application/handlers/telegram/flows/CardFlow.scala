@@ -1,7 +1,6 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.AuthorCommands
-import bot.application.handlers.telegram.flows.SpreadFlow.validateModifySpread
 import bot.domain.models.session.{BotPendingAction, CardMode, CardPosition}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
@@ -20,7 +19,7 @@ object CardFlow {
   def selectSpreadCards(context: TelegramContext, spreadId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Select spread cards $spreadId from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Select cards by spread $spreadId from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
       token <- ZIO.fromOption(session.token)
@@ -28,7 +27,7 @@ object CardFlow {
 
       _ <- sessionService.clearCard(context.chatId)
       cards <- tarotApi.getCards(spreadId, token)
-      _ <- CardFlow.showCards(context, spreadId, cards)(telegramApi, tarotApi, sessionService)
+      _ <- showCards(context, spreadId, cards)(telegramApi, tarotApi, sessionService)
     } yield ()
     
   private def showCards(context: TelegramContext, spreadId: UUID, cards: List[CardResponse])(
@@ -151,7 +150,6 @@ object CardFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
 
       _ <- ZIO.logInfo(s"Delete card $cardId for chat ${context.chatId}")
-      _ <- validateModifySpread(context, spreadId, token)(telegramApi, tarotApi)
 
       _ <- tarotApi.deleteCard(cardId, token)
       _ <- telegramApi.sendText(context.chatId, s"Карта удалена")
@@ -170,17 +168,16 @@ object CardFlow {
     } yield ()
 
   private def showCard(context: TelegramContext, card: CardResponse, spreadId: UUID)(telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
-    val summaryText =
-      s""" Карта: “${card.title}”
-         |
-         |Выбери действие:
-         |""".stripMargin
-   
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardEdit(card.id)))
     val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardDelete(card.id)))
     val backButton = TelegramInlineKeyboardButton("⬅ К картам", Some(AuthorCommands.spreadCardsSelect(spreadId)))
     val buttons = List(editButton, deleteButton)
 
+    val summaryText =
+      s""" Карта: “${card.title}”
+         |
+         |Выбери действие:
+         |""".stripMargin
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()  

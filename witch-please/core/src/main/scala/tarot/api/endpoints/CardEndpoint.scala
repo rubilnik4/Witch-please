@@ -1,7 +1,8 @@
 package tarot.api.endpoints
 
 import shared.api.dto.tarot.TarotApiRoutes
-import shared.api.dto.tarot.cards.{CardCreateRequest, CardOfDayCreateRequest, CardResponse, CardUpdateRequest}
+import shared.api.dto.tarot.cardsOfDay.CardOfDayCreateRequest
+import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.common.IdResponse
 import shared.models.tarot.authorize.Role
 import sttp.tapir.generic.auto.*

@@ -9,6 +9,7 @@ import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.CardId
+import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId}
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.integration.SpreadIntegrationSpec.test
@@ -33,10 +34,14 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)
         cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoId)
+        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        _ <- ref.set(TestSpreadState(Some(photoId), Some(userId.id), Some(token), Some(spreadId.id), Some(cardIds.map(_.id))))
+        
+        state = TestSpreadState.empty.withPhotoId(photoId).withUserId(userId.id).withToken(token)
+          .withSpreadId(spreadId.id).withCardIds(cardIds.map(_.id)).withCardOfDayId(cardOfDayId.id)
+        _ <- ref.set(state)
       } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
     },
 
@@ -75,7 +80,6 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
         cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
         
         cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
@@ -92,6 +96,34 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         card.id.id == cardId,
         card.photo.sourceId == photoId,
+        !cardPhotoExist
+      )
+    },
+
+    test("should update card of day") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
+        state <- ref.get
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        cardOfDayId <- ZIO.fromOption(state.cardOfDayId).orElseFail(TarotError.NotFound("cardOfDayId not set"))
+        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.lastOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+
+        cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+        photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
+        previousCard <- cardOfDayQueryHandler.getCardOfDay(CardOfDayId(cardOfDayId))
+
+        app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
+        cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardId, photoId)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardOfDayUpdatePath("", cardOfDayId), cardOfDayRequest, token)
+        _ <- app.runZIO(request)
+
+        cardOfDay <- cardOfDayQueryHandler.getCardOfDay(CardOfDayId(cardOfDayId))
+        cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
+      } yield assertTrue(
+        cardOfDay.id.id == cardOfDayId,
+        cardOfDay.cardId.id == cardId,
+        cardOfDay.photo.sourceId == photoId,
         !cardPhotoExist
       )
     },
@@ -125,5 +157,5 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
   ) @@ sequential
 
   private val testSpreadStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestSpreadState]] =
-    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState(None, None, None, None, None)))  
+    ZLayer.fromZIO(Ref.Synchronized.make(TestSpreadState.empty))  
 }

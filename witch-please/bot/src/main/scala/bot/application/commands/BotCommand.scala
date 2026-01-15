@@ -21,6 +21,7 @@ object AuthorCommand {
   final case class EditSpread(spreadId: UUID) extends AuthorCommand
   final case class SelectSpread(spreadId: UUID) extends AuthorCommand
   final case class SelectSpreadCards(spreadId: UUID) extends AuthorCommand
+  final case class SelectSpreadCardOfDay(spreadId: UUID) extends AuthorCommand
   final case class PublishSpread(spreadId: UUID) extends AuthorCommand
   final case class DeleteSpread(spreadId: UUID) extends AuthorCommand
   final case class CreateCard(position: Int) extends AuthorCommand

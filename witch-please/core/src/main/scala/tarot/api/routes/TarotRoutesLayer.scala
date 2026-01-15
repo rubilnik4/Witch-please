@@ -12,7 +12,7 @@ import zio.{ZIO, ZLayer}
 object TarotRoutesLayer {
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     UserEndpoint.endpoints ++ AuthorEndpoint.endpoints ++  AuthEndpoint.endpoints ++
-      SpreadEndpoint.endpoints ++ CardEndpoint.endpoints ++ CardOfDayEndpoint.endpoints
+    SpreadEndpoint.endpoints ++ CardEndpoint.endpoints ++ CardOfDayEndpoint.endpoints
 
   private val openApiDocs =
     SwaggerInterpreter().fromEndpoints[[T] =>> ZIO[TarotEnv, Throwable, T]](

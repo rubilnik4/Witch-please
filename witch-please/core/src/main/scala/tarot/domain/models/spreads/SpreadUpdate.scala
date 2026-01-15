@@ -18,16 +18,13 @@ final case class SpreadUpdate(
 )
 
 object SpreadUpdate {
-  def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStorage): UIO[SpreadUpdate] =
+  def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStorage): SpreadUpdate =
     val photo = Photo.toPhoto(UUID.randomUUID(), storedPhoto, PhotoOwnerType.Spread,
       command.spreadId.id, command.photo.sourceType, command.photo.sourceId)
-    for {
-      createdAt <- DateTimeService.getDateTimeNow
-      spread = SpreadUpdate(
-        title = command.title,
-        cardCount = command.cardCount,      
-        description = command.description,
-        photo = photo
-      )
-    } yield spread
+    SpreadUpdate(
+      title = command.title,
+      cardCount = command.cardCount,      
+      description = command.description,
+      photo = photo
+    )
 }

@@ -11,12 +11,12 @@ import zio.{IO, ZIO}
 
 object CardRequestMapper {
   def fromRequest(request: CardCreateRequest, spreadId: SpreadId): IO[TarotError, CreateCardCommand] =
-    validateCreate(request) *> toDomainCreate(request, spreadId)
+    validateCreate(request) *> toCreateCommand(request, spreadId)
 
   def fromRequest(request: CardUpdateRequest, cardId: CardId): IO[TarotError, UpdateCardCommand] =
-    validate(request) *> toDomainUpdate(request, cardId)
+    validate(request) *> toUpdateCommand(request, cardId)
     
-  private def toDomainCreate(request: CardCreateRequest, spreadId: SpreadId) =
+  private def toCreateCommand(request: CardCreateRequest, spreadId: SpreadId) =
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield CreateCardCommand(
@@ -27,7 +27,7 @@ object CardRequestMapper {
       photo = photo
     )
 
-  private def toDomainUpdate(request: CardUpdateRequest, cardId: CardId) =
+  private def toUpdateCommand(request: CardUpdateRequest, cardId: CardId) =
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield UpdateCardCommand(

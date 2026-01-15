@@ -170,7 +170,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         spread <- tarotApiService.getSpread(spreadId, token)
       } yield assertTrue(
         Option(sessionError).isDefined,
-        spread.spreadStatus == SpreadStatus.Scheduled,
+        spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishTime)
       )
     }

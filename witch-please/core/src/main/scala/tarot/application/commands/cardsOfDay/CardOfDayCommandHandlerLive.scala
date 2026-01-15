@@ -1,15 +1,15 @@
-package tarot.application.commands.cardOfDay
+package tarot.application.commands.cardsOfDay
 
 import shared.models.files.FileStorage
-import tarot.application.commands.cardOfDay.commands.CreateCardOfDayCommand
+import tarot.application.commands.cardsOfDay.commands.{CreateCardOfDayCommand, UpdateCardOfDayCommand}
 import tarot.application.commands.cards.commands.{CreateCardCommand, UpdateCardCommand}
 import tarot.application.commands.spreads.SpreadValidateHandler
 import tarot.domain.models.TarotError
-import tarot.domain.models.cardOfDay.{CardOfDay, CardOfDayId, CardOfDayStatusUpdate}
+import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId, CardOfDayStatusUpdate, CardOfDayUpdate}
 import tarot.domain.models.cards.*
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.SpreadId
-import tarot.infrastructure.repositories.cardOfDay.CardOfDayRepository
+import tarot.infrastructure.repositories.cardsOfDay.CardOfDayRepository
 import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -38,7 +38,43 @@ final class CardOfDayCommandHandlerLive(
       cardOfDay <- CardOfDay.toDomain(command, photoFile)
       cardOfDayId <- cardOfDayRepository.createCardOfDay(cardOfDay)
     } yield cardOfDayId
+  
+  override def updateCardOfDay(command: UpdateCardOfDayCommand): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing update card of day ${command.cardOfDayId} command")
 
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+      previousCardOfDay <- cardOfDayQueryHandler.getCardOfDay(command.cardOfDayId)
+
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(previousCardOfDay.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
+
+      photoFile <- getPhotoSource(command.photo)
+      cardOfDay = CardOfDayUpdate.toDomain(command, photoFile)
+      _ <- cardOfDayRepository.updateCardOfDay(command.cardOfDayId, cardOfDay)
+
+      photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
+      _ <- photoCommandHandler.deletePhoto(previousCardOfDay.photo.id, previousCardOfDay.photo.fileId)
+    } yield ()
+
+  override def deleteCardOfDay(cardOfDayId: CardOfDayId): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing delete command for card of day $cardOfDayId")
+
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+      cardOfDay <- cardOfDayQueryHandler.getCardOfDay(cardOfDayId)
+
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      spread <- spreadQueryHandler.getSpread(cardOfDay.spreadId)
+      _ <- SpreadValidateHandler.validateModifyStatus(spread)
+
+      _ <- cardOfDayRepository.deleteCardOfDay(cardOfDay.id)
+
+      photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
+      _ <- photoCommandHandler.deletePhoto(cardOfDay.photo.id, cardOfDay.photo.fileId)
+    } yield ()
+      
   override def publishCardOfDay(cardOfDayId: CardOfDayId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
     for {
       _ <- ZIO.logInfo(s"Executing publish command for card of day $cardOfDayId")
@@ -46,6 +82,7 @@ final class CardOfDayCommandHandlerLive(
       cardOfDayStatusUpdate = CardOfDayStatusUpdate.Published(cardOfDayId, publishAt)
       _ <- cardOfDayRepository.updateCardOfDayStatus(cardOfDayStatusUpdate)
     } yield ()
+
     
   private def getPhotoSource(photoFile: PhotoSource): ZIO[TarotEnv, TarotError, FileStorage] =
     for {

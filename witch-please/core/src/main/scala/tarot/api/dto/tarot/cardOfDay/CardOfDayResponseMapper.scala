@@ -1,33 +1,26 @@
-package tarot.domain.entities
+package tarot.api.dto.tarot.cardOfDay
 
+import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
+import shared.api.dto.tarot.cards.CardResponse
+import shared.api.dto.tarot.photo.PhotoResponse
 import shared.models.tarot.cardOfDay.CardOfDayStatus
+import tarot.api.dto.tarot.photo.PhotoResponseMapper
+import tarot.domain.models.TarotError
 import tarot.domain.models.cardsOfDay.CardOfDay
 import tarot.domain.models.cards.Card
 
 import java.time.Instant
 import java.util.UUID
 
-final case class CardOfDayEntity(
-  id: UUID,
-  cardId: UUID,
-  spreadId: UUID,
-  description: String,
-  status: CardOfDayStatus,
-  photoId: UUID,
-  createdAt: Instant,
-  scheduledAt: Option[Instant],
-  publishedAt: Option[Instant]
-)
-
-object CardOfDayEntity {
-  def toEntity(cardOfDay: CardOfDay, coverPhotoId: UUID): CardOfDayEntity =
-    CardOfDayEntity(
+object CardOfDayResponseMapper {
+  def toResponse(cardOfDay: CardOfDay): CardOfDayResponse =
+    CardOfDayResponse(
       id = cardOfDay.id.id,
       cardId = cardOfDay.cardId.id,
       spreadId = cardOfDay.spreadId.id,
       description = cardOfDay.description,
       status = cardOfDay.status,
-      photoId = coverPhotoId,
+      photo =  PhotoResponseMapper.toResponse(cardOfDay.photo),
       createdAt = cardOfDay.createdAt,
       scheduledAt = cardOfDay.scheduledAt,
       publishedAt = cardOfDay.publishedAt

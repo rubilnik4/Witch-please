@@ -34,6 +34,13 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
+      case AuthorCommands.SpreadCardOfDaySelect :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            AuthorCommand.SelectSpreadCardOfDay(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case AuthorCommands.SpreadPublish :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>

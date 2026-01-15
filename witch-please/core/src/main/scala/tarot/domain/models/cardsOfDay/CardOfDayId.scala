@@ -1,4 +1,4 @@
-package tarot.domain.models.cardOfDay
+package tarot.domain.models.cardsOfDay
 
 import java.util.UUID
 

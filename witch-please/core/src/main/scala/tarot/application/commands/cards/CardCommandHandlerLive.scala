@@ -50,7 +50,7 @@ final class CardCommandHandlerLive(
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
 
       photoFile <- getPhotoSource(command.photo)
-      card <- CardUpdate.toDomain(command, photoFile)
+      card = CardUpdate.toDomain(command, photoFile)
       _ <- cardRepository.updateCard(command.cardId, card)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)

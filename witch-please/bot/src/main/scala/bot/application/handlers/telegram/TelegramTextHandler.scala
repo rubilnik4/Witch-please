@@ -21,18 +21,29 @@ object TelegramTextHandler {
           SpreadFlow.setSpreadTitle(context, spreadMode, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.SpreadCardsCount(spreadMode, title)) =>
           text.toIntOption match {
-            case Some(cardCount) =>
+            case Some(cardCount) if cardCount > 0 =>
               SpreadFlow.setSpreadCardsCount(context, spreadMode, title, cardCount)(telegramApi, tarotApi, sessionService)
-            case None =>
-              telegramApi.sendText(context.chatId, "Введи число карт числом")
+            case _ =>
+              telegramApi.sendText(context.chatId, "Число карт должно быть больше 0")
           }
         case Some(BotPendingAction.SpreadDescription(spreadMode, title, cardsCount)) =>
           SpreadFlow.setSpreadDescription(context, spreadMode, title, cardsCount, text)(telegramApi, tarotApi, sessionService)  
-        case Some(BotPendingAction.CardTitle(position)) =>
-          CardFlow.setCardTitle(context, position, text)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardDescription(position, title)) =>
-          CardFlow.setCardDescription(context, position, title, text)(telegramApi, tarotApi, sessionService)  
-        case None | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_)) =>
+        case Some(BotPendingAction.CardTitle(cardMode)) =>
+          CardFlow.setCardTitle(context, cardMode, text)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.CardDescription(cardMode, title)) =>
+          CardFlow.setCardDescription(context, cardMode, title, text)(telegramApi, tarotApi, sessionService)
+        case Some(BotPendingAction.CardOfDayCardId(cardOfDayMode)) =>
+          text.toIntOption match {
+            case Some(position) if position > 0 =>
+              CardOfDayFlow.setCardOfDayCardId(context, cardOfDayMode, position)(telegramApi, tarotApi, sessionService)
+            case _ =>
+              telegramApi.sendText(context.chatId, "Введи номер карты числом и больше 0")
+          }
+        case Some(BotPendingAction.CardOfDayDescription(cardMode, cardId)) =>
+          CardOfDayFlow.setCardOfDayDescription(context, cardMode, cardId, text)(telegramApi, tarotApi, sessionService)  
+        case None
+             | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_))
+             | Some(BotPendingAction.CardOfDayPhoto(_,_,_))=>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)

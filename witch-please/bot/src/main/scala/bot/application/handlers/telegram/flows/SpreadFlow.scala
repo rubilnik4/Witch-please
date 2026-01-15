@@ -155,23 +155,11 @@ object SpreadFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       _ <- ZIO.logInfo(s"Delete spread $spreadId for chat ${context.chatId}")
-      _ <- validateModifySpread(context, spreadId, token)(telegramApi, tarotApi)
 
       _ <- tarotApi.deleteSpread(spreadId, token)
       _ <- telegramApi.sendText(context.chatId, s"Расклад удален")
 
       _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
-    } yield ()
-
-  def validateModifySpread(context: TelegramContext, spreadId: UUID, token: String)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      spread <- tarotApi.getSpread(spreadId, token)
-      _ <- ZIO.when(spread.publishedAt.isDefined) {
-        telegramApi.sendText(context.chatId, s"Нельзя удалить опубликованный расклад") *>
-          ZIO.logError(s"Can't delete published spread $spreadId") *>
-          ZIO.fail(new RuntimeException("Can't delete published spread $spreadId"))
-      }
     } yield ()
 
   private def startSpreadPending(context: TelegramContext, spreadMode: SpreadMode)(
@@ -184,22 +172,22 @@ object SpreadFlow {
 
   private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int)
       (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
-    val summaryText =
-      s""" Расклад: “${spread.title}”
-         | Публикация: ${getScheduledText(spread)}
-         | Карт по плану: ${spread.cardsCount}
-         | Создано карт: $cardsPositions
-         |
-         |Выбери действие:
-         |""".stripMargin
-
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
+    val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
     val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadEdit(spread.id)))
     val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.Start))
-    val buttons = List(cardsButton, publishButton, editButton, deleteButton, backButton)
+    val buttons = List(cardsButton, cardOfDayButton, publishButton, editButton, deleteButton, backButton)
 
+    val summaryText =
+      s""" Расклад: “${spread.title}”         
+         | Карт по плану: ${spread.cardsCount}
+         | Создано карт: $cardsPositions
+         | Публикация: ${getScheduledText(spread)}
+         |
+         |Выбери действие:
+         |""".stripMargin
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
