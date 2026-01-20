@@ -1,12 +1,14 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.AuthorCommands
+import bot.application.handlers.telegram.flows.CardOfDayFlow.getCardOfDayPositionText
 import bot.domain.models.session.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
+import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
@@ -138,11 +140,12 @@ object SpreadFlow {
 
       spread <- tarotApi.getSpread(spreadId, token)
       cards <- tarotApi.getCards(spreadId, token)
+      cardOfDay <- tarotApi.getCardOfDayBySpread(spreadId, token)
       createdPosition = cards.map(card => CardPosition(card.position, card.id)).toSet
       progress = SpreadProgress(spread.cardsCount, createdPosition)
       _ <- sessionService.setSpread(context.chatId, spreadId, progress)
 
-      _ <- showSpread(context, spread, createdPosition.size)(telegramApi)
+      _ <- showSpread(context, spread, createdPosition.size, cardOfDay)(telegramApi, sessionService)
     } yield ()
 
   def deleteSpread(context: TelegramContext)(
@@ -171,8 +174,8 @@ object SpreadFlow {
     _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
   } yield ()
 
-  private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int)
-      (telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
+  private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int, cardOfDay: Option[CardOfDayResponse])
+      (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
     val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
     val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
@@ -181,15 +184,18 @@ object SpreadFlow {
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.Start))
     val buttons = List(cardsButton, cardOfDayButton, publishButton, editButton, deleteButton, backButton)
 
-    val summaryText =
-      s""" Расклад: “${spread.title}”         
-         | Карт по плану: ${spread.cardsCount}
-         | Создано карт: $cardsPositions
-         | Публикация: ${getScheduledText(spread)}
-         |
-         |Выбери действие:
-         |""".stripMargin
     for {
+      cardOfDayText <- CardOfDayFlow.getCardOfDayPositionText(context, cardOfDay)(sessionService)
+      summaryText =
+        s""" Расклад: “${spread.title}”         
+           | Карт по плану: ${spread.cardsCount}
+           | Создано карт: $cardsPositions
+           | Номер карты дня: $cardOfDayText
+           | Публикация: ${getScheduledText(spread)}
+           |
+           |Выбери действие:
+           |""".stripMargin
+   
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
 

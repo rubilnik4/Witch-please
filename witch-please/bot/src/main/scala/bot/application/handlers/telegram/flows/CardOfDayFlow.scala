@@ -77,8 +77,13 @@ object CardOfDayFlow {
             _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayDescription(cardOfDayMode, cardId))
             _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты дня")
           } yield ()
-        else
-          telegramApi.sendText(context.chatId, "Карта с такой позицией ещё не создана")
+        else {
+          for {
+            spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("Spread id not found"))
+            _ <- telegramApi.sendText(context.chatId, "Карта с такой позицией ещё не создана")
+            _ <- SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+          } yield ()
+        }
     } yield ()
 
   def setCardOfDayDescription(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, description: String)(
@@ -154,10 +159,10 @@ object CardOfDayFlow {
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardOfDayEdit(cardOfDay.id)))
     val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardOfDayDelete(cardOfDay.id)))
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладу", Some(AuthorCommands.spreadSelect(spreadId)))
-    val buttons = List(editButton, deleteButton)
+    val buttons = List(editButton, deleteButton, backButton)
 
     for {
-      positionText <- getCardOfDayPositionText(context, cardOfDay)(sessionService)
+      positionText <- getCardOfDayPositionText(context, Some(cardOfDay))(sessionService)
       summaryText =
         s""" Карта дня”
            | Номер карты: $positionText
@@ -169,16 +174,15 @@ object CardOfDayFlow {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
 
-  private def getCardOfDayPositionText(context: TelegramContext, cardOfDay: CardOfDayResponse)(sessionService: BotSessionService) =
-    for {
-      session <- sessionService.get(context.chatId)
-      progress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("Spread progress not found"))
-      position = progress.createdPositions.find(_.cardId == cardOfDay.cardId).map(_.position)
-      positionText = position match {
-        case Some(position) => position.toString
-        case None => "-"
-      }
-    } yield positionText
+  def getCardOfDayPositionText(context: TelegramContext, cardOfDay: Option[CardOfDayResponse])
+    (sessionService: BotSessionService): ZIO[BotEnv, Throwable, String] =
+    ZIO.foreach(cardOfDay) { cardOfDay =>
+      for {
+        session <- sessionService.get(context.chatId)
+        progress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("Spread progress not found"))
+      } yield
+        progress.createdPositions.find(_.cardId == cardOfDay.cardId).map(_.position.+(1).toString).getOrElse("—")
+    }.map(_.getOrElse("—"))
 
   private def getScheduledText(cardOfDay: CardOfDayResponse) =
     cardOfDay.scheduledAt match {

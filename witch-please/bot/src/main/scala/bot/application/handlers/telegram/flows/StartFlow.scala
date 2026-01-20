@@ -9,13 +9,12 @@ import shared.api.dto.tarot.authorize.AuthRequest
 import shared.api.dto.tarot.users.UserCreateRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
-import shared.models.api.ApiError
 import shared.models.tarot.authorize.ClientType
 import zio.ZIO
 
 object StartFlow {
   def handleStart(context: TelegramContext)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[Any, ApiError, Unit] =
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Start command for chat ${context.chatId}")
 

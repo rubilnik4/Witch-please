@@ -9,7 +9,7 @@ object AuthorCommands {
   final val SpreadEdit = s"${Prefix}_spread_edit"
   final val SpreadSelect = s"${Prefix}_spread_select"
   final val SpreadCardsSelect = s"${Prefix}_spread_cards_select"
-  final val SpreadCardOfDaySelect = s"${Prefix}_spread_card_of_day_select"
+  final val SpreadCardOfDaySelect = s"${Prefix}_spread_cod_select"
   final val SpreadPublish = s"${Prefix}_spread_publish"
   final val SpreadDelete = s"${Prefix}_spread_delete"
   final val CardCreate = s"${Prefix}_card_create"

@@ -142,8 +142,7 @@ object SchedulerFlow {
 
       text = s"Расклад будет опубликован ${DateFormatter.fromLocalDateTime(dateTime)} c картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}"
       _ <- telegramApi.sendText(context.chatId, text)
-      _ <- sessionService.reset(context.chatId)
-      _ <- SpreadFlow.selectSpreads(context)(telegramApi, tarotApi, sessionService)
+      _ <- SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   private def showTimeKeyboard(context: TelegramContext, date: LocalDate, page: Int)
