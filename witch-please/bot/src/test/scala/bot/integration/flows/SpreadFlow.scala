@@ -59,6 +59,6 @@ object SpreadFlow {
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       response <- app.runZIO(request)
-      _ <- CommonFlow.expectStatusOk(response, "get spreads fail")
+      _ <- CommonFlow.expectStatusOk(response, "select spread fail")
     } yield ()
 }

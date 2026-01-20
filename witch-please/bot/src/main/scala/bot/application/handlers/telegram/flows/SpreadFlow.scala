@@ -158,6 +158,7 @@ object SpreadFlow {
 
       _ <- tarotApi.deleteSpread(spreadId, token)
       _ <- telegramApi.sendText(context.chatId, s"Расклад удален")
+      _ <- sessionService.clearSpread(context.chatId)
 
       _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
     } yield ()

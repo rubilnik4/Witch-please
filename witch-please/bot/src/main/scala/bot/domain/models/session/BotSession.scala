@@ -41,6 +41,8 @@ object BotSession {
     session.copy(
       spreadId = None,
       spreadProgress = None,
+      cardOfDayId = None,
+      cardId = None,
       pending = None,
       updatedAt = now)
 

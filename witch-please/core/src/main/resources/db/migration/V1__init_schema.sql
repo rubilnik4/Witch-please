@@ -84,7 +84,7 @@ CREATE INDEX idx_cards_photo_id ON cards(photo_id);
 CREATE TABLE cards_of_day (
     id UUID PRIMARY KEY,
     spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
-    card_id UUID NOT NULL REFERENCES cards(id)   ON DELETE CASCADE,
+    card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
     photo_id UUID NOT NULL REFERENCES photos(id),
     description TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
@@ -103,6 +103,7 @@ CREATE TABLE cards_of_day (
 );
 
 CREATE INDEX idx_cards_of_day_spread_id ON cards_of_day(spread_id);
+CREATE INDEX idx_cards_of_day_card_id ON cards_of_day(card_id);
 CREATE INDEX idx_cards_of_day_photo_id ON cards_of_day(photo_id);
 CREATE INDEX idx_cards_of_day_scheduled_at
     ON cards_of_day(scheduled_at)

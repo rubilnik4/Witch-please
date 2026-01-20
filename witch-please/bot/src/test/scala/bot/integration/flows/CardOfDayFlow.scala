@@ -42,4 +42,12 @@ object CardOfDayFlow {
       _ <- CommonFlow.expectPending("CardOfDayPhoto", chatId) {
         case BotPendingAction.CardOfDayPhoto(mode, _, d) if mode == cardOfDayMode && d == description => d }
     } yield ()
+
+  def selectCardOfDay(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =
+    val postRequest = TestTelegramWebhook.selectCardOfDayRequest(chatId, spreadId)
+    val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
+    for {
+      response <- app.runZIO(request)
+      _ <- CommonFlow.expectStatusOk(response, "select card of day fail")
+    } yield ()  
 }

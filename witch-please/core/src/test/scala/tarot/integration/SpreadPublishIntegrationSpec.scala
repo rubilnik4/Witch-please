@@ -271,7 +271,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("can't create modify card of day on published spread") {
+    test("can't modify card of day on published spread") {
       for {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
@@ -283,6 +283,23 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
         cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardId, photoId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardOfDayUpdatePath("", cardOfDayId), cardOfDayRequest, token)
+        response <- app.runZIO(request)
+      } yield assertTrue(
+        response.status == Status.Conflict
+      )
+    },
+
+    test("can't delete card of day on published spread") {
+      for {
+        state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
+        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        cardOfDayId <- ZIO.fromOption(state.cardOfDayId).orElseFail(TarotError.NotFound("cardOfDayId not set"))
+        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.lastOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+
+        app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)      
+        request = ZIOHttpClient.deleteAuthRequest(TarotApiRoutes.cardOfDayDeletePath("", cardOfDayId), token)
         response <- app.runZIO(request)
       } yield assertTrue(
         response.status == Status.Conflict

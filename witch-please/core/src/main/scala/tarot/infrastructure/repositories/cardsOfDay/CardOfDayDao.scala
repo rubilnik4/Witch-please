@@ -43,6 +43,18 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
           .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
       })
       .map(_.headOption)
+
+  def getCardOfDayByCard(cardId: UUID): ZIO[Any, SQLException, Option[CardOfDayPhotoEntity]] =
+    run(
+      quote {
+        cardOfDayTable
+          .join(photoTable)
+          .on((cardOfDay, photo) => cardOfDay.photoId == photo.id)
+          .filter { case (cardOfDay, _) => cardOfDay.cardId == lift(cardId) }
+          .take(1)
+          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+      })
+      .map(_.headOption)
       
   def getScheduledCardsOfDay(deadline: Instant, limit: Int): ZIO[Any, SQLException, List[CardOfDayPhotoEntity]] =
     run(

@@ -5,6 +5,7 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
+import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.*
 import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.repositories.photo.PhotoDao
@@ -37,7 +38,17 @@ final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Ca
         .mapError(e => DatabaseError(s"Failed to get card of day by spreadId $spreadId", e))
         .flatMap(spreadMaybe => ZIO.foreach(spreadMaybe)(CardOfDayPhotoEntity.toDomain))
     } yield cardOfDay
-    
+
+  override def getCardOfDayByCard(cardId: CardId): ZIO[Any, TarotError, Option[CardOfDay]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting card of day by cardId $cardId")
+
+      cardOfDay <- cardOfDayDao.getCardOfDayByCard(cardId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get card of day by cardId $cardId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get card of day by cardId $cardId", e))
+        .flatMap(spreadMaybe => ZIO.foreach(spreadMaybe)(CardOfDayPhotoEntity.toDomain))
+    } yield cardOfDay
+      
   override def getScheduledCardsOfDay(deadline: Instant, limit: Int): ZIO[Any, TarotError, List[CardOfDay]] =
     for {
       _ <- ZIO.logDebug(s"Getting scheduled cards of day by deadline $deadline")

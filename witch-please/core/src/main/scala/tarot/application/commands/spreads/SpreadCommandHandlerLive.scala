@@ -83,16 +83,16 @@ final class SpreadCommandHandlerLive(
       cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
       spread <- spreadQueryHandler.getSpread(spreadId)
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
+      
       cards <- cardQueryHandler.getCards(spreadId)
-      cardOfDay <- cardOfDayQueryHandler.getCardOfDayBySpread(spreadId)
+      cardOfDayMaybe <- cardOfDayQueryHandler.getCardOfDayBySpreadOption(spreadId)
       _ <- spreadRepository.deleteSpread(spreadId)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      photos = spread.photo :: cards.map(_.photo)
+      photos = spread.photo :: cards.map(_.photo) ++ cardOfDayMaybe.map(_.photo).toList
       _ <- ZIO.foreachParDiscard(photos) { photo =>
         photoCommandHandler.deletePhoto(photo.id, photo.fileId)
       }
-      _ <- photoCommandHandler.deletePhoto(cardOfDay.photo.id, cardOfDay.photo.fileId)
     } yield ()
 
   private def getPhotoFile(photoFile: PhotoSource) =

@@ -62,13 +62,20 @@ final class CardCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing delete command for card $cardId")
 
       cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-      card <- cardQueryHandler.getCard(cardId)
-
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+      card <- cardQueryHandler.getCard(cardId)    
       spread <- spreadQueryHandler.getSpread(card.spreadId)
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
-      
+
+      cardOfDayMaybe <- cardOfDayQueryHandler.getCardOfDayByCardOption(cardId)
       _ <- deleteCard(card)
+
+      photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
+      photos = cardOfDayMaybe.map(_.photo).toList
+      _ <- ZIO.foreachParDiscard(photos) { photo =>
+        photoCommandHandler.deletePhoto(photo.id, photo.fileId)
+      }
     } yield ()
     
   override def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit] =
