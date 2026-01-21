@@ -8,4 +8,5 @@ object TarotTableNames {
   final val users = "users"
   final val projects = "projects"
   final val userProjects = "user_projects"
+  final val userChannels = "user_channels"
 }

@@ -4,8 +4,9 @@ import shared.models.tarot.authorize.ClientType
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{Token, UserId}
+import tarot.domain.models.authorize.Token
 import tarot.domain.models.projects.ProjectId
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

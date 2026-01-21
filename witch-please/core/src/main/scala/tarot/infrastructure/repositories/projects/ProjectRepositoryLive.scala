@@ -5,8 +5,8 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.projects.{Project, ProjectId}
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.*
 

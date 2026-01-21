@@ -1,4 +1,4 @@
-package tarot.domain.models.authorize
+package tarot.domain.models.users
 
 import java.util.UUID
 

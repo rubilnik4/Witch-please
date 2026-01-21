@@ -13,9 +13,9 @@ import tarot.api.dto.tarot.spreads.*
 import tarot.api.endpoints.errors.TapirError
 import tarot.api.infrastructure.AuthValidator
 import tarot.application.commands.spreads.commands.ScheduleSpreadCommand
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.spreads.SpreadId
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

@@ -13,6 +13,7 @@ import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.CardOfDayId
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

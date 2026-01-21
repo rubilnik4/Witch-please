@@ -2,6 +2,7 @@ package tarot.application.commands
 
 import tarot.application.commands.cardsOfDay.CardOfDayCommandHandlerLayer
 import tarot.application.commands.cards.CardCommandHandlerLayer
+import tarot.application.commands.channels.UserChannelCommandHandlerLayer
 import tarot.application.commands.photos.PhotoCommandHandlerLayer
 import tarot.application.commands.projects.*
 import tarot.application.commands.spreads.*
@@ -14,6 +15,7 @@ object TarotCommandHandlerLayer {
   val live: ZLayer[Repositories, Throwable, TarotCommandHandler] =
     (
       UserCommandHandlerLayer.live ++
+      UserChannelCommandHandlerLayer.live ++
       ProjectCommandHandlerLayer.live ++
       SpreadCommandHandlerLayer.live ++
       CardCommandHandlerLayer.live ++

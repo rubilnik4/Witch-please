@@ -7,10 +7,11 @@ import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.*
+import tarot.api.dto.tarot.authorize.AuthResponseMapper
 import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.endpoints.errors.TapirError
-import tarot.domain.models.authorize.{AuthResponseMapper, UserId}
 import tarot.domain.models.projects.ProjectId
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

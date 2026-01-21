@@ -1,7 +1,7 @@
 package tarot.application.queries.users
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{Author, User}
+import tarot.domain.models.users.{Author, User}
 import tarot.infrastructure.repositories.users.*
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -14,8 +14,8 @@ final class UserQueryHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Executing user query by clientId $clientId")
       
-      userOption <- userRepository.getUserByClientId(clientId)
-      user <- ZIO.fromOption(userOption)
+      userMaybe <- userRepository.getUserByClientId(clientId)
+      user <- ZIO.fromOption(userMaybe)
         .orElseFail(TarotError.NotFound(s"user by clientId $clientId not found"))
     } yield user
 

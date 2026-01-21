@@ -2,6 +2,7 @@ package tarot.application.queries
 
 import tarot.application.queries.cards.*
 import tarot.application.queries.cardsOfDay.CardOfDayQueryHandlerLayer
+import tarot.application.queries.channels.UserChannelQueryHandlerLayer
 import tarot.application.queries.photos.PhotoQueryHandlerLayer
 import tarot.application.queries.projects.*
 import tarot.application.queries.spreads.*
@@ -14,6 +15,7 @@ object TarotQueryHandlerLayer {
   val live: ZLayer[Repositories, Throwable, TarotQueryHandler] =
     (
       UserQueryHandlerLayer.live ++
+      UserChannelQueryHandlerLayer.live ++
       ProjectQueryHandlerLayer.live ++
       SpreadQueryHandlerLayer.live ++
       CardQueryHandlerLayer.live ++

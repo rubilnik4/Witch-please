@@ -1,5 +1,6 @@
-package tarot.domain.models.authorize
+package tarot.domain.models.users
 
+import tarot.domain.models.users.UserId
 import zio.UIO
 
 import java.time.Instant

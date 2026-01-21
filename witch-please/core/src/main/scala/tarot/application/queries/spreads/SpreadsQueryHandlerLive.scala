@@ -1,8 +1,8 @@
 package tarot.application.queries.spreads
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.spreads.{Spread, SpreadId}
+import tarot.domain.models.users.UserId
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.infrastructure.repositories.users.UserProjectRepository
 import tarot.layers.TarotEnv

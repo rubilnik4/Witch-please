@@ -1,4 +1,4 @@
-package tarot.domain.models.authorize
+package tarot.domain.models.users
 
 import shared.models.tarot.authorize.Role
 import tarot.domain.models.projects.{Project, ProjectId}

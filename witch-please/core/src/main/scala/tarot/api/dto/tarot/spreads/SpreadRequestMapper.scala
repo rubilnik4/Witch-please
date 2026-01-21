@@ -5,8 +5,8 @@ import tarot.api.dto.tarot.photo.PhotoRequestMapper
 import tarot.application.commands.spreads.commands.{CreateSpreadCommand, UpdateSpreadCommand}
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.spreads.SpreadId
+import tarot.domain.models.users.UserId
 import zio.{IO, ZIO}
 
 object SpreadRequestMapper {

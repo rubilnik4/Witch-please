@@ -2,6 +2,7 @@ package tarot.domain.entities
 
 import shared.models.tarot.authorize.ClientType
 import tarot.domain.models.authorize.*
+import tarot.domain.models.users.{User, UserId}
 
 import java.time.Instant
 import java.util.UUID

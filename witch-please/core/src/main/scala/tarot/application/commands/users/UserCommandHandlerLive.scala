@@ -4,6 +4,7 @@ import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.*
+import tarot.domain.models.users.{User, UserId}
 import tarot.infrastructure.repositories.users.*
 import tarot.infrastructure.services.users.UserService
 import tarot.layers.TarotEnv

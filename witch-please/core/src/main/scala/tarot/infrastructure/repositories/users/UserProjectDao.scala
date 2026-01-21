@@ -5,8 +5,8 @@ import io.getquill.jdbczio.*
 import shared.models.tarot.authorize.Role
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.domain.entities.*
-import tarot.domain.models.authorize.{Author, UserId}
 import tarot.domain.models.spreads.SpreadStatusUpdate
+import tarot.domain.models.users.{Author, UserId}
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.spreads.SpreadQuillMappings
 import zio.ZIO

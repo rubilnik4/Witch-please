@@ -1,7 +1,7 @@
 package tarot.infrastructure.services.authorize
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.{Token, User, UserId, UserProject, UserRole}
+import tarot.domain.models.authorize.Token
 import tarot.layers.TarotEnv
 import zio.{Cause, ZIO}
 import com.github.roundrop.bcrypt.*
@@ -9,6 +9,7 @@ import shared.models.tarot.authorize.{ClientType, Role}
 import tarot.api.dto.tarot.authorize.TokenPayload
 import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.projects.ProjectId
+import tarot.domain.models.users.{User, UserId, UserProject, UserRole}
 import tarot.infrastructure.repositories.users.*
 
 final case class AuthServiceLive(

@@ -2,8 +2,8 @@ package tarot.application.commands.spreads
 
 import tarot.application.commands.spreads.commands.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.UserId
 import tarot.domain.models.spreads.{Spread, SpreadId}
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

@@ -3,6 +3,7 @@ package tarot.infrastructure.repositories.users
 import tarot.domain.models.TarotError
 import tarot.domain.models.authorize.*
 import tarot.domain.models.projects.ProjectId
+import tarot.domain.models.users.{User, UserId}
 import tarot.layers.TarotEnv
 import zio.ZIO
 

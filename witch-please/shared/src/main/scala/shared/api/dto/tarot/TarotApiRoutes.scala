@@ -13,6 +13,7 @@ case object TarotApiRoutes {
   val authors = "authors"
   val auth = "auth"
   val users ="users"
+  val channels = "channel"
 
   private def make(baseUrl: String, segments: String*): URL = {
     val base = baseUrl.stripSuffix("/")

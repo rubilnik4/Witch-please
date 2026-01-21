@@ -37,6 +37,19 @@ CREATE TABLE user_projects (
 CREATE INDEX idx_user_projects_user_id ON user_projects(user_id);
 CREATE INDEX idx_user_projects_project_id ON user_projects(project_id);
 
+CREATE TABLE user_channels (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    chat_id BIGINT NOT NULL,
+    name TEXT NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT uq_user_channels_user_chat UNIQUE (user_id, chat_id)
+);
+
+CREATE INDEX idx_user_channels_user_id ON user_channels(user_id);
+
 CREATE TABLE spreads (
     id UUID PRIMARY KEY,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

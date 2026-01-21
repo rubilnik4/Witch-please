@@ -1,4 +1,4 @@
-package tarot.domain.models.authorize
+package tarot.domain.models.users
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.authorize.ClientType
@@ -17,19 +17,16 @@ final case class User(
   active: Boolean,
   createdAt: Instant
 )
-{
-  override def toString: String = id.toString
-}
 
 object User {
-  def toDomain(externalUser: CreateAuthorCommand, secretHash: String): UIO[User] =
+  def toDomain(command: CreateAuthorCommand, secretHash: String): UIO[User] =
     for {
       createdAt <- DateTimeService.getDateTimeNow
       user = User(
         id = UserId(UUID.randomUUID()),
-        clientId = externalUser.clientId,
-        name = externalUser.name,
-        clientType = externalUser.clientType,
+        clientId = command.clientId,
+        name = command.name,
+        clientType = command.clientType,
         secretHash = secretHash,
         active = true,
         createdAt = createdAt)

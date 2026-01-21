@@ -5,7 +5,7 @@ import io.getquill.jdbczio.Quill
 import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
-import tarot.domain.models.authorize.{Author, User, UserId}
+import tarot.domain.models.users.*
 import zio.*
 
 final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRepository {
@@ -33,10 +33,10 @@ final class UserRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends UserRep
     for {
       _ <- ZIO.logDebug(s"Getting user by clientId $clientId")
 
-      userId <- userDao.getUserByClientId(clientId)
+      user <- userDao.getUserByClientId(clientId)
         .tapError(e => ZIO.logErrorCause(s"Failed to get user by clientId $clientId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get user by clientId $clientId", e))
-    } yield userId.map(UserEntity.toDomain)  
+    } yield user.map(UserEntity.toDomain)  
 
   override def existsUser(userId: UserId): ZIO[Any, TarotError, Boolean] =
     for {
