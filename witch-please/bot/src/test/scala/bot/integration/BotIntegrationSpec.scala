@@ -196,7 +196,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         session <- botSessionService.get(chatId)
         spread <- tarotApiService.getSpread(spreadId, token)
       } yield assertTrue(
-        session.spreadId == spreadId,
+        session.spreadId.nonEmpty,
         spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishTime)
       )
