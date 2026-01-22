@@ -2,6 +2,7 @@ package tarot.fixtures
 
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.cards.*
+import shared.api.dto.tarot.channels.*
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.infrastructure.services.common.DateTimeService
@@ -14,6 +15,12 @@ import java.time.Instant
 import java.util.UUID
 
 object TarotTestRequests {
+  def channelCreateRequest(chatId: Long): ChannelCreateRequest =
+    ChannelCreateRequest(
+      chatId = chatId,
+      name = "test channel"
+    )
+
   def spreadCreateRequest(cardCount: Int, photoId: String): SpreadCreateRequest =
     SpreadCreateRequest(
       title = "Spread integration test",
@@ -71,5 +78,4 @@ object TarotTestRequests {
       description = "Card of day integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
-
 }

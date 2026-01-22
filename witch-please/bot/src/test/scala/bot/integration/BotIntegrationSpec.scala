@@ -193,10 +193,10 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         _ <- PublishFlow.selectCardOdDayDelay(app, chatId, cardOdDayDelay)
         _ <- PublishFlow.confirm(app, chatId)
 
-        sessionError <- botSessionService.get(chatId).flip
+        session <- botSessionService.get(chatId)
         spread <- tarotApiService.getSpread(spreadId, token)
       } yield assertTrue(
-        Option(sessionError).isDefined,
+        session.spreadId == spreadId,
         spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishTime)
       )

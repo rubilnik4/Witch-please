@@ -30,8 +30,14 @@ case object TarotApiRoutes {
     make(baseUrl, apiPath, authors)
     
   def authorsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, authors)   
+    make(baseUrl, apiPath, authors)
 
+  def channelCreatePath(baseUrl: String): URL =
+    make(baseUrl, apiPath, channels)
+
+  def channelDefaultGetPath(baseUrl: String): URL =
+    make(baseUrl, apiPath, channels, "default")
+    
   def spreadCreatePath(baseUrl: String): URL =
     make(baseUrl, apiPath, spreads)
 
