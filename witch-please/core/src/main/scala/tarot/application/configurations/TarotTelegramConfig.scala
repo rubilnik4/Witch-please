@@ -4,7 +4,6 @@ import zio.Config
 import zio.config.magnolia.deriveConfig
 
 final case class TarotTelegramConfig(
-  chatId: Option[Long] = None,
   token: String
 )
 

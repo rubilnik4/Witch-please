@@ -161,6 +161,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
         _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
         _ <- CommonFlow.expectNoPending(chatId)

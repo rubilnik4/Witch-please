@@ -105,6 +105,7 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
           .filter(_.id == lift(cardOfDayId))
           .update(
             _.cardId -> lift(cardOfDay.cardId.id),
+            _.title -> lift(cardOfDay.title),
             _.description -> lift(cardOfDay.description),
             _.photoId -> lift(photoId)
           )

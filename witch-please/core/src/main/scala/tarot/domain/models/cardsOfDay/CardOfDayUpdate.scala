@@ -15,6 +15,7 @@ import java.util.UUID
 
 final case class CardOfDayUpdate(
   cardId: CardId,
+  title: String,
   description: String,
   photo: Photo
 )
@@ -25,6 +26,7 @@ object CardOfDayUpdate {
       command.photo.sourceType, command.photo.sourceId)   
     CardOfDayUpdate(
       cardId = command.cardId,
+      title = command.title,
       description = command.description,
       photo = photo
     )

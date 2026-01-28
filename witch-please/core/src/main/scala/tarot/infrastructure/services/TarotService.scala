@@ -10,5 +10,5 @@ trait TarotService {
   def authService: AuthService
   def photoService: PhotoService
   def fileStorageService: FileStorageService
-  def telegramChannelService: TelegramApiService
+  def telegramApiService: TelegramApiService
 }

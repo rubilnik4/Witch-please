@@ -134,11 +134,10 @@ object SpreadEndpoint {
       .serverLogic { tokenPayload => {
         case (spreadId, request) =>
           (for {
-            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")
-            
-            _ <- SpreadPublishRequestMapper.validate(request)
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to publish spread: $spreadId")            
+           
             handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
-            command = ScheduleSpreadCommand(SpreadId(spreadId), request.scheduledAt, request.cardOfDayDelayHours)
+            command <- SpreadPublishRequestMapper.fromRequest(request, UserId(tokenPayload.userId), SpreadId(spreadId))
             _ <- handler.scheduleSpread(command)
           } yield ()).mapResponseErrors
         }

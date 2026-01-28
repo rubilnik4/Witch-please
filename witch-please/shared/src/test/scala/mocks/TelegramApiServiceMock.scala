@@ -34,6 +34,9 @@ final class TelegramApiServiceMock extends TelegramApiService {
   override def sendInlineGroupButtons(chatId: Long, text: String, buttons: List[List[TelegramInlineKeyboardButton]]): ZIO[Any, ApiError, Long] =
     ZIO.succeed(1L)
 
+  override def sendPhotos(chatId: Long, text: String, fileIds: List[String]): ZIO[Any, ApiError, Long] =
+    ZIO.succeed(1L)   
+
   override def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     ZIO.succeed(TelegramFile(fileId, Array.emptyByteArray))
 }

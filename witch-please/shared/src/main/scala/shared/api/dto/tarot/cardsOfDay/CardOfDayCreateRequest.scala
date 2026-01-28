@@ -8,6 +8,7 @@ import java.util.UUID
 
 final case class CardOfDayCreateRequest(
   cardId: UUID,
+  title: String,
   description: String,           
   photo: PhotoRequest
 ) extends CardOfDayRequest derives JsonCodec, Schema

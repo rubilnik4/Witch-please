@@ -17,7 +17,8 @@ import java.util.UUID
 final case class CardOfDay(
   id: CardOfDayId,                        
   cardId: CardId,
-  spreadId: SpreadId,                        
+  spreadId: SpreadId,
+  title: String,
   description: String,
   status: CardOfDayStatus,
   photo: Photo,
@@ -37,6 +38,7 @@ object CardOfDay {
         id = CardOfDayId(id),
         cardId = command.cardId,
         spreadId = command.spreadId,
+        title = command.title,
         description = command.description,
         status = CardOfDayStatus.Draft,
         photo = photo,

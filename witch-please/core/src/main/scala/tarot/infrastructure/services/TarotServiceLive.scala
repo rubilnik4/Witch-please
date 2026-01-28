@@ -9,5 +9,5 @@ final case class TarotServiceLive(
                                    authService: AuthService,
                                    photoService: PhotoService,
                                    fileStorageService: FileStorageService,
-                                   telegramChannelService: TelegramApiService,
+                                   telegramApiService: TelegramApiService,
 ) extends TarotService 

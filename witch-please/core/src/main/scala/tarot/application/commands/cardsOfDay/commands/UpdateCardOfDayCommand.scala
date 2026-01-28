@@ -10,6 +10,7 @@ import java.util.UUID
 final case class UpdateCardOfDayCommand(
   cardOfDayId: CardOfDayId,
   cardId: CardId,
+  title: String,
   description: String,
   photo: PhotoSource
 )

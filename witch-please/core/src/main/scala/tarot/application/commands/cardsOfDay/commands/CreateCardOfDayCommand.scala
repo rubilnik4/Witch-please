@@ -9,6 +9,7 @@ import java.util.UUID
 final case class CreateCardOfDayCommand(
   cardId: CardId,
   spreadId: SpreadId,
+  title: String,
   description: String,
   photo: PhotoSource
 )

@@ -11,4 +11,6 @@ import zio.ZIO
 trait UserChannelRepository {
   def createUserChannel(userChannel: UserChannel): ZIO[Any, TarotError, UserChannelId]
   def getUserChannel(userId: UserId): ZIO[TarotEnv, TarotError, Option[UserChannel]]
+  def getUserChannelByProject(projectId: ProjectId): ZIO[TarotEnv, TarotError, Option[UserChannel]]
+  def existUserChannels(userId: UserId): ZIO[TarotEnv, TarotError, Boolean]
 }

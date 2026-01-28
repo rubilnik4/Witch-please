@@ -6,6 +6,7 @@ import tarot.domain.entities.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.channels.{UserChannel, UserChannelId}
+import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.users.{Author, User, UserId}
 import tarot.layers.TarotEnv
 import zio.*
@@ -24,10 +25,28 @@ final class UserChannelRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends 
     
   override def getUserChannel(userId: UserId): ZIO[TarotEnv, TarotError, Option[UserChannel]] =
     for {
-      _ <- ZIO.logDebug(s"Getting default channel by user $userId")
+      _ <- ZIO.logDebug(s"Getting user channel by user $userId")
 
       userChannel <- userChannelDao.getUserChannel(userId.id)
         .tapError(e => ZIO.logErrorCause(s"Failed to get user channel by user $userId", Cause.fail(e)))
         .mapError(e => DatabaseError(s"Failed to get user channel by user $userId", e))
     } yield userChannel.map(UserChannelEntity.toDomain)
+
+  override def getUserChannelByProject(projectId: ProjectId): ZIO[TarotEnv, TarotError, Option[UserChannel]] =
+    for {
+      _ <- ZIO.logDebug(s"Getting user channel by project $projectId")
+
+      userChannel <- userChannelDao.getUserChannelByProject(projectId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to get user channel by project $projectId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to get user channel by project $projectId", e))
+    } yield userChannel.map(UserChannelEntity.toDomain)
+    
+  override def existUserChannels(userId: UserId): ZIO[TarotEnv, TarotError, Boolean] =
+    for {
+      _ <- ZIO.logDebug(s"Checking channels exists by user $userId")
+
+      exists <- userChannelDao.existsUserChannels(userId.id)
+        .tapError(e => ZIO.logErrorCause(s"Failed to check user channels by user $userId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to check user channels channel by user $userId", e))
+    } yield exists
 }

@@ -25,15 +25,14 @@ object ChannelIntegrationSpec extends ZIOSpecDefault {
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Channel API integration")(
     test("initialize test state") {
-      for {
-        photoId <- TarotTestFixtures.createPhoto
+      for {      
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestChannelState]]
         state = TestChannelState.empty.withUserId(userId.id).withToken(token)
         _ <- ref.set(state)
-      } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
+      } yield assertTrue(token.nonEmpty)
     },
 
     test("should create channel") {

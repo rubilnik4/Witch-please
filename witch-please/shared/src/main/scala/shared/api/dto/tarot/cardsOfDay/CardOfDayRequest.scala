@@ -8,5 +8,6 @@ import java.util.UUID
 
 trait CardOfDayRequest {
   def cardId: UUID
+  def title: String
   def description: String
 }

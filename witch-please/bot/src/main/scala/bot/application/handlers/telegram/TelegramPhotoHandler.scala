@@ -21,13 +21,14 @@ object TelegramPhotoHandler {
           SpreadFlow.setSpreadPhoto(context, spreadMode, title, cardCount, description, fileId)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.CardPhoto(cardMode, title, description)) =>
           CardFlow.setCardPhoto(context, cardMode,  title, description, fileId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, description)) =>
-          CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, description, fileId)(telegramApi, tarotApi, sessionService)  
+        case Some(BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, title, description)) =>
+          CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, title, description, fileId)(telegramApi, tarotApi, sessionService)  
         case None 
              | Some(BotPendingAction.SpreadTitle(_)) | Some(BotPendingAction.SpreadCardsCount(_,_)) 
              | Some(BotPendingAction.SpreadDescription(_,_,_)) 
              | Some(BotPendingAction.CardTitle(_)) | Some(BotPendingAction.CardDescription(_,_))
-             | Some(BotPendingAction.CardOfDayCardId(_)) | Some(BotPendingAction.CardOfDayDescription(_,_))
+             | Some(BotPendingAction.CardOfDayCardId(_)) | Some(BotPendingAction.CardOfDayTitle(_,_))
+             | Some(BotPendingAction.CardOfDayDescription(_,_,_))
         =>
           for {
             _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")

@@ -32,7 +32,7 @@ final class PublishJobLive extends PublishJob {
 
       spreads <- spreadQueryHandler.getScheduledSpreads(deadline, config.batchLimit)
       spreadResults <- ZIO.foreach(spreads) { spread =>
-        spreadCommandHandler.publishSpread(spread.id, now).either.map(PublishJobResult.Spread(spread.id, _))
+        spreadCommandHandler.publishSpread(spread, now).either.map(PublishJobResult.Spread(spread.id, _))
       }
 
       cardsOfDay <- cardOfDayQueryHandler.getScheduledCardsOfDay(deadline, config.batchLimit)

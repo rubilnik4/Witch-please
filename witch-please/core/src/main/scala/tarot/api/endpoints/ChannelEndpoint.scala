@@ -57,7 +57,7 @@ object ChannelEndpoint {
             _ <- ZIO.logInfo(s"Received request to get default channel by user ${tokenPayload.userId}")
 
             userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
-            userChannel <- userChannelQueryHandler.getDefaultUserChannel(UserId(tokenPayload.userId))
+            userChannel <- userChannelQueryHandler.getUserChannel(UserId(tokenPayload.userId))
           } yield UserChannelResponseMapper.toResponse(userChannel)).mapResponseErrors
       }
 

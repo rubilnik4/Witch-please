@@ -11,12 +11,12 @@ import zio.{IO, ZIO}
 
 object SpreadRequestMapper {
   def fromRequest(request: SpreadCreateRequest, userId: UserId): IO[TarotError, CreateSpreadCommand] =
-    validate(request) *> toDomainCreate(request, userId)
+    validate(request) *> toCreate(request, userId)
 
   def fromRequest(request: SpreadUpdateRequest, spreadId: SpreadId): IO[TarotError, UpdateSpreadCommand] =
-    validate(request) *> toDomainUpdate(request, spreadId)
+    validate(request) *> toUpdate(request, spreadId)
     
-  private def toDomainCreate(request: SpreadCreateRequest, userId: UserId) = 
+  private def toCreate(request: SpreadCreateRequest, userId: UserId) = 
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield CreateSpreadCommand(
@@ -27,7 +27,7 @@ object SpreadRequestMapper {
         photo = photo
       )
 
-  private def toDomainUpdate(request: SpreadUpdateRequest, spreadId: SpreadId) =
+  private def toUpdate(request: SpreadUpdateRequest, spreadId: SpreadId) =
     for {
       photo <- PhotoRequestMapper.fromRequest(request.photo)
     } yield UpdateSpreadCommand(

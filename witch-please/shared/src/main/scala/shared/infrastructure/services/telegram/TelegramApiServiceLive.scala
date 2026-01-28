@@ -82,7 +82,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       telegramImage <- SttpClient.sendJsonForBytes(client, imageRequest)
     } yield TelegramFile(fileName, telegramImage)
 
-  override def sendPhoto(chatId: Long, fileId: String): ZIO[Any, ApiError, String] = {
+  override def sendPhoto(chatId: Long, fileId: String): ZIO[Any, ApiError, String] =
     for {
       _ <- ZIO.logDebug(s"Sending existing photo fileId=$fileId to chat $chatId")
       
@@ -91,9 +91,8 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       telegramMessage <- TelegramApi.getTelegramResponse(response)
       fileId <- getPhotoId(telegramMessage, fileId)
     } yield fileId
-  }
 
-  override def sendPhoto(chatId: Long, photo: TelegramFile): ZIO[Any, ApiError, String] = {
+  override def sendPhoto(chatId: Long, photo: TelegramFile): ZIO[Any, ApiError, String] =
     for {
       _ <- ZIO.logDebug(s"Sending telegram file ${photo.fileName} to chat $chatId")
       
@@ -102,7 +101,15 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       telegramMessage <- TelegramApi.getTelegramResponse(response)
       fileId <- getPhotoId(telegramMessage, photo.fileName)
     } yield fileId
-  }
+
+  override def sendPhotos(chatId: Long, text: String, fileIds: List[String]): ZIO[Any, ApiError, Long] =
+    for {
+      _ <- ZIO.logDebug(s"Sending telegram files $fileIds to chat $chatId")
+
+      mediaRequest = getSendMediaGroupRequest(chatId, text, fileIds)
+      response <- SttpClient.sendJson(client, mediaRequest)
+      telegramMessage <- TelegramApi.getTelegramResponse(response)
+    } yield telegramMessage.messageId
 
   private def getPhotoId(response: TelegramMessageResponse, fileName: String) =
     ZIO.fromOption(response.photo.flatMap(_.lastOption.map(_.fileId)))
@@ -141,7 +148,7 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }
 
-  private def getSendPhotoRequest(chatId: Long, photo: TelegramFile) = {
+  private def getSendPhotoRequest(chatId: Long, photo: TelegramFile) =
     basicRequest
       .post(sendPhotoUrl)
       .multipartBody(
@@ -150,5 +157,17 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
           .fileName(photo.fileName)
           .contentType(MediaType.ImageJpeg)
       )
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
+
+  private def getSendMediaGroupRequest(chatId: Long, text: String, fileIds: List[String]) = {
+    val mediaPhotos =
+      fileIds.zipWithIndex.map { case (fileId, idx) =>
+        if (idx == 0)
+          TelegramInputMediaPhotoRequest(media = fileId, caption = Some(text))
+        else
+          TelegramInputMediaPhotoRequest(media = fileId)
+      }
+    val request = TelegramMediaGroupRequest(chatId, mediaPhotos)
+    SttpClient.postRequest(sendPhotoUrl, request)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramMessageResponse]])
   }

@@ -99,6 +99,7 @@ CREATE TABLE cards_of_day (
     spread_id UUID NOT NULL REFERENCES spreads(id) ON DELETE CASCADE,
     card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
     photo_id UUID NOT NULL REFERENCES photos(id),
+    title TEXT NOT NULL,
     description TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
     created_at TIMESTAMPTZ NOT NULL,

@@ -5,12 +5,13 @@ import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.application.commands.cardsOfDay.commands.CreateCardOfDayCommand
+import tarot.application.commands.channels.commands.CreateUserChannelCommand
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.*
-import tarot.domain.models.authorize.*
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.CardOfDayId
+import tarot.domain.models.channels.UserChannelId
 import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
 import tarot.domain.models.users.UserId
@@ -20,14 +21,13 @@ import zio.ZIO
 object TarotTestFixtures {
   final val resourcePath = "photos/test.png"
   
-  def createPhoto: ZIO[TarotEnv, TarotError, String] =
+  def createPhoto(chatId: Long): ZIO[TarotEnv, TarotError, String] =
     for {
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.services.fileStorageService)
-      telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramChannelService)
+      telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
       photo <- fileStorageService.getResourceFile(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
-      chatId <- getChatId
       photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
         .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
     } yield photoId
@@ -38,6 +38,13 @@ object TarotTestFixtures {
       userHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.userCommandHandler)
       userId <- userHandler.createAuthor(author)
     } yield userId
+
+  def createUserChannel(userId: UserId, chatId: Long): ZIO[TarotEnv, TarotError, UserChannelId] =
+    val userChannel = getUserChannelCommand(userId, chatId)
+    for {
+      userChannelCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.userChannelCommandHandler)
+      userChannelId <- userChannelCommandHandler.createUserChannel(userChannel)
+    } yield userChannelId
 
   def createToken(clientType: ClientType, clientSecret: String, userId: UserId): ZIO[TarotEnv, TarotError, String] =
     for {
@@ -70,12 +77,6 @@ object TarotTestFixtures {
       command = getCardOfDayCommand(cardId, spreadId, photo)
       cardOfDayId <- cardOfDayCommandHandler.createCardOfDay(command)
     } yield cardOfDayId
-
-  def getChatId: ZIO[TarotEnv, TarotError, Long] =
-    for {
-      telegramConfig <- ZIO.serviceWith[TarotEnv](_.config.telegram)
-      chatId <- ZIO.fromOption(telegramConfig.chatId).orElseFail(TarotError.NotFound("chatId not set"))
-    } yield chatId
     
   private def getAuthorCommand(clientId: String, clientType: ClientType, clientSecret: String) =
     CreateAuthorCommand(
@@ -83,7 +84,13 @@ object TarotTestFixtures {
       clientType = clientType,
       clientSecret = clientSecret,
       name = "test user")
-  
+
+  private def getUserChannelCommand(userId: UserId, chatId: Long): CreateUserChannelCommand =
+    CreateUserChannelCommand(
+      userId = userId,
+      chatId = chatId,
+      name = "test user channel")
+
   private def getSpreadCommand(userId: UserId, cardsCount: Int, photo: PhotoSource) =
     CreateSpreadCommand(
       userId = userId,
@@ -104,6 +111,7 @@ object TarotTestFixtures {
     CreateCardOfDayCommand(
       cardId = cardId,
       spreadId = spreadId,
+      title = "Test card of day",
       description = "Test card of day",
       photo = photo)
 }

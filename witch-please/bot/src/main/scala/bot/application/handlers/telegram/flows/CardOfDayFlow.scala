@@ -74,8 +74,8 @@ object CardOfDayFlow {
 
             cardId <- ZIO.fromOption(progress.createdPositions.find(_.position == position).map(_.cardId))
               .orElseFail(new RuntimeException("Card id in spread progress not found"))
-            _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayDescription(cardOfDayMode, cardId))
-            _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты дня")
+            _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayTitle(cardOfDayMode, cardId))
+            _ <- telegramApi.sendReplyText(context.chatId, s"Укажи название карты дня")
           } yield ()
         else {
           for {
@@ -86,18 +86,29 @@ object CardOfDayFlow {
         }
     } yield ()
 
-  def setCardOfDayDescription(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, description: String)(
+  def setCardOfDayTitle(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, title: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle card of day title from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayDescription(cardOfDayMode, cardId, title))
+      _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты дня")
+    } yield ()  
+
+  def setCardOfDayDescription(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, title: String, description: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card of day description from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, description))
+      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, title, description))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты дня")
     } yield ()
 
-  def setCardOfDayPhoto(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, description: String, fileId: String)(
+  def setCardOfDayPhoto(context: TelegramContext, cardOfDayMode: CardOfDayMode, cardId: UUID, title: String, description: String, fileId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card of day photo from chat ${context.chatId}")
@@ -111,14 +122,14 @@ object CardOfDayFlow {
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
       _ <- cardOfDayMode match {
         case CardOfDayMode.Create =>
-          val request = CardOfDayCreateRequest(cardId, description, photo)
+          val request = CardOfDayCreateRequest(cardId, description, title, photo)
           for {
             cardOfDayId <- tarotApi.createCardOfDay(request, spreadId, token)
             _ <- sessionService.setCardOfDay(context.chatId, cardOfDayId.id)
             _ <- telegramApi.sendText(context.chatId, s"Карта дня создана")
           } yield cardId
         case CardOfDayMode.Edit(cardOfDayId) =>
-          val request = CardOfDayUpdateRequest(cardId, description, photo)
+          val request = CardOfDayUpdateRequest(cardId, description, title, photo)
           for {
             _ <- tarotApi.updateCardOfDay(request, cardOfDayId, token)
             _ <- telegramApi.sendText(context.chatId, s"Карта дня обновлёна")

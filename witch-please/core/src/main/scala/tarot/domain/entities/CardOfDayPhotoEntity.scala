@@ -22,6 +22,7 @@ object CardOfDayPhotoEntity {
         id = CardOfDayId(cardOfDayPhoto.cardOfDay.id),
         cardId = CardId(cardOfDayPhoto.cardOfDay.cardId),
         spreadId = SpreadId(cardOfDayPhoto.cardOfDay.spreadId),
+        title = cardOfDayPhoto.cardOfDay.title,
         description = cardOfDayPhoto.cardOfDay.description,
         status = cardOfDayPhoto.cardOfDay.status,
         photo = photo,

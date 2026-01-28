@@ -19,13 +19,14 @@ import zio.test.TestAspect.sequential
 object SpreadDeleteSimpleIntegrationSpec extends ZIOSpecDefault {
   private final val cardsCount = 3
   private final val clientId = "123456789"
+  private final val chatId = 12345
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread delete simple API integration")(
     test("initialize test state") {
       for {
-        photoId <- TarotTestFixtures.createPhoto
+        photoId <- TarotTestFixtures.createPhoto(chatId)
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)       
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)

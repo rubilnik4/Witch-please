@@ -1,10 +1,8 @@
 package tarot.api.dto.tarot.cardOfDay
 
 import shared.api.dto.tarot.cardsOfDay.{CardOfDayCreateRequest, CardOfDayRequest, CardOfDayUpdateRequest}
-import shared.api.dto.tarot.cards.*
 import tarot.api.dto.tarot.photo.PhotoRequestMapper
 import tarot.application.commands.cardsOfDay.commands.*
-import tarot.application.commands.cards.commands.*
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.CardId
@@ -25,6 +23,7 @@ object CardOfDayRequestMapper {
     } yield CreateCardOfDayCommand(
       cardId = CardId(request.cardId),
       spreadId = spreadId,
+      title = request.title,
       description = request.description,
       photo = photo
     )
@@ -35,12 +34,14 @@ object CardOfDayRequestMapper {
     } yield UpdateCardOfDayCommand(
       cardOfDayId = cardOfDayId,
       cardId = CardId(request.cardId),
+      title = request.title,
       description = request.description,
       photo = photo
     )
     
   private def validate(request: CardOfDayRequest) = {
     for {
+      _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
       _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
     } yield ()
   }

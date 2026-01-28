@@ -7,7 +7,7 @@ import tarot.domain.models.{TarotError, TarotErrorMapper}
 import zio.ZIO
 
 final class PhotoServiceLive(telegram: TelegramApiService, storage: FileStorageService) extends PhotoService:
-  def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileStorage] =
+  override def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileStorage] =
     for {
       _ <- ZIO.logInfo(s"Downloading photo: $fileId")
       telegramFile <- telegram.downloadPhoto(fileId)

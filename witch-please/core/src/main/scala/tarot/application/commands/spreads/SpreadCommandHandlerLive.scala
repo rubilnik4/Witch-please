@@ -3,7 +3,7 @@ package tarot.application.commands.spreads
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.application.commands.spreads.commands.*
-import tarot.domain.models.TarotError
+import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.Card
 import tarot.domain.models.cardsOfDay.CardOfDay
@@ -53,11 +53,14 @@ final class SpreadCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Executing schedule spread command for spread ${command.spreadId}")
 
+      userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
       cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
       cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
-      spread <- spreadQueryHandler.getSpread(command.spreadId)
-
+      
+      _ <- userChannelQueryHandler.validateUserChannels(command.userId)
+      
+      spread <- spreadQueryHandler.getSpread(command.spreadId)      
       cards <- cardQueryHandler.getCards(spread.id)
       _ <- validatePublishing(spread, cards)
 
@@ -66,11 +69,18 @@ final class SpreadCommandHandlerLive(
       _ <- deleteCardsOnPublish(spread, cards)
     } yield ()
 
-  override def publishSpread(spreadId: SpreadId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
+  override def publishSpread(spread: Spread, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Executing publish command for spread $spreadId")
+      _ <- ZIO.logInfo(s"Executing publish command for spread ${spread.id}")
 
-      spreadStatusUpdate = SpreadStatusUpdate.Published(spreadId, publishAt)
+      userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+      userChannel <- userChannelQueryHandler.getUserChannelByProject(spread.projectId)
+
+      telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
+      _ <- telegramApiService.sendPhoto(userChannel.chatId, spread.photo.sourceId)
+        .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
+
+      spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
     } yield ()
 
@@ -109,7 +119,6 @@ final class SpreadCommandHandlerLive(
         ZIO.logError(s"Spread $spread.id is not in Draft or Scheduled status") *>
           ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft or Scheduled status"))
       }
-
 
       _ <- ZIO.when(cards.size < spread.cardsCount) {
         ZIO.logError(s"Spread ${spread.id} has only ${cards.size} out of ${spread.cardsCount} cards") *>

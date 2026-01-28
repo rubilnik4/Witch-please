@@ -67,7 +67,8 @@ object TarotTestRequests {
 
   def cardOfDayCreateRequest(cardId: UUID, photoId: String): CardOfDayCreateRequest =
     CardOfDayCreateRequest(
-      cardId = cardId,     
+      cardId = cardId,
+      title = "Card of day",
       description = "Card of day integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
@@ -75,6 +76,7 @@ object TarotTestRequests {
   def cardOfDayUpdateRequest(cardId: UUID, photoId: String): CardOfDayUpdateRequest =
     CardOfDayUpdateRequest(     
       cardId = cardId,
+      title = "Card of day",
       description = "Card of day integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )

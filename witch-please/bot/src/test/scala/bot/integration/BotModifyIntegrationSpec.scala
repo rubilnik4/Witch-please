@@ -72,7 +72,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
           .orElseFail(new RuntimeException("cardId not set"))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
-        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card")
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
@@ -205,7 +206,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
-        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card")
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)

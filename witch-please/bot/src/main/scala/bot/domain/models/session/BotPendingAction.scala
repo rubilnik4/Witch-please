@@ -13,5 +13,6 @@ enum BotPendingAction:
   case CardPhoto(cardMode: CardMode, title: String, description: String)
 
   case CardOfDayCardId(cardMode: CardOfDayMode)
-  case CardOfDayDescription(cardMode: CardOfDayMode, cardId: UUID)
-  case CardOfDayPhoto(cardMode: CardOfDayMode, cardId: UUID, description: String)
+  case CardOfDayTitle(cardMode: CardOfDayMode, cardId: UUID)
+  case CardOfDayDescription(cardMode: CardOfDayMode, cardId: UUID, title: String)
+  case CardOfDayPhoto(cardMode: CardOfDayMode, cardId: UUID, title: String, description: String)
