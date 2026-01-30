@@ -13,6 +13,7 @@ import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId}
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.integration.SpreadIntegrationSpec.test
+import tarot.integration.SpreadPublishIntegrationSpec.channelId
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -33,6 +34,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         photoId <- TarotTestFixtures.createPhoto(channelId)
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
+        _ <- TarotTestFixtures.createUserChannel(userId, channelId)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)
         cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoId)
         cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoId)
