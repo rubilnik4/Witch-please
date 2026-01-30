@@ -65,7 +65,8 @@ object SpreadEndpoint {
       }
 
   private val postSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint.post
+    endpoint
+      .post
       .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads)
       .in(jsonBody[SpreadCreateRequest])
       .out(jsonBody[IdResponse])
@@ -85,7 +86,8 @@ object SpreadEndpoint {
       }
 
   private val putSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint.put
+    endpoint
+      .put
       .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId"))
       .in(jsonBody[SpreadUpdateRequest])
       .out(emptyOutput)
@@ -105,7 +107,8 @@ object SpreadEndpoint {
       }
       
   private val deleteSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint.delete
+    endpoint
+      .delete
       .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId"))
       .out(emptyOutput)
       .errorOut(TapirError.tapirErrorOut)
@@ -123,7 +126,8 @@ object SpreadEndpoint {
       }
 
   private val publishSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
-    endpoint.put
+    endpoint
+      .put
       .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / "publish")
       .in(jsonBody[SpreadPublishRequest])
       .out(emptyOutput)

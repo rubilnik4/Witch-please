@@ -8,6 +8,7 @@ import shared.models.tarot.authorize.ClientType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
+import tarot.domain.models.channels.UserChannelId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestChannelState
@@ -19,7 +20,7 @@ import zio.test.TestAspect.sequential
 
 object ChannelIntegrationSpec extends ZIOSpecDefault {
   private final val clientId = "123456789"
-  private final val chatId = 12345
+  private final val channelId = 12345
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
 
@@ -42,10 +43,12 @@ object ChannelIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(ChannelEndpoint.endpoints)
-        channelRequest = TarotTestRequests.channelCreateRequest(chatId)
+        channelRequest = TarotTestRequests.channelCreateRequest(channelId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.channelCreatePath(""), channelRequest, token)
         response <- app.runZIO(request)
         userChannelId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
+
+        _ <- ref.set(state.withUserChannel(userChannelId))
       } yield assertTrue(userChannelId.toString.nonEmpty)
     },
 
@@ -54,14 +57,49 @@ object ChannelIntegrationSpec extends ZIOSpecDefault {
         ref <- ZIO.service[Ref.Synchronized[TestChannelState]]
         state <- ref.get
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        userChannelId <- ZIO.fromOption(state.userChannelId).orElseFail(TarotError.NotFound("channel not set"))
 
         app = ZioHttpInterpreter().toHttp(ChannelEndpoint.endpoints)
         request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.channelDefaultGetPath(""), token)
         response <- app.runZIO(request)
         userChannel <- ZIOHttpClient.getResponse[UserChannelResponse](response)
       } yield assertTrue(
-        userChannel.chatId == chatId
+        userChannel.id == userChannelId,
+        userChannel.channelId == channelId
       )
+    },
+
+    test("shouldn't create channel another channel") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestChannelState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+
+        app = ZioHttpInterpreter().toHttp(ChannelEndpoint.endpoints)
+        channelRequest = TarotTestRequests.channelCreateRequest(channelId)
+        request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.channelCreatePath(""), channelRequest, token)
+        response <- app.runZIO(request)
+      } yield assertTrue(
+        response.status == Status.Conflict
+      )
+    },
+
+    test("should update channel") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestChannelState]]
+        state <- ref.get
+        token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
+        userChannelId <- ZIO.fromOption(state.userChannelId).orElseFail(TarotError.NotFound("channel not set"))
+        channelIdUpdated = 54321
+
+        app = ZioHttpInterpreter().toHttp(ChannelEndpoint.endpoints)
+        channelRequest = TarotTestRequests.channelUpdateRequest(channelIdUpdated)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.channelUpdatePath("", userChannelId), channelRequest, token)
+        _ <- app.runZIO(request)
+
+        userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+        userChannel <- userChannelQueryHandler.getUserChannel(UserChannelId(userChannelId))
+      } yield assertTrue(userChannel.channelId == channelIdUpdated)
     },
   ).provideShared(
     Scope.default,

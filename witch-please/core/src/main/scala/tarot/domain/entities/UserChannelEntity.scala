@@ -11,7 +11,7 @@ import java.util.UUID
 final case class UserChannelEntity(
   id: UUID,
   userId: UUID,
-  chatId: Long,
+  channelId: Long,
   name: String,
   isDefault: Boolean,
   createdAt: Instant
@@ -22,7 +22,7 @@ object UserChannelEntity {
     UserChannel(
       id = UserChannelId(userChannel.id),
       userId = UserId(userChannel.userId),
-      chatId = userChannel.chatId,
+      channelId = userChannel.channelId,
       name = userChannel.name,
       isDefault = userChannel.isDefault,
       createdAt = userChannel.createdAt
@@ -32,7 +32,7 @@ object UserChannelEntity {
     UserChannelEntity(
       id = userChannel.id.id,
       userId = userChannel.userId.id,
-      chatId = userChannel.chatId,
+      channelId = userChannel.channelId,
       name = userChannel.name,
       isDefault = userChannel.isDefault,
       createdAt = userChannel.createdAt

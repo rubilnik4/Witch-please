@@ -88,7 +88,7 @@ object TarotTestFixtures {
   private def getUserChannelCommand(userId: UserId, chatId: Long): CreateUserChannelCommand =
     CreateUserChannelCommand(
       userId = userId,
-      chatId = chatId,
+      channelId = chatId,
       name = "test user channel")
 
   private def getSpreadCommand(userId: UserId, cardsCount: Int, photo: PhotoSource) =

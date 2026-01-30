@@ -5,6 +5,8 @@ import java.util.UUID
 object AuthorCommands {
   final val Prefix = "/author"
   final val Start = s"${Prefix}_start"
+  final val ChannelCreate = s"${Prefix}_channel_create"
+  final val ChannelEdit = s"${Prefix}_channel_edit"
   final val SpreadCreate = s"${Prefix}_spread_create"
   final val SpreadEdit = s"${Prefix}_spread_edit"
   final val SpreadSelect = s"${Prefix}_spread_select"
@@ -19,7 +21,10 @@ object AuthorCommands {
   final val CardOfDayCreate = s"${Prefix}_card_of_day_create"
   final val CardOfDayEdit = s"${Prefix}_card_of_day_edit"
   final val CardOfDayDelete = s"${Prefix}_card_of_day_delete"
-  
+
+  def channelEdit(userChannelId: UUID): String =
+    s"$ChannelEdit $userChannelId"
+    
   def spreadEdit(spreadId: UUID): String =
     s"$SpreadEdit $spreadId"
     

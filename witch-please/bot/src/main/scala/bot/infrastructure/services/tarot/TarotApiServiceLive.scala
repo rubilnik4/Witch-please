@@ -5,6 +5,7 @@ import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.authorize.*
 import shared.api.dto.tarot.cards.{CardCreateRequest, CardResponse, CardUpdateRequest}
 import shared.api.dto.tarot.cardsOfDay.{CardOfDayCreateRequest, CardOfDayResponse, CardOfDayUpdateRequest}
+import shared.api.dto.tarot.channels.{ChannelCreateRequest, ChannelUpdateRequest, UserChannelResponse}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
 import shared.api.dto.tarot.spreads.*
@@ -40,14 +41,14 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       response <- SttpClient.sendJson(client, userRequest)
     } yield response
 
-  override def getOrCreateUserId(request: UserCreateRequest): ZIO[Any, ApiError, UUID] =
-    getUserByClientId(request.clientId).map(_.id)
+  override def getOrCreateUserId(request: UserCreateRequest): ZIO[Any, ApiError, IdResponse] =
+    getUserByClientId(request.clientId).map(user => IdResponse(user.id))
       .catchSome {
         case ApiError.HttpCode(StatusCode.NotFound.code, _) =>
           for {
             _ <- ZIO.logDebug(s"User not found, creating new one: ${request.clientId}")
             idResponse <- createUser(request)
-          } yield idResponse.id
+          } yield idResponse
     }
 
   override def getAuthors: ZIO[Any, ApiError, List[AuthorResponse]] =
@@ -69,6 +70,37 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       response <- SttpClient.sendJson(client, authRequest)
     } yield response
 
+
+  override def getDefaultChannel(token: String): ZIO[Any, ApiError, Option[UserChannelResponse]] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get default channel request")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.channelDefaultGetPath(apiUrl.url))
+      userChannelRequest = SttpClient.getRequest(uri)
+        .response(asJsonEither[TarotErrorResponse, Option[UserChannelResponse]])
+      response <- SttpClient.sendJson(client, userChannelRequest)
+    } yield response
+
+  override def createChannel(request: ChannelCreateRequest, token: String): ZIO[Any, ApiError, IdResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending create channel ${request.channelId} request")
+  
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.channelCreatePath(apiUrl.url))
+      channelRequest = SttpClient.postAuthRequest(uri, request, token)
+        .response(asJsonEither[TarotErrorResponse, IdResponse])
+      response <- SttpClient.sendJson(client, channelRequest)
+    } yield response
+
+  override def updateChannel(request: ChannelUpdateRequest, userChannelId: UUID, token: String): ZIO[Any, ApiError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Sending update channel ${request.channelId} request: $userChannelId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.channelUpdatePath(apiUrl.url, userChannelId))
+      channelRequest = SttpClient.putAuthRequest(uri, request, token)
+        .response(SttpClient.asJsonNoContent[TarotErrorResponse])
+      _ <- SttpClient.sendNoContent(client, channelRequest)
+    } yield ()
+    
   override def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse] =
     for {
       _ <- ZIO.logDebug(s"Sending get spread request by spreadId: $spreadId")
@@ -227,5 +259,5 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       cardOfDayRequest = SttpClient.deleteAuthRequest(uri, token)
         .response(SttpClient.asJsonNoContent[TarotErrorResponse])
       response <- SttpClient.sendJson(client, cardOfDayRequest)
-    } yield response
+    } yield response  
 }

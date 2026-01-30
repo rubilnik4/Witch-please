@@ -25,32 +25,32 @@ object CardOfDayFlow {
         case BotPendingAction.CardOfDayCardId(mode) if mode == cardOfDayMode => () }
     } yield ()
 
-  def cardOfDayCardId(app: Routes[BotEnv, Response], chatId: Long, cardOfDayMode: CardOfDayMode, cardPosition: CardPosition): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def cardOfDayCardId(app: Routes[BotEnv, Response], chatId: Long, cardPosition: CardPosition): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, (cardPosition.position + 1).toString)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayTitle", chatId) {
-        case BotPendingAction.CardOfDayTitle(mode, cardId) if mode == cardOfDayMode && cardId == cardPosition.cardId => cardId }
+        case BotPendingAction.CardOfDayTitle(mode, cardId) if cardId == cardPosition.cardId => cardId }
     } yield ()
 
-  def cardOfDayTitle(app: Routes[BotEnv, Response], chatId: Long, cardOfDayMode: CardOfDayMode, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def cardOfDayTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, title)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayDescription", chatId) {
-        case BotPendingAction.CardOfDayDescription(mode, _, t) if mode == cardOfDayMode && t == title => title
+        case BotPendingAction.CardOfDayDescription(mode, _, t) if t == title => title
       }
     } yield ()
 
-  def cardOfDayDescription(app: Routes[BotEnv, Response], chatId: Long, cardOfDayMode: CardOfDayMode, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def cardOfDayDescription(app: Routes[BotEnv, Response], chatId: Long, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, description)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayPhoto", chatId) {
-        case BotPendingAction.CardOfDayPhoto(mode, _, _, d) if mode == cardOfDayMode && d == description => d }
+        case BotPendingAction.CardOfDayPhoto(mode, _, _, d) if d == description => d }
     } yield ()
 
   def selectCardOfDay(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =

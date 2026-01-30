@@ -17,9 +17,15 @@ import java.util.UUID
 object TarotTestRequests {
   def channelCreateRequest(chatId: Long): ChannelCreateRequest =
     ChannelCreateRequest(
-      chatId = chatId,
+      channelId = chatId,
       name = "test channel"
     )
+
+  def channelUpdateRequest(chatId: Long): ChannelUpdateRequest =
+    ChannelUpdateRequest(
+      channelId = chatId,
+      name = "test channel"
+    )  
 
   def spreadCreateRequest(cardCount: Int, photoId: String): SpreadCreateRequest =
     SpreadCreateRequest(

@@ -21,6 +21,7 @@ import zio.test.TestAspect.sequential
 object BotIntegrationSpec extends ZIOSpecDefault {
   final val resourcePath = "photos/test.png"
   final val cardsCount = 2
+  final val channelId = 54321
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Bot API integration")(
     test("initialize test state") {
@@ -87,6 +88,25 @@ object BotIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
+    test("create channel flow") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+        chatId <- BotTestFixtures.getChatId
+        channelMode = ChannelMode.Create
+
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        _ <- ChannelFlow.startChannel(app, chatId, channelMode)
+        _ <- ChannelFlow.channelChannelId(app, chatId, channelId)
+
+        session <- botSessionService.get(chatId)
+      } yield assertTrue(
+        session.channel.exists(_.channelId == channelId),
+        session.pending.isEmpty
+      )
+    },
+
     test("create spread flow") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
@@ -100,9 +120,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
           
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)        
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
-        _ <- SpreadFlow.spreadTitle(app, chatId, spreadMode, "Test spread")
-        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadMode, cardsCount)
-        _ <- SpreadFlow.spreadDescription(app, chatId, spreadMode, "Test spread")
+        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
+        _ <- SpreadFlow.spreadCardCount(app, chatId, cardsCount)
+        _ <- SpreadFlow.spreadDescription(app, chatId, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
@@ -128,8 +148,8 @@ object BotIntegrationSpec extends ZIOSpecDefault {
           val cardMode = CardMode.Create(position - 1)
           for {
             _ <- CardFlow.startCard(app, chatId, cardMode)
-            _ <- CardFlow.cardTitle(app, chatId, cardMode, "Test card")
-            _ <- CardFlow.cardDescription(app, chatId, cardMode, "Test card")
+            _ <- CardFlow.cardTitle(app, chatId, "Test card")
+            _ <- CardFlow.cardDescription(app, chatId, "Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
             _ <- CommonFlow.expectNoPending(chatId)
           } yield ()
@@ -160,9 +180,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
-        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
-        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
-        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
         _ <- CommonFlow.expectNoPending(chatId)
 

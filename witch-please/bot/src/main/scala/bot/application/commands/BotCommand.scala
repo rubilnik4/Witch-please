@@ -17,6 +17,8 @@ object BotCommand {
 
 object AuthorCommand {  
   case object Start extends AuthorCommand
+  case object CreateChannel extends AuthorCommand
+  final case class EditChannel(userChannelId: UUID) extends AuthorCommand
   case object CreateSpread extends AuthorCommand
   final case class EditSpread(spreadId: UUID) extends AuthorCommand
   final case class SelectSpread(spreadId: UUID) extends AuthorCommand

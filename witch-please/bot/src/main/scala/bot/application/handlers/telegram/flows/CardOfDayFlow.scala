@@ -25,8 +25,7 @@ object CardOfDayFlow {
       session <- sessionService.get(context.chatId)
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-
-      _ <- sessionService.clearCardOfDay(context.chatId)
+     
       cardOfDayMaybe <- tarotApi.getCardOfDayBySpread(spreadId, token)
       _ <- cardOfDayMaybe match {
         case None =>

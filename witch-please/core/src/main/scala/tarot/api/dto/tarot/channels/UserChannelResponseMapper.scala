@@ -16,7 +16,7 @@ object UserChannelResponseMapper {
   def toResponse(userChannel: UserChannel): UserChannelResponse =
     UserChannelResponse(
       id = userChannel.id.id,
-      chatId = userChannel.chatId,
+      channelId = userChannel.channelId,
       name = userChannel.name,
       createdAt = userChannel.createdAt,
     )

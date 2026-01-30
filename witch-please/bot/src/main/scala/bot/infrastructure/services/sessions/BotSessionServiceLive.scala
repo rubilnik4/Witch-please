@@ -54,6 +54,22 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withUser(session, userId, token, now))
     } yield ()
 
+  override def clearChannel(chatId: Long): ZIO[BotEnv, Throwable, Unit] = 
+    for {
+      _ <- ZIO.logDebug(s"Clear channel for chat $chatId")
+  
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.clearSpread(session, now))
+    } yield ()
+
+  override def setChannel(chatId: Long, channel: BotChannel): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Set channel ${channel.channelId} for chat $chatId")
+
+      now <- DateTimeService.getDateTimeNow
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withChannel(session, channel, now))
+    } yield ()
+    
   override def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Clear pending action for chat $chatId")

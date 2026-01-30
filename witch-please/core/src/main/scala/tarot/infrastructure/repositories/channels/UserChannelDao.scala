@@ -3,6 +3,7 @@ package tarot.infrastructure.repositories.channels
 import io.getquill.*
 import io.getquill.jdbczio.*
 import tarot.domain.entities.*
+import tarot.domain.models.channels.UserChannelUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.users.{UserProjectQuillMappings, UserQuillMappings}
 import zio.ZIO
@@ -23,7 +24,28 @@ final class UserChannelDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
-  def getUserChannel(userId: UUID): ZIO[Any, SQLException, Option[UserChannelEntity]] =
+  def updateUserChannel(userChannelId: UUID, userChannel: UserChannelUpdate): ZIO[Any, SQLException, Long] =
+    run(
+      quote {
+        userChannelTable
+          .filter(_.id == lift(userChannelId))
+          .update(
+            _.channelId -> lift(userChannel.channelId),
+            _.name -> lift(userChannel.name)
+          )
+      }
+    )
+
+  def getUserChannel(userChannelId: UUID): ZIO[Any, SQLException, Option[UserChannelEntity]] =
+    run(
+      quote {
+        userChannelTable
+          .filter(userChannelEntity => userChannelEntity.id == lift(userChannelId))
+          .take(1)
+      }
+    ).map(_.headOption)  
+
+  def getUserChannelByUser(userId: UUID): ZIO[Any, SQLException, Option[UserChannelEntity]] =
     run(
       quote {
         userChannelTable

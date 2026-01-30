@@ -12,7 +12,7 @@ import java.util.UUID
 final case class UserChannel(
   id: UserChannelId,
   userId: UserId,
-  chatId: Long,
+  channelId: Long,
   name: String,
   isDefault: Boolean,
   createdAt: Instant
@@ -25,7 +25,7 @@ object UserChannel {
       userChannel = UserChannel(
         id = UserChannelId(UUID.randomUUID()),
         userId = command.userId,
-        chatId = command.chatId,
+        channelId = command.channelId,
         name = command.name,
         isDefault = true,
         createdAt = createdAt)

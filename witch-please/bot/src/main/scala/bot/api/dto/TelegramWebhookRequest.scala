@@ -31,7 +31,8 @@ final case class TelegramMessageRequest(
   @jsonField("chat") chat: TelegramChatRequest,
   @jsonField("date") date: Long,
   @jsonField("text") text: Option[String] = None,
-  @jsonField("photo") photo: Option[List[TelegramPhotoSizeRequest]] = None
+  @jsonField("photo") photo: Option[List[TelegramPhotoSizeRequest]] = None,
+  @jsonField("forward_from_chat") forward: Option[TelegramChatRequest]
 ) derives JsonCodec, Schema
 
 final case class TelegramUserRequest(

@@ -35,6 +35,9 @@ case object TarotApiRoutes {
   def channelCreatePath(baseUrl: String): URL =
     make(baseUrl, apiPath, channels)
 
+  def channelUpdatePath(baseUrl: String, userChannelId: UUID): URL =
+    make(baseUrl, apiPath, channels, userChannelId.toString)  
+
   def channelDefaultGetPath(baseUrl: String): URL =
     make(baseUrl, apiPath, channels, "default")
     

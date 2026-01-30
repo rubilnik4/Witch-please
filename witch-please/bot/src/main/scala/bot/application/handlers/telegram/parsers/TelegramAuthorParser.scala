@@ -11,6 +11,15 @@ object TelegramAuthorParser {
     command.split("\\s+").toList match {
       case List(AuthorCommands.Start) =>
         AuthorCommand.Start
+      case List(AuthorCommands.ChannelCreate) =>
+        AuthorCommand.CreateChannel
+      case AuthorCommands.ChannelEdit :: userChannelIdStr :: Nil =>
+        Try(UUID.fromString(userChannelIdStr)).toOption match {
+          case Some(userChannelId) =>
+            AuthorCommand.EditChannel(userChannelId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case List(AuthorCommands.SpreadCreate) =>
         AuthorCommand.CreateSpread
       case AuthorCommands.SpreadEdit :: spreadIdStr :: Nil =>

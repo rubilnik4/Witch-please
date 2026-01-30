@@ -4,12 +4,13 @@ import java.util.UUID
 
 final case class TestChannelState(
   userId: Option[UUID],
-  token: Option[String]
+  token: Option[String],
+  userChannelId: Option[UUID]                               
 )
 
 object TestChannelState {
   val empty: TestChannelState =
-    TestChannelState(None, None)
+    TestChannelState(None, None, None)
     
   extension (state: TestChannelState)
     def withUserId(value: UUID): TestChannelState =
@@ -17,4 +18,7 @@ object TestChannelState {
 
     def withToken(value: String): TestChannelState =
       state.copy(token = Some(value))
+
+    def withUserChannel(value: UUID): TestChannelState =
+      state.copy(userChannelId = Some(value))  
 }

@@ -7,7 +7,8 @@ import java.time.*
 import java.util.UUID
 
 object TestTelegramWebhook {
-  private def getMessage(chatId: Long, text: Option[String], photo: Option[List[TelegramPhotoSizeRequest]]) =
+  private def getMessage(chatId: Long, text: Option[String], photo: Option[List[TelegramPhotoSizeRequest]],
+                         forward: Option[TelegramChatRequest]) =
     TelegramMessageRequest(
       messageId = 10L,
       from = Some(
@@ -30,13 +31,14 @@ object TestTelegramWebhook {
       ),
       date = Instant.now().getEpochSecond,
       text = text,
-      photo = photo
+      photo = photo,
+      forward = forward
     )
 
   def textRequest(chatId: Long, text: String): TelegramWebhookRequest =
     TelegramWebhookRequest(
       updateId = 1L,
-      message = Some(getMessage(chatId, Some(text), None)),
+      message = Some(getMessage(chatId, Some(text), None, None)),
       editedMessage = None,
       callbackQuery = None,
       inlineQuery = None
@@ -54,7 +56,23 @@ object TestTelegramWebhook {
     )
     TelegramWebhookRequest(
       updateId = 2L,
-      message = Some(getMessage(chatId, None, Some(photo))),
+      message = Some(getMessage(chatId, None, Some(photo), None)),
+      editedMessage = None,
+      callbackQuery = None,
+      inlineQuery = None
+    )
+  }
+
+  def forwardRequest(chatId: Long, channelId: Long): TelegramWebhookRequest = {
+    val forward = TelegramChatRequest(
+      id = channelId,
+      `type` = "channel",
+      title = Some("test_channel"),
+      username = Some("test_name")
+    )
+    TelegramWebhookRequest(
+      updateId = 3L,
+      message = Some(getMessage(chatId, None, None, Some(forward))),
       editedMessage = None,
       callbackQuery = None,
       inlineQuery = None
@@ -66,6 +84,12 @@ object TestTelegramWebhook {
 
   def startAuthorRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.Start)
+
+  def createChannelRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.ChannelCreate)
+
+  def updateChannelRequest(chatId: Long, userChannelId: UUID): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.channelEdit(userChannelId))  
     
   def createSpreadRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, s"${AuthorCommands.SpreadCreate}")

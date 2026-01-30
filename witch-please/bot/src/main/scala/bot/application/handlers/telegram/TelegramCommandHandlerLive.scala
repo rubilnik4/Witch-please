@@ -11,9 +11,11 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
         TelegramTextHandler.handle(context, text)
       case TelegramMessage.Photo(context, fileId) =>
         TelegramPhotoHandler.handle(context, fileId)
-      case TelegramMessage.Command(context, cmd) =>
-        TelegramRouterHandler.handle(context, cmd)
-      case _ =>
+      case TelegramMessage.Command(context, command) =>
+        TelegramRouterHandler.handle(context, command)
+      case TelegramMessage.Forward(context, channelId, channelName) =>
+        TelegramForwardHandler.handle(context, channelId,  channelName)
+      case TelegramMessage.Unknown() =>
         ZIO.logError("Unsupported telegram request type received")
     }    
 }

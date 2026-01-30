@@ -8,7 +8,7 @@ import java.util.UUID
 
 final case class UserChannelResponse(
   id: UUID,
-  chatId: Long,
+  channelId: Long,
   name: String,
   createdAt: Instant
 ) derives JsonCodec, Schema

@@ -55,10 +55,10 @@ object StartFlow {
 
       userRequest = UserCreateRequest(context.clientId.toString, session.clientSecret, username)
       userId <- tarotApi.getOrCreateUserId(userRequest)
-      authRequest = AuthRequest(ClientType.Telegram, userId, session.clientSecret)
+      authRequest = AuthRequest(ClientType.Telegram, userId.id, session.clientSecret)
       token <- tarotApi.tokenAuth(authRequest).map(_.token)
 
-      _ <- sessionService.setUser(context.chatId, userId, token)
+      _ <- sessionService.setUser(context.chatId, userId.id, token)
       _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username хозяйка таро!")
     }  yield token
 }

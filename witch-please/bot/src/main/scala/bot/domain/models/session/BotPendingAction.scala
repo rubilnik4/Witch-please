@@ -3,6 +3,8 @@ package bot.domain.models.session
 import java.util.UUID
 
 enum BotPendingAction:
+  case ChannelChannelId(channelMode: ChannelMode)
+
   case SpreadTitle(spreadMode: SpreadMode)
   case SpreadCardsCount(spreadMode: SpreadMode, title: String)
   case SpreadDescription(spreadMode: SpreadMode, title: String, cardCount: Int)

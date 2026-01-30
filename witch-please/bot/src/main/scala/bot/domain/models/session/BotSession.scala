@@ -9,6 +9,7 @@ final case class BotSession(
   clientSecret: String,
   token: Option[String],
   userId: Option[UUID],
+  channel: Option[BotChannel],
   pending: Option[BotPendingAction],
   spreadId: Option[UUID],
   spreadProgress: Option[SpreadProgress],
@@ -22,10 +23,21 @@ final case class BotSession(
 
 object BotSession {
   def newSession(clientSecret: String, now: Instant): BotSession =
-    BotSession(clientSecret, None, None, None, None, None, None, None, None, None, None, now)
+    BotSession(clientSecret, None, None, None, None, None, None, None, None, None, None, None, now)
 
   def withUser(session: BotSession, userId: UUID, token: String, now: Instant): BotSession =
     session.copy(userId = Some(userId), token = Some(token), updatedAt = now)
+
+  def clearChannel(session: BotSession, now: Instant): BotSession =
+    session.copy(
+      channel = None,
+      pending = None)
+
+  def withChannel(session: BotSession, channel: BotChannel, now: Instant): BotSession =
+    session.copy(
+      channel = Some(channel),
+      pending = None,
+      updatedAt = now)
 
   def withPending(session: BotSession, pending: Option[BotPendingAction], now: Instant): BotSession =
     session.copy(pending = pending, updatedAt = now)  

@@ -16,14 +16,15 @@ object TelegramPhotoHandler {
       session <- sessionService.get(context.chatId)
       _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action ${session.pending}")
       
-      _ <- session.pending match {
+      _ <- session.pending match {      
         case Some(BotPendingAction.SpreadPhoto(spreadMode, title, cardCount, description)) =>
           SpreadFlow.setSpreadPhoto(context, spreadMode, title, cardCount, description, fileId)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.CardPhoto(cardMode, title, description)) =>
           CardFlow.setCardPhoto(context, cardMode,  title, description, fileId)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, title, description)) =>
           CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, title, description, fileId)(telegramApi, tarotApi, sessionService)  
-        case None 
+        case None
+             | Some(BotPendingAction.ChannelChannelId(_))
              | Some(BotPendingAction.SpreadTitle(_)) | Some(BotPendingAction.SpreadCardsCount(_,_)) 
              | Some(BotPendingAction.SpreadDescription(_,_,_)) 
              | Some(BotPendingAction.CardTitle(_)) | Some(BotPendingAction.CardDescription(_,_))

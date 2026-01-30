@@ -44,6 +44,7 @@ object TelegramTextHandler {
         case Some(BotPendingAction.CardOfDayDescription(cardMode, cardId, title)) =>
           CardOfDayFlow.setCardOfDayDescription(context, cardMode, cardId, title, text)(telegramApi, tarotApi, sessionService)
         case None
+             | Some(BotPendingAction.ChannelChannelId(_))
              | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_))
              | Some(BotPendingAction.CardOfDayPhoto(_,_,_,_))=>
           for {

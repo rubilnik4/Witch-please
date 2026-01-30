@@ -19,6 +19,7 @@ import zio.test.TestAspect.sequential
 
 object BotModifyIntegrationSpec extends ZIOSpecDefault {
   final val cardsCount = 2
+  final val channelId = 54321
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Bot API modify integration")(
     test("initialize test state") {
@@ -35,9 +36,34 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), startAuthorRequest)
         _ <- app.runZIO(request)
 
+        channelMode = ChannelMode.Create
+        _ <- ChannelFlow.startChannel(app, chatId, channelMode)
+        _ <- ChannelFlow.channelChannelId(app, chatId, 11111)
+
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         _ <- ref.set(TestBotState(Some(photoId), None))
       } yield assertTrue(photoId.nonEmpty)
+    },
+
+    test("update channel flow") {
+      for {
+        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
+        state <- ref.get
+        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+        chatId <- BotTestFixtures.getChatId
+        session <- botSessionService.get(chatId)
+        channel <- ZIO.fromOption(session.channel).orElseFail(new RuntimeException("channel not set"))
+
+        channelMode = ChannelMode.Edit(channel.userChannelId)
+        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
+        _ <- ChannelFlow.startChannel(app, chatId, channelMode)
+        _ <- ChannelFlow.channelChannelId(app, chatId, channelId)
+
+        session <- botSessionService.get(chatId)
+      } yield assertTrue(
+        session.channel.exists(_.channelId == channelId),
+        session.pending.isEmpty
+      )
     },
 
     test("create spread with cards flow and card of day") {
@@ -53,16 +79,16 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         spreadMode = SpreadMode.Create
         spreadCardsCount = cardsCount + 1
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
-        _ <- SpreadFlow.spreadTitle(app, chatId, spreadMode, "Test spread")
-        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadMode, spreadCardsCount)
-        _ <- SpreadFlow.spreadDescription(app, chatId, spreadMode, "Test spread")
+        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
+        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadCardsCount)
+        _ <- SpreadFlow.spreadDescription(app, chatId, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
         _ <- ZIO.foreachDiscard(1 to spreadCardsCount) { position =>
           val cardMode = CardMode.Create(position - 1)
           for {
             _ <- CardFlow.startCard(app, chatId, cardMode)
-            _ <- CardFlow.cardTitle(app, chatId, cardMode, "Test card")
-            _ <- CardFlow.cardDescription(app, chatId, cardMode, "Test card")
+            _ <- CardFlow.cardTitle(app, chatId, "Test card")
+            _ <- CardFlow.cardDescription(app, chatId, "Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
           } yield ()
         }
@@ -71,9 +97,9 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
           .orElseFail(new RuntimeException("cardId not set"))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
-        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
-        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
-        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
@@ -126,9 +152,9 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         spreadMode = SpreadMode.Edit(spreadId)
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
-        _ <- SpreadFlow.spreadTitle(app, chatId, spreadMode, "Test spread")
-        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadMode, cardsCount)
-        _ <- SpreadFlow.spreadDescription(app, chatId, spreadMode, "Test spread")
+        _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
+        _ <- SpreadFlow.spreadCardCount(app, chatId, cardsCount)
+        _ <- SpreadFlow.spreadDescription(app, chatId, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)
@@ -155,8 +181,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         cardMode = CardMode.Edit(cardId)
         _ <- CardFlow.startCard(app, chatId, cardMode)
-        _ <- CardFlow.cardTitle(app, chatId, cardMode, "Test card")
-        _ <- CardFlow.cardDescription(app, chatId, cardMode, "Test card")
+        _ <- CardFlow.cardTitle(app, chatId, "Test card")
+        _ <- CardFlow.cardDescription(app, chatId, "Test card")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
         _ <- CommonFlow.expectNoPending(chatId)
 
@@ -205,9 +231,9 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         cardOfDayMode = CardOfDayMode.Edit(cardOfDayId)
         cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
-        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardOfDayMode, cardPosition)
-        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, cardOfDayMode, "Test card of day")
-        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, cardOfDayMode, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
+        _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, "Test card of day")
+        _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
         session <- botSessionService.get(chatId)

@@ -44,6 +44,10 @@ object TelegramRouterHandler {
         _ <- command match {
           case AuthorCommand.Start =>
             StartFlow.handleAuthorStart(context)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.CreateChannel =>
+            ChannelFlow.createChannel(context)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.EditChannel(userChannelId) =>
+            ChannelFlow.editChannel(context, userChannelId)(telegramApi, sessionService)
           case AuthorCommand.CreateSpread =>
             SpreadFlow.createSpread(context)(telegramApi, sessionService)
           case AuthorCommand.EditSpread(spreadId) =>

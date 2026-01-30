@@ -27,21 +27,21 @@ object CardFlow {
         case BotPendingAction.CardTitle(mode) if mode == cardMode => () }
     } yield ()
 
-  def cardTitle(app: Routes[BotEnv, Response], chatId: Long, cardMode: CardMode, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def cardTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, title)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardDescription", chatId) {
-        case BotPendingAction.CardDescription(mode, t) if mode == cardMode && t == title => t }
+        case BotPendingAction.CardDescription(mode, t) if t == title => t }
     } yield ()
 
-  def cardDescription(app: Routes[BotEnv, Response], chatId: Long, cardMode: CardMode, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
+  def cardDescription(app: Routes[BotEnv, Response], chatId: Long, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
     val postRequest = TestTelegramWebhook.textRequest(chatId, description)
     val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardPhoto", chatId) {
-        case BotPendingAction.CardPhoto(mode, _, d) if mode == cardMode && d == description => d }
+        case BotPendingAction.CardPhoto(mode, _, d) if d == description => d }
     } yield ()
 }
