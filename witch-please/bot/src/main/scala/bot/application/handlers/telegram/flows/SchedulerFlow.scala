@@ -104,8 +104,7 @@ object SchedulerFlow {
         TelegramInlineKeyboardButton("Подтвердить", Some(SchedulerCommands.Confirm))
       )
 
-      text =
-        s"Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)} " +
+      text = s"Время публикации: ${DateFormatter.fromLocalDate(date)} ${DateFormatter.fromLocalTime(time)} " +
           s"и картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}. Подтвердить?"
       _ <- telegramApi.sendInlineButtons(context.chatId, text, buttons)
     } yield ()

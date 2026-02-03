@@ -1,5 +1,6 @@
 package shared.api.dto.tarot
 
+import shared.api.dto.ApiRoutes
 import zio.*
 import zio.http.*
 
@@ -15,83 +16,75 @@ case object TarotApiRoutes {
   val users ="users"
   val channels = "channel"
 
-  private def make(baseUrl: String, segments: String*): URL = {
-    val base = baseUrl.stripSuffix("/")
-    val path = segments.map(_.stripPrefix("/")).mkString("/")
-    URL.decode(s"$base/$path").getOrElse {
-      throw new IllegalArgumentException(s"Invalid URL: $base/$path")
-    }
-  }  
-
   def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
-    make(baseUrl, apiPath, users, "by-client", clientId)
+    ApiRoutes.make(baseUrl, apiPath, users, "by-client", clientId)
 
   def authorCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, authors)
+    ApiRoutes.make(baseUrl, apiPath, authors)
     
   def authorsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, authors)
+    ApiRoutes.make(baseUrl, apiPath, authors)
 
   def channelCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, channels)
+    ApiRoutes.make(baseUrl, apiPath, channels)
 
   def channelUpdatePath(baseUrl: String, userChannelId: UUID): URL =
-    make(baseUrl, apiPath, channels, userChannelId.toString)  
+    ApiRoutes.make(baseUrl, apiPath, channels, userChannelId.toString)
 
   def channelDefaultGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, channels, "default")
+    ApiRoutes.make(baseUrl, apiPath, channels, "default")
     
   def spreadCreatePath(baseUrl: String): URL =
-    make(baseUrl, apiPath, spreads)
+    ApiRoutes.make(baseUrl, apiPath, spreads)
 
-  def spreadGetPath(baseUrl: String, spreadId: UUID): URL =    
-    make(baseUrl, apiPath, spreads, spreadId.toString)
+  def spreadGetPath(baseUrl: String, spreadId: UUID): URL =
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString)
     
   def spreadsGetPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, spreads)
+    ApiRoutes.make(baseUrl, apiPath, spreads)
 
   def spreadUpdatePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString)
     
   def spreadPublishPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, "publish")
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, "publish")
 
   def spreadDeletePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString)
     
   def cardCreatePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cards)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cards)
 
   def cardUpdatePath(baseUrl: String, cardId: UUID): URL =
-    make(baseUrl, apiPath, cards, cardId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cards, cardId.toString)
 
   def cardDeletePath(baseUrl: String, cardId: UUID): URL =
-    make(baseUrl, apiPath, cards, cardId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cards, cardId.toString)
 
   def cardGetPath(baseUrl: String, cardId: UUID): URL =
-    make(baseUrl, apiPath, cards, cardId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cards, cardId.toString)
 
   def cardsGetPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cards)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cards)
 
   def cardsCountGetPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cards, "count")
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cards, "count")
 
   def cardOfDayCreatePath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
 
   def cardOfDayUpdatePath(baseUrl: String, cardOfDayId: UUID): URL =
-    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
 
   def cardOfDayDeletePath(baseUrl: String, cardOfDayId: UUID): URL =
-    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
 
   def cardOfDayGetPath(baseUrl: String, cardOfDayId: UUID): URL =
-    make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
+    ApiRoutes.make(baseUrl, apiPath, cardsOfDay, cardOfDayId.toString)
     
   def cardOfDayBySpreadGetPath(baseUrl: String, spreadId: UUID): URL =
-    make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
+    ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
 
   def tokenAuthPath(baseUrl: String): URL =
-    make(baseUrl, apiPath, TarotApiRoutes.auth)
+    ApiRoutes.make(baseUrl, apiPath, TarotApiRoutes.auth)
 }

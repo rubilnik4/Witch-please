@@ -7,17 +7,18 @@ object AuthorCommands {
   final val Start = s"${Prefix}_start"
   final val ChannelCreate = s"${Prefix}_channel_create"
   final val ChannelEdit = s"${Prefix}_channel_edit"
+  final val SpreadsSelect = s"${Prefix}_spreads_select"
   final val SpreadCreate = s"${Prefix}_spread_create"
   final val SpreadEdit = s"${Prefix}_spread_edit"
-  final val SpreadSelect = s"${Prefix}_spread_select"
-  final val SpreadCardsSelect = s"${Prefix}_spread_cards_select"
-  final val SpreadCardOfDaySelect = s"${Prefix}_spread_cod_select"
+  final val SpreadSelect = s"${Prefix}_spread_select" 
   final val SpreadPublish = s"${Prefix}_spread_publish"
   final val SpreadDelete = s"${Prefix}_spread_delete"
+  final val CardsSelect = s"${Prefix}_cards_select"
   final val CardCreate = s"${Prefix}_card_create"
   final val CardEdit = s"${Prefix}_card_edit"
   final val CardDelete = s"${Prefix}_card_delete"
   final val CardSelect = s"${Prefix}_card_select"
+  final val CardOfDaySelect = s"${Prefix}_card_of_day_select"
   final val CardOfDayCreate = s"${Prefix}_card_of_day_create"
   final val CardOfDayEdit = s"${Prefix}_card_of_day_edit"
   final val CardOfDayDelete = s"${Prefix}_card_of_day_delete"
@@ -32,10 +33,10 @@ object AuthorCommands {
     s"$SpreadSelect $spreadId"
 
   def spreadCardsSelect(spreadId: UUID): String =
-    s"$SpreadCardsSelect $spreadId"
+    s"$CardsSelect $spreadId"
 
   def spreadCardOfDaySelect(spreadId: UUID): String =
-    s"$SpreadCardOfDaySelect $spreadId"
+    s"$CardOfDaySelect $spreadId"
 
   def spreadPublish(spreadId: UUID): String =
     s"$SpreadPublish $spreadId"

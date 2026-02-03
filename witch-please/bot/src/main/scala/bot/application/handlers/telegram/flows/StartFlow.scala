@@ -33,7 +33,7 @@ object StartFlow {
         .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
       token <- setUser(context, username)(telegramApi, tarotApi, sessionService)
 
-      _ <- SpreadFlow.selectSpreads(context)(telegramApi, tarotApi, sessionService)
+      _ <- ChannelFlow.selectChannel(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def handleClientStart(context: TelegramContext)(

@@ -19,7 +19,9 @@ object TelegramAuthorParser {
             AuthorCommand.EditChannel(userChannelId)
           case _ =>
             BotCommand.Unknown
-        }  
+        }
+      case List(AuthorCommands.SpreadsSelect) =>
+        AuthorCommand.SelectSpreads 
       case List(AuthorCommands.SpreadCreate) =>
         AuthorCommand.CreateSpread
       case AuthorCommands.SpreadEdit :: spreadIdStr :: Nil =>
@@ -36,17 +38,17 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
-      case AuthorCommands.SpreadCardsSelect :: spreadIdStr :: Nil =>
+      case AuthorCommands.CardsSelect :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>
-            AuthorCommand.SelectSpreadCards(spreadId)
+            AuthorCommand.SelectCards(spreadId)
           case _ =>
             BotCommand.Unknown
         }
-      case AuthorCommands.SpreadCardOfDaySelect :: spreadIdStr :: Nil =>
+      case AuthorCommands.CardOfDaySelect :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>
-            AuthorCommand.SelectSpreadCardOfDay(spreadId)
+            AuthorCommand.SelectCardOfDay(spreadId)
           case _ =>
             BotCommand.Unknown
         }  

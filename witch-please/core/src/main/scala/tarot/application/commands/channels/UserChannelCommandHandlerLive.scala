@@ -20,6 +20,9 @@ final class UserChannelCommandHandlerLive(
         ZIO.logError(s"Can't create user channel. User ${command.userId} already has channel") *>
           ZIO.fail(TarotError.Conflict(s"Can't create user channel. User ${command.userId} already has channel"))
       )
+
+      userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+      _ <- userChannelQueryHandler.validateChannel(command.channelId)
       
       userChannel <- UserChannel.toDomain(command)
       userChannelId <- userChannelRepository.createUserChannel(userChannel)
@@ -27,7 +30,10 @@ final class UserChannelCommandHandlerLive(
 
   override def updateUserChannel(command: UpdateUserChannelCommand): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Executing update channel ${command.channelId} command for user channel ${command.userChannelId}")    
+      _ <- ZIO.logInfo(s"Executing update channel ${command.channelId} command for user channel ${command.userChannelId}")
+
+      userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+      _ <- userChannelQueryHandler.validateChannel(command.channelId)
 
       userChannel = UserChannelUpdate.toDomain(command)
       userChannelId <- userChannelRepository.updateUserChannel(command.userChannelId, userChannel)

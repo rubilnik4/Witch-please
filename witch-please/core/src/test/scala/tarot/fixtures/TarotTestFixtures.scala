@@ -28,8 +28,7 @@ object TarotTestFixtures {
       photo <- fileStorageService.getResourceFile(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
-      photoId <- telegramApiService.sendPhoto(chatId, telegramFile)
-        .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
+      photoId <- telegramApiService.sendPhoto(chatId, telegramFile).mapError(TarotErrorMapper.toTarotError)
     } yield photoId
 
   def createUser(clientId: String, clientType: ClientType, clientSecret: String): ZIO[TarotEnv, TarotError, UserId] =

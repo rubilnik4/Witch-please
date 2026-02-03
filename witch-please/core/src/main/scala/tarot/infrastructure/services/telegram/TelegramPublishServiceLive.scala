@@ -17,14 +17,12 @@ final class TelegramPublishServiceLive extends TelegramPublishService:
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
 
       text = buildSpreadText(spread, cards)
-      _ <- telegramApiService.sendText(chatId, text)
-        .mapError(err => TarotErrorMapper.toTarotError("TelegramPublishServiceLive", err))
+      _ <- telegramApiService.sendText(chatId, text).mapError(TarotErrorMapper.toTarotError)
 
       caption = s"🖼️ Расклад: ${spread.title}"
       photos = spread.photo :: cards.map(_.photo)
       fileIds <- ZIO.foreach(photos)(getTelegramPhotoId)
-      _ <- telegramApiService.sendPhotos(chatId, caption, fileIds)
-        .mapError(error => TarotErrorMapper.toTarotError("TelegramPublishServiceLive", error))
+      _ <- telegramApiService.sendPhotos(chatId, caption, fileIds).mapError(TarotErrorMapper.toTarotError)
     } yield ()
 
   override def publishCardOfDay(chatId: Long, cardOfDay: CardOfDay): ZIO[TarotEnv, TarotError, Unit] =
@@ -34,13 +32,11 @@ final class TelegramPublishServiceLive extends TelegramPublishService:
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
 
       text = buildCardOfDayText(cardOfDay)
-      _ <- telegramApiService.sendText(chatId,text)
-        .mapError(err => TarotErrorMapper.toTarotError("TelegramPublishServiceLive", err))
+      _ <- telegramApiService.sendText(chatId,text).mapError(TarotErrorMapper.toTarotError)
 
       caption = s"🃏 Карта дня: ${cardOfDay.title}"
       fileId <- getTelegramPhotoId(cardOfDay.photo)      
-      _ <- telegramApiService.sendPhotos(chatId, caption, List(fileId))
-        .mapError(error => TarotErrorMapper.toTarotError("TelegramPublishServiceLive", error))
+      _ <- telegramApiService.sendPhotos(chatId, caption, List(fileId)).mapError(TarotErrorMapper.toTarotError)
     } yield ()
     
   private def getTelegramPhotoId(photo: Photo) =

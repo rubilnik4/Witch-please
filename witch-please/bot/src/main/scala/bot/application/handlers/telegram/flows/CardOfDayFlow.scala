@@ -177,8 +177,6 @@ object CardOfDayFlow {
         s""" Карта дня”
            | Номер карты: $positionText
            | Публикация: ${getScheduledText(cardOfDay)}
-           |
-           |Выбери действие:
            |""".stripMargin
 
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)

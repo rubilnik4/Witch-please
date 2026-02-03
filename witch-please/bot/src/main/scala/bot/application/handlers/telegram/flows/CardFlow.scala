@@ -175,8 +175,6 @@ object CardFlow {
 
     val summaryText =
       s""" Карта: “${card.title}”
-         |
-         |Выбери действие:
          |""".stripMargin
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)

@@ -1,12 +1,12 @@
 package tarot.application.queries.channels
 
-import shared.models.tarot.spreads.SpreadStatus
-import tarot.domain.models.TarotError
+import shared.api.dto.telegram.TelegramChatMemberStatus
+import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.channels.{UserChannel, UserChannelId}
 import tarot.domain.models.projects.ProjectId
-import tarot.domain.models.users.{Author, User, UserId}
+import tarot.domain.models.users.UserId
+import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.infrastructure.repositories.channels.UserChannelRepository
-import tarot.infrastructure.repositories.users.*
 import tarot.layers.TarotEnv
 import zio.ZIO
 
@@ -50,4 +50,17 @@ final class UserChannelQueryHandlerLive(
       }
     } yield()
 
+  override def validateChannel(channelId: Long): ZIO[TarotEnv, TarotError, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Executing validate channel query by channelId $channelId")
+
+      telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
+      bot <- telegramApiService.getBot.mapError(TarotErrorMapper.toTarotError)
+      _ <- telegramApiService.getChat(channelId).mapError(TarotErrorMapper.toTarotError)
+      chatMember <- telegramApiService.getChatMember(channelId, bot.id).mapError(TarotErrorMapper.toTarotError)
+
+      _ <- ZIO.fail(ValidationError(s"Telegram bot doesn't has admin permissions in channel $channelId")).unless {
+        chatMember.status == TelegramChatMemberStatus.Administrator || chatMember.status == TelegramChatMemberStatus.Creator
+      }
+    } yield ()
 }

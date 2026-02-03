@@ -76,7 +76,7 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       _ <- ZIO.logDebug(s"Sending get default channel request")
 
       uri <- SttpClient.toSttpUri(TarotApiRoutes.channelDefaultGetPath(apiUrl.url))
-      userChannelRequest = SttpClient.getRequest(uri)
+      userChannelRequest = SttpClient.getAuthRequest(uri, token)
         .response(asJsonEither[TarotErrorResponse, Option[UserChannelResponse]])
       response <- SttpClient.sendJson(client, userChannelRequest)
     } yield response

@@ -14,8 +14,8 @@ object TarotErrorResponseMapper {
       TarotErrorResponse.InternalServerError(s"Database error: $msg", Some(ex.getMessage))
     case TarotError.CacheError(msg, ex) =>
       TarotErrorResponse.InternalServerError(s"Cache error: $msg", Some(ex.getMessage))
-    case TarotError.ApiError(provider, code, msg) =>
-      TarotErrorResponse.InternalServerError(s"External API error from $provider with code $code: $msg",
+    case TarotError.ApiError(code, msg) =>
+      TarotErrorResponse.InternalServerError(s"External API error with code $code: $msg",
         Some("External API call failed"))
     case TarotError.ServiceUnavailable(service, ex) =>
       TarotErrorResponse.InternalServerError(s"Service '$service' is currently unavailable", Some(ex.getMessage))

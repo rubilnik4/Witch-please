@@ -17,6 +17,34 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
   private final val sendMessageUrl = uri"$baseUrl/sendMessage"
   private final val sendPhotoUrl = uri"$baseUrl/sendPhoto"
 
+
+  override def getBot: ZIO[Any, ApiError, TelegramBotResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Getting bot info")
+
+      request = getBotRequest
+      response <- SttpClient.sendJson(client, request)
+      bot <- TelegramApi.getTelegramResponse(response)
+    } yield bot
+
+  override def getChat(chatId: Long): ZIO[Any, ApiError, TelegramChatResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Getting chat info for chatId $chatId")
+
+      request = getChatRequest(chatId)
+      response <- SttpClient.sendJson(client, request)
+      chat <- TelegramApi.getTelegramResponse(response)
+    } yield chat
+
+  override def getChatMember(chatId: Long, userId: Long): ZIO[Any, ApiError, TelegramChatMemberResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Getting chat member for chatId $chatId")
+
+      request = getChatMemberRequest(chatId, userId)
+      response <- SttpClient.sendJson(client, request)
+      chatMember <- TelegramApi.getTelegramResponse(response)
+    } yield chatMember
+
   override def sendText(chatId: Long, text: String): ZIO[Any, ApiError, Long] = {
     for {
       _ <- ZIO.logDebug(s"Sending text message to chat $chatId: $text")
@@ -118,16 +146,33 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
 
   private def getFileRequest(fileId: String) = {
     val uri = uri"$baseUrl/getFile?file_id=$fileId"
-    basicRequest
-      .get(uri)
+    SttpClient.getRequest(uri)
       .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramFileResponse]])
   }
 
   private def getDownloadImageRequest(filePath: String) = {
     val uri = uri"$fileBaseUrl/$filePath"
-    basicRequest
-      .get(uri)
+    SttpClient.getRequest(uri)
       .response(asByteArray)
+  }
+
+  private def getBotRequest = {
+    val uri = uri"${ApiRoutes.make(baseUrl, "getMe")}"
+    SttpClient.getRequest(uri)
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramBotResponse]])
+  }
+
+  private def getChatRequest(chatId: Long) = {
+    val uri = uri"${ApiRoutes.make(baseUrl, Seq("getChat"), Map("chat_id" -> chatId.toString))}"
+    SttpClient.getRequest(uri)
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramChatResponse]])
+  }
+
+  private def getChatMemberRequest(chatId: Long, userId: Long) = {
+    val uri = uri"${ApiRoutes.make(baseUrl, Seq("getChatMember"),
+      Map("chat_id" -> chatId.toString, "user_id" -> userId.toString))}"
+    SttpClient.getRequest(uri)
+      .response(asJsonEither[TelegramErrorResponse, TelegramResponse[TelegramChatMemberResponse]])
   }
 
   private def getSendTextRequest(chatId: Long, text: String) = {

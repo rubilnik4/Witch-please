@@ -1,11 +1,9 @@
 package tarot.infrastructure.repositories.channels
 
 import tarot.domain.models.TarotError
-import tarot.domain.models.authorize.*
-import tarot.domain.models.cardsOfDay.{CardOfDayId, CardOfDayUpdate}
 import tarot.domain.models.channels.{UserChannel, UserChannelId, UserChannelUpdate}
 import tarot.domain.models.projects.ProjectId
-import tarot.domain.models.users.{User, UserId}
+import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
 

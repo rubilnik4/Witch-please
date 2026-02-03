@@ -192,8 +192,7 @@ object SpreadFlow {
            | Создано карт: $cardsPositions
            | Номер карты дня: $cardOfDayText
            | Публикация: ${getScheduledText(spread)}
-           |
-           |Выбери действие:
+           | Публикация карты дня: ${getCardOfDayScheduledText(cardOfDay)}
            |""".stripMargin
    
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
@@ -204,4 +203,10 @@ object SpreadFlow {
       case Some(scheduledAt) => DateFormatter.fromInstant(scheduledAt)
       case None => "—"
   }
+
+  private def getCardOfDayScheduledText(cardOfDay: Option[CardOfDayResponse]) =
+    cardOfDay.flatMap(_.scheduledAt) match {
+      case Some(scheduledAt) => DateFormatter.fromInstant(scheduledAt)
+      case None => "—"
+    }
 }

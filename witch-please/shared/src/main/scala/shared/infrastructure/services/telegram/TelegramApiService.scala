@@ -6,6 +6,9 @@ import shared.models.telegram.*
 import zio.ZIO
 
 trait TelegramApiService {
+  def getBot: ZIO[Any, ApiError, TelegramBotResponse]
+  def getChat(chatId: Long): ZIO[Any, ApiError, TelegramChatResponse]
+  def getChatMember(chatId: Long, userId: Long): ZIO[Any, ApiError, TelegramChatMemberResponse]
   def sendText(chatId: Long, text: String): ZIO[Any, ApiError, Long]
   def sendReplyText(chatId: Long, text: String): ZIO[Any, ApiError, Long]
   def sendButton(chatId: Long, text: String, button: TelegramKeyboardButton): ZIO[Any, ApiError, Long]

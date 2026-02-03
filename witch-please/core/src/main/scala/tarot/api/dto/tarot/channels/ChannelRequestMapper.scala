@@ -1,18 +1,11 @@
 package tarot.api.dto.tarot.channels
 
 import shared.api.dto.tarot.channels.*
-import shared.api.dto.tarot.users.*
-import shared.models.tarot.authorize.ClientType
-import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.application.commands.channels.commands.{CreateUserChannelCommand, UpdateUserChannelCommand}
-import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.channels.UserChannelId
-import tarot.domain.models.spreads.SpreadId
 import tarot.domain.models.users.UserId
-import zio.json.*
-import zio.schema.*
 import zio.{IO, ZIO}
 
 object ChannelRequestMapper {
@@ -38,7 +31,6 @@ object ChannelRequestMapper {
 
   private def validate(request: ChannelRequest) = {
     for {
-      _ <- ZIO.fail(ValidationError("chatId must be positive number")).when(request.channelId <= 0)
       _ <- ZIO.fail(ValidationError("name must not be empty")).when(request.name.isEmpty)
     } yield ()
   }  

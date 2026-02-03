@@ -9,6 +9,7 @@ import bot.layers.BotEnv
 import shared.api.dto.tarot.channels.*
 import shared.api.dto.telegram.*
 import shared.infrastructure.services.telegram.TelegramApiService
+import shared.models.api.ApiError
 import zio.ZIO
 
 import java.util.UUID
@@ -71,14 +72,14 @@ object ChannelFlow {
         case ChannelMode.Create =>
           val request = ChannelCreateRequest(channelId, name)
           for {
-            userChannelId <- tarotApi.createChannel(request, token)
+            userChannelId <- tarotApi.createChannel(request, token).validateChannel(telegramApi, context)
             _ <- sessionService.setChannel(context.chatId, BotChannel(userChannelId.id, channelId))
             _ <- telegramApi.sendText(context.chatId, s"Канал привязан")
           } yield userChannelId
         case ChannelMode.Edit(userChannelId) =>
           val request = ChannelUpdateRequest(channelId, name)
           for {
-            _ <- tarotApi.updateChannel(request, userChannelId, token)
+            _ <- tarotApi.updateChannel(request, userChannelId, token).validateChannel(telegramApi, context)
             _ <- sessionService.setChannel(context.chatId, BotChannel(userChannelId, channelId))
             _ <- telegramApi.sendText(context.chatId, s"Канал обновлен")
           } yield userChannelId
@@ -92,23 +93,31 @@ object ChannelFlow {
     for {
       _ <- sessionService.clearChannel(context.chatId)
       _ <- sessionService.setPending(context.chatId, BotPendingAction.ChannelChannelId(channelMode))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Добавь бот в свой канал и отправь ему любое сообщение")
+      _ <- telegramApi.sendText(context.chatId, s"Добавь бот в свой канал и перешли ему любой пост из этого канала")
     } yield ()
 
   private def showChannel(context: TelegramContext, userChannel: UserChannelResponse)(
     telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    val spreadsButton = TelegramInlineKeyboardButton("➡ К раскладам", Some(AuthorCommands.SpreadsSelect))
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.channelEdit(userChannel.id)))
-    val buttons = List(editButton)
+    val buttons = List(spreadsButton, editButton)
 
     val summaryText =
-      s""" Канал”
+      s""" Канал
          | Название: ${userChannel.name}
-         | Идентификатор: ${userChannel.channelId}
-         |
-         |Выбери действие:
          |""".stripMargin
 
     for {
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
+
+  extension [A](zio: ZIO[BotEnv, ApiError, A])
+    private def validateChannel(telegramApi: TelegramApiService, context: TelegramContext): ZIO[BotEnv, ApiError, A] =
+      zio.tapError {
+        case ApiError.HttpCode(400, _) =>
+          telegramApi.sendText(context.chatId,
+            "❗ Не удалось привязать канал.\n" + "Проверьте, что бот добавлен и является администратором."
+          )
+        case _ => ZIO.unit
+      }
 }

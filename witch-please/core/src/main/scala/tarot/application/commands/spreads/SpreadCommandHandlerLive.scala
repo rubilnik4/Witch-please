@@ -77,9 +77,8 @@ final class SpreadCommandHandlerLive(
       userChannel <- userChannelQueryHandler.getUserChannelByProject(spread.projectId)
 
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
-      _ <- telegramApiService.sendPhoto(userChannel.channelId, spread.photo.sourceId)
-        .mapError(error => TarotErrorMapper.toTarotError("TelegramApiService", error))
-
+      _ <- telegramApiService.sendPhoto(userChannel.channelId, spread.photo.sourceId).mapError(TarotErrorMapper.toTarotError)
+       
       spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
     } yield ()

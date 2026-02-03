@@ -8,7 +8,7 @@ import shared.api.dto.telegram.*
 import shared.infrastructure.services.common.DateTimeService
 import zio.ZIO
 
-import java.time.{Duration, LocalDate, LocalTime, YearMonth}
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, YearMonth}
 
 object SchedulerMarkup {
   def monthKeyboard(month: YearMonth): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
@@ -33,7 +33,7 @@ object SchedulerMarkup {
       maxDelay = projectConfig.maxCardOfDayDelay
 
       today <- DateTimeService.currentLocalDateTime()
-      calendarTime = CalendarService.buildTime(today, date, Duration.ofDays(1),
+      calendarTime = CalendarService.buildTime(LocalDateTime.of(date, LocalTime.of(0, 0)), date, Duration.ofDays(1),
         page = page, start = LocalTime.of(0, 0), end = LocalTime.MIDNIGHT.plus(maxDelay).plusMinutes(1))
     } yield keyboardDelay(calendarTime)
 

@@ -9,8 +9,8 @@ object TarotError {
   final case class DatabaseError(message: String, ex: Throwable) extends TarotError
   final case class CacheError(message: String, ex: Throwable) extends TarotError
   final case class StorageError(message: String, ex: Throwable) extends TarotError
-  final case class ApiError(provider: String, code: Int, message: String) extends TarotError
-  final case class ServiceUnavailable(service: String, ex: Throwable) extends TarotError
+  final case class ApiError(code: Int, message: String) extends TarotError
+  final case class ServiceUnavailable(message: String, ex: Throwable) extends TarotError
   final case class ValidationError(message: String) extends TarotError
   final case class SerializationError(message: String) extends TarotError
   final case class ParsingError(raw: String, message: String) extends TarotError
@@ -20,12 +20,12 @@ object TarotError {
 }
 
 object TarotErrorMapper {
-  def toTarotError(provider: String, error: ApiError): TarotError = error match {
+  def toTarotError(error: ApiError): TarotError = error match {
     case ApiError.HttpCode(code, description) =>
-      TarotError.ApiError(provider, code, description)
+      TarotError.ApiError(code, description)
     case ApiError.RequestFailed(message, cause) =>
-      TarotError.ServiceUnavailable(provider, cause)
+      TarotError.ServiceUnavailable(message, cause)
     case ApiError.InvalidResponse(_, reason) =>
-      TarotError.ApiError(provider, 500, reason)
+      TarotError.ApiError(500, reason)
   }
 }

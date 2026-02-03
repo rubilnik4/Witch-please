@@ -12,5 +12,6 @@ trait UserChannelQueryHandler {
   def getUserChannelByUser(userId: UserId): ZIO[TarotEnv, TarotError, Option[UserChannel]]
   def getUserChannelByProject(projectId: ProjectId): ZIO[TarotEnv, TarotError, UserChannel]
   def validateUserChannels(userId: UserId): ZIO[TarotEnv, TarotError, Unit]
+  def validateChannel(channelId: Long): ZIO[TarotEnv, TarotError, Unit]
 }
  

@@ -10,8 +10,7 @@ final class PhotoServiceLive(telegram: TelegramApiService, storage: FileStorageS
   override def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileStorage] =
     for {
       _ <- ZIO.logInfo(s"Downloading photo: $fileId")
-      telegramFile <- telegram.downloadPhoto(fileId)
-        .mapError(err => TarotErrorMapper.toTarotError("TelegramApiService", err))
+      telegramFile <- telegram.downloadPhoto(fileId).mapError(TarotErrorMapper.toTarotError)
 
       _ <- ZIO.logInfo(s"Storing photo: ${telegramFile.fileName}")
       photoFile = StoredFile(telegramFile.fileName, telegramFile.bytes)
