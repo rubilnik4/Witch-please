@@ -40,9 +40,8 @@ object SpreadFlow {
 
       spreadButtons = spreads
         .sortBy(_.scheduledAt.fold(Long.MaxValue)(_.toEpochMilli))
-        .zipWithIndex
-        .map { case (spread, index) =>
-          val label = s"${index + 1}. ${spread.title} (${getScheduledText(spread)})"
+        .map { spread =>
+          val label = s"${getPublishStatusImage(spread)} ${spread.title} - ${getScheduledText(spread)}"
           val command = AuthorCommands.spreadSelect(spread.id)
           TelegramInlineKeyboardButton(label, Some(command))
         }
@@ -181,7 +180,7 @@ object SpreadFlow {
     val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
     val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadEdit(spread.id)))
     val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
-    val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.Start))
+    val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.SpreadsSelect))
     val buttons = List(cardsButton, cardOfDayButton, publishButton, editButton, deleteButton, backButton)
 
     for {
@@ -191,12 +190,27 @@ object SpreadFlow {
            | Карт по плану: ${spread.cardsCount}
            | Создано карт: $cardsPositions
            | Номер карты дня: $cardOfDayText
+           | Статус: ${getPublishStatusImage(spread)} ${getPublishStatusText(spread)}
            | Публикация: ${getScheduledText(spread)}
            | Публикация карты дня: ${getCardOfDayScheduledText(cardOfDay)}
            |""".stripMargin
    
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
+
+  private def getPublishStatusImage(spread: SpreadResponse) =
+    (spread.publishedAt, spread.scheduledAt) match {
+      case (Some(publishedAt), _) => s"🟢"
+      case (None, Some(scheduledAt)) => s"🕒"
+      case (_,_) => s"⚪"
+    }
+
+  private def getPublishStatusText(spread: SpreadResponse) =
+    (spread.publishedAt, spread.scheduledAt) match {
+      case (Some(publishedAt), _) => "опубликован"
+      case (None, Some(scheduledAt)) => "к публикации"
+      case (_, _) => "черновик"
+    }
 
   private def getScheduledText(spread: SpreadResponse) =
     spread.scheduledAt match {

@@ -1,11 +1,8 @@
 package tarot.application.jobs
 
-import shared.infrastructure.services.storage.FileStorageService
-import shared.infrastructure.services.telegram.TelegramApiService
 import tarot.application.jobs.publish.PublishJob
-import tarot.infrastructure.services.authorize.AuthService
-import tarot.infrastructure.services.photo.*
-import tarot.infrastructure.services.users.UserService
+import tarot.layers.TarotEnv
+import zio.ZIO
 
 trait TarotJob {
   def publishJob: PublishJob
