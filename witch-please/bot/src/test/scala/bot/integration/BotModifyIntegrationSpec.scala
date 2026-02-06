@@ -10,6 +10,8 @@ import bot.layers.{BotEnv, TestBotEnvLayer}
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.models.tarot.spreads.SpreadStatus
+import shared.models.tarot.spreads.SpreadStatus.Draft
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import zio.*
 import zio.http.*
@@ -104,7 +106,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.spreadId.nonEmpty,
+        session.spread.exists(_.status == SpreadStatus.Draft),
         session.spreadProgress.exists(_.cardsCount == spreadCardsCount),
         session.pending.isEmpty
       )
@@ -147,10 +149,10 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        spreadMode = SpreadMode.Edit(spreadId)
+        spreadMode = SpreadMode.Edit(spread.spreadId)
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
         _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
         _ <- SpreadFlow.spreadCardCount(app, chatId, cardsCount)
@@ -205,10 +207,10 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- CardOfDayFlow.selectCardOfDay(app, chatId, spreadId)
+        _ <- CardOfDayFlow.selectCardOfDay(app, chatId, spread.spreadId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
@@ -276,10 +278,10 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- SpreadFlow.selectSpread(app, chatId, spreadId)
+        _ <- SpreadFlow.selectSpread(app, chatId, spread.spreadId)
 
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
@@ -300,16 +302,16 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        postRequest = TestTelegramWebhook.deleteSpreadRequest(chatId, spreadId)
+        postRequest = TestTelegramWebhook.deleteSpreadRequest(chatId, spread.spreadId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
         _ <- app.runZIO(request)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.spreadId.isEmpty,
+        session.spread.isEmpty,
         session.spreadProgress.isEmpty,
         session.cardOfDayId.isEmpty,
         session.cardId.isEmpty

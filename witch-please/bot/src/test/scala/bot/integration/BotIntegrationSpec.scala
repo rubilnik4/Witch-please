@@ -127,7 +127,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.spreadId.nonEmpty,
+        session.spread.exists(_.status == SpreadStatus.Draft),
         session.pending.isEmpty
       )
     },
@@ -141,7 +141,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ZIO.foreachDiscard(1 to cardsCount) { position =>
@@ -200,14 +200,14 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
         token <- ZIO.fromOption(session.token).orElseFail(new RuntimeException("token not set"))
-        spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
 
         now <- DateTimeService.getDateTimeNow
         publishTime = now.plus(1.day)
         cardOdDayDelay = 1.hour
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        _ <- PublishFlow.startPublish(app, chatId, spreadId)
+        _ <- PublishFlow.startPublish(app, chatId, spread.spreadId)
         _ <- PublishFlow.selectMonth(app, chatId, publishTime)
         _ <- PublishFlow.selectDate(app, chatId, publishTime)
         _ <- PublishFlow.selectTime(app, chatId, publishTime)
@@ -215,9 +215,9 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         _ <- PublishFlow.confirm(app, chatId)
 
         session <- botSessionService.get(chatId)
-        spread <- tarotApiService.getSpread(spreadId, token)
+        spread <- tarotApiService.getSpread(spread.spreadId, token)
       } yield assertTrue(
-        session.spreadId.nonEmpty,
+        session.spread.exists(_.status == SpreadStatus.Scheduled),
         spread.status == SpreadStatus.Scheduled,
         spread.scheduledAt.contains(publishTime)
       )

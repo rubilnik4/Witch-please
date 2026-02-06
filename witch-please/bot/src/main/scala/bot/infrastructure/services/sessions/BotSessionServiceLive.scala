@@ -86,12 +86,12 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, Some(pending), now))
     } yield ()
 
-  override def setSpread(chatId: Long, spreadId: UUID, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
+  override def setSpread(chatId: Long, spread: BotSpread, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logDebug(s"Set spread $spreadId for chat $chatId")
+      _ <- ZIO.logDebug(s"Set spread ${spread.spreadId} for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spreadId, spreadProgress, now))     
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withSpread(session, spread, spreadProgress, now))     
     } yield ()
 
   override def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
