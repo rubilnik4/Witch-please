@@ -118,7 +118,7 @@ object SchedulerFlow {
       session <- sessionService.get(context.chatId)
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
-      spreadId <- ZIO.fromOption(session.spreadId)
+      spread <- ZIO.fromOption(session.spread)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
       date <- ZIO.fromOption(session.date)
         .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
@@ -137,11 +137,11 @@ object SchedulerFlow {
       zoneOffset <- DateTimeService.getOffset
       scheduledAt = dateTime.toInstant(zoneOffset)
       request = SpreadPublishRequest(scheduledAt, cardOfDayDelay)
-      _ <- tarotApi.publishSpread(request, spreadId, token)
+      _ <- tarotApi.publishSpread(request, spread.spreadId, token)
 
       text = s"Расклад будет опубликован ${DateFormatter.fromLocalDateTime(dateTime)} c картой дня через ${DateFormatter.fromDuration(cardOfDayDelay)}"
       _ <- telegramApi.sendText(context.chatId, text)
-      _ <- SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+      _ <- SpreadFlow.selectSpread(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   private def showTimeKeyboard(context: TelegramContext, date: LocalDate, page: Int)

@@ -17,7 +17,7 @@ final class SpreadsQueryHandlerLive(
   
   override def getSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Spread] =
     for {
-      _ <- ZIO.logInfo(s"Executing spread query by spreadId $spreadId")
+      _ <- ZIO.logDebug(s"Executing spread query by spreadId $spreadId")
       
       spread <- spreadRepository.getSpread(spreadId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Spread $spreadId not found")))
@@ -26,7 +26,7 @@ final class SpreadsQueryHandlerLive(
 
   override def getSpreads(userId: UserId): ZIO[TarotEnv, TarotError, List[Spread]] =
     for {
-      _ <- ZIO.logInfo(s"Executing spreads query by userId $userId")
+      _ <- ZIO.logDebug(s"Executing spreads query by userId $userId")
 
       projectIds <- userProjectRepository.getProjectIds(userId)
       projectId <- ZIO.fromOption(projectIds.headOption).orElseFail(TarotError.NotFound(s"No project found for user $userId"))
@@ -37,7 +37,7 @@ final class SpreadsQueryHandlerLive(
 
   override def getScheduledSpreads(deadline: Instant, limit: Int): ZIO[TarotEnv, TarotError, List[Spread]] =
     for {
-      _ <- ZIO.logInfo(s"Executing ready to publish spreads query by deadline $deadline")      
+      _ <- ZIO.logDebug(s"Executing ready to publish spreads query by deadline $deadline")      
       
       spreads <- spreadRepository.getScheduledSpreads(deadline, limit)
     } yield spreads

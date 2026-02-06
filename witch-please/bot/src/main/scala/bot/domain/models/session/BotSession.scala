@@ -11,7 +11,7 @@ final case class BotSession(
   userId: Option[UUID],
   channel: Option[BotChannel],
   pending: Option[BotPendingAction],
-  spreadId: Option[UUID],
+  spread: Option[BotSpread],
   spreadProgress: Option[SpreadProgress],
   cardId: Option[UUID],
   cardOfDayId: Option[UUID],
@@ -42,16 +42,16 @@ object BotSession {
   def withPending(session: BotSession, pending: Option[BotPendingAction], now: Instant): BotSession =
     session.copy(pending = pending, updatedAt = now)  
 
-  def withSpread(session: BotSession, spreadId: UUID, spreadProgress: SpreadProgress, now: Instant): BotSession =
+  def withSpread(session: BotSession, spread: BotSpread, spreadProgress: SpreadProgress, now: Instant): BotSession =
     session.copy(
-      spreadId = Some(spreadId),
+      spread = Some(spread),
       spreadProgress = Some(spreadProgress),
       pending = None,
       updatedAt = now)
 
   def clearSpread(session: BotSession, now: Instant): BotSession =
     session.copy(
-      spreadId = None,
+      spread = None,
       spreadProgress = None,
       cardOfDayId = None,
       cardId = None,

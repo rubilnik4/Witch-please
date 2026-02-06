@@ -12,12 +12,13 @@ import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
+import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
 
 import java.util.UUID
 
 object CardOfDayFlow {
-  def selectSpreadCardOfDay(context: TelegramContext, spreadId: UUID)(
+  def selectCardOfDay(context: TelegramContext, spreadId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Select card of day by spread $spreadId from chat ${context.chatId}")
@@ -39,10 +40,10 @@ object CardOfDayFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
       session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      spread <- ZIO.fromOption(session.spread)
+        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
       _ <- sessionService.setCardOfDay(context.chatId, cardOfDay.id)
-      _ <- showCardOfDay(context, cardOfDay, spreadId)(telegramApi, sessionService)
+      _ <- showCardOfDay(context, cardOfDay, spread)(telegramApi, sessionService)
     } yield ()
 
   def createCardOfDay(context: TelegramContext)(
@@ -78,9 +79,9 @@ object CardOfDayFlow {
           } yield ()
         else {
           for {
-            spreadId <- ZIO.fromOption(session.spreadId).orElseFail(new RuntimeException("Spread id not found"))
+            spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("Spread id not found"))
             _ <- telegramApi.sendText(context.chatId, "Карта с такой позицией ещё не создана")
-            _ <- SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+            _ <- SpreadFlow.selectSpread(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
           } yield ()
         }
     } yield ()
@@ -113,7 +114,7 @@ object CardOfDayFlow {
       _ <- ZIO.logInfo(s"Handle card of day photo from chat ${context.chatId}")
 
       session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
+      spread <- ZIO.fromOption(session.spread)
         .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
@@ -123,7 +124,7 @@ object CardOfDayFlow {
         case CardOfDayMode.Create =>
           val request = CardOfDayCreateRequest(cardId, description, title, photo)
           for {
-            cardOfDayId <- tarotApi.createCardOfDay(request, spreadId, token)
+            cardOfDayId <- tarotApi.createCardOfDay(request, spread.spreadId, token)
             _ <- sessionService.setCardOfDay(context.chatId, cardOfDayId.id)
             _ <- telegramApi.sendText(context.chatId, s"Карта дня создана")
           } yield cardId
@@ -135,14 +136,14 @@ object CardOfDayFlow {
           } yield cardId
       }
 
-      _ <- selectSpreadCardOfDay(context, spreadId)(telegramApi, tarotApi, sessionService)
+      _ <- selectCardOfDay(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def deleteCardOfDay(context: TelegramContext, cardOfDayId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
+      spread <- ZIO.fromOption(session.spread)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
@@ -153,7 +154,7 @@ object CardOfDayFlow {
       _ <- telegramApi.sendText(context.chatId, s"Карта дня удалена")
       _ <- sessionService.clearCardOfDay(context.chatId)
 
-      _ <- SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+      _ <- SpreadFlow.selectSpread(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   private def startCardOfDayPending(context: TelegramContext, cardOfDayMode: CardOfDayMode)(
@@ -164,17 +165,22 @@ object CardOfDayFlow {
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи номер карты дня для твоего расклада")
     } yield ()
 
-  private def showCardOfDay(context: TelegramContext, cardOfDay: CardOfDayResponse, spreadId: UUID)
+  private def showCardOfDay(context: TelegramContext, cardOfDay: CardOfDayResponse, spread: BotSpread)
                            (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardOfDayEdit(cardOfDay.id)))
-    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardOfDayDelete(cardOfDay.id)))
-    val backButton = TelegramInlineKeyboardButton("⬅ К раскладу", Some(AuthorCommands.spreadSelect(spreadId)))
-    val buttons = List(editButton, deleteButton, backButton)
+    val modifyButtons =
+      if (SpreadStatus.isModify(spread.status))
+        val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardOfDayEdit(cardOfDay.id)))
+        val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardOfDayDelete(cardOfDay.id)))
+        List(editButton, deleteButton)
+      else Nil
+ 
+    val backButton = TelegramInlineKeyboardButton("⬅ К раскладу", Some(AuthorCommands.spreadSelect(spread.spreadId)))
+    val buttons =  modifyButtons :+ backButton
 
     for {
       positionText <- getCardOfDayPositionText(context, Some(cardOfDay))(sessionService)
       summaryText =
-        s""" Карта дня”
+        s""" Карта дня: “${cardOfDay.title}”
            | Номер карты: $positionText
            | Публикация: ${getScheduledText(cardOfDay)}
            |""".stripMargin

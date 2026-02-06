@@ -100,7 +100,16 @@ object SchedulerMarkup {
     
     val month = YearMonth.of(calendarTime.date.getYear, calendarTime.date.getMonth)
     val returnButton = TelegramInlineKeyboardButton("⬅ Дата", Some(SchedulerCommands.selectMonth(month)))
-    returnButton :: pageButtons
+
+    val quickButtons =
+      if (calendarTime.date == calendarTime.today.toLocalDate)
+        List(
+          TelegramInlineKeyboardButton("⚡ Сейчас", Some(SchedulerCommands.selectTime(calendarTime.today.toLocalTime))),
+          TelegramInlineKeyboardButton("🕒 Через час", Some(SchedulerCommands.selectTime(calendarTime.today.toLocalTime.plusHours(1))))
+        )
+      else
+        Nil
+    returnButton :: pageButtons ::: quickButtons
   }
 
   private def getTimeSlotKeyboard(calendarSlots: List[CalendarTimeSlot], slotCommand: LocalTime => String) =

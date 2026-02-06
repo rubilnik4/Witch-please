@@ -16,7 +16,7 @@ final class UserChannelQueryHandlerLive(
 
   override def getUserChannel(userChannelId: UserChannelId): ZIO[TarotEnv, TarotError, UserChannel] =
     for {
-      _ <- ZIO.logInfo(s"Executing get channel query by user channel $userChannelId")
+      _ <- ZIO.logDebug(s"Executing get channel query by user channel $userChannelId")
 
       userChannelMaybe <- userChannelRepository.getUserChannel(userChannelId)
       userChannel <- ZIO.fromOption(userChannelMaybe)
@@ -25,14 +25,14 @@ final class UserChannelQueryHandlerLive(
     
   override def getUserChannelByUser(userId: UserId): ZIO[TarotEnv, TarotError, Option[UserChannel]] =
     for {
-      _ <- ZIO.logInfo(s"Executing get channel query by user $userId")
+      _ <- ZIO.logDebug(s"Executing get channel query by user $userId")
 
       userChannel <- userChannelRepository.getUserChannelByUser(userId)     
     } yield userChannel
 
   override def getUserChannelByProject(projectId: ProjectId): ZIO[TarotEnv, TarotError, UserChannel] =
     for {
-      _ <- ZIO.logInfo(s"Executing get channel query by project $projectId")
+      _ <- ZIO.logDebug(s"Executing get channel query by project $projectId")
 
       userChannelMaybe <- userChannelRepository.getUserChannelByProject(projectId)
       userChannel <- ZIO.fromOption(userChannelMaybe)
@@ -41,7 +41,7 @@ final class UserChannelQueryHandlerLive(
 
   override def validateUserChannels(userId: UserId): ZIO[TarotEnv, TarotError, Unit]  =
     for {
-      _ <- ZIO.logInfo(s"Executing validate channel query by user $userId")
+      _ <- ZIO.logDebug(s"Executing validate channel query by user $userId")
 
       exists <- userChannelRepository.existUserChannels(userId)
       _ <- ZIO.unless(exists) {
@@ -52,7 +52,7 @@ final class UserChannelQueryHandlerLive(
 
   override def validateChannel(channelId: Long): ZIO[TarotEnv, TarotError, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Executing validate channel query by channelId $channelId")
+      _ <- ZIO.logDebug(s"Executing validate channel query by channelId $channelId")
 
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
       bot <- telegramApiService.getBot.mapError(TarotErrorMapper.toTarotError)

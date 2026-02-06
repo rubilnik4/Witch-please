@@ -9,14 +9,14 @@ import zio.ZIO
 final class PhotoQueryHandlerLive(photoRepository: PhotoRepository) extends PhotoQueryHandler {
   override def existPhoto(photoId: PhotoId): ZIO[TarotEnv, TarotError, Boolean] =
     for {
-      _ <- ZIO.logInfo(s"Executing photo exists query by photoId $photoId")
+      _ <- ZIO.logDebug(s"Executing photo exists query by photoId $photoId")
       
       exist <- photoRepository.existPhoto(photoId)
     } yield exist
 
   override def existAnyPhoto(photoIds: List[PhotoId]): ZIO[TarotEnv, TarotError, Boolean] =
     for {
-      _ <- ZIO.logInfo(s"Executing any photo exists query by photoIds $photoIds")
+      _ <- ZIO.logDebug(s"Executing any photo exists query by photoIds $photoIds")
 
       exist <- photoRepository.existAnyPhoto(photoIds)
     } yield exist

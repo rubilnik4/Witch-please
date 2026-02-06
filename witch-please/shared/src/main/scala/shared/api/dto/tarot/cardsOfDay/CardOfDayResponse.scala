@@ -12,6 +12,7 @@ final case class CardOfDayResponse(
   id: UUID,
   cardId: UUID,
   spreadId: UUID,
+  title: String,
   description: String,
   status: CardOfDayStatus,
   photo: PhotoResponse,

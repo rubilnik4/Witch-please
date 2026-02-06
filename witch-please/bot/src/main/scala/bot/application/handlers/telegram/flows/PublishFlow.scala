@@ -16,10 +16,10 @@ object PublishFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
+      spread <- ZIO.fromOption(session.spread)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))      
 
-      _ <- ZIO.logInfo(s"Publish spread $spreadId for chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Publish spread ${spread.spreadId} for chat ${context.chatId}")
 
       _ <- ZIO.unless(session.spreadProgress.exists(p => p.createdPositions.size == p.cardsCount)) {
         telegramApi.sendText(context.chatId, s"Нельзя опубликовать: не все карты загружены") *>

@@ -55,11 +55,7 @@ object TelegramRouterHandler {
           case AuthorCommand.SelectSpreads =>
             SpreadFlow.selectSpreads(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectSpread(spreadId) =>
-            SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.SelectCards(spreadId) =>
-            CardFlow.selectSpreadCards(context, spreadId)(telegramApi, tarotApi, sessionService)
-          case AuthorCommand.SelectCardOfDay(spreadId) =>
-            CardOfDayFlow.selectSpreadCardOfDay(context, spreadId)(telegramApi, tarotApi, sessionService)
+            SpreadFlow.selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)        
           case AuthorCommand.DeleteSpread(spreadId) =>
             SpreadFlow.deleteSpread(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.PublishSpread(spreadId) =>
@@ -70,6 +66,8 @@ object TelegramRouterHandler {
             CardFlow.editCard(context, cardId)(telegramApi, sessionService)
           case AuthorCommand.DeleteCard(cardId) =>
             CardFlow.deleteCard(context, cardId)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.SelectCards(spreadId) =>
+            CardFlow.selectCards(context, spreadId)(telegramApi, tarotApi, sessionService)       
           case AuthorCommand.SelectCard(cardId) =>
             CardFlow.selectCard(context, cardId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateCardOfDay =>
@@ -77,7 +75,9 @@ object TelegramRouterHandler {
           case AuthorCommand.EditCardOfDay(cardOfDayId) =>
             CardOfDayFlow.editCardOfDay(context, cardOfDayId)(telegramApi, sessionService)
           case AuthorCommand.DeleteCardOfDay(cardOfDayId) =>
-            CardOfDayFlow.deleteCardOfDay(context, cardOfDayId)(telegramApi, tarotApi, sessionService)  
+            CardOfDayFlow.deleteCardOfDay(context, cardOfDayId)(telegramApi, tarotApi, sessionService)
+          case AuthorCommand.SelectCardOfDay(spreadId) =>
+            CardOfDayFlow.selectCardOfDay(context, spreadId)(telegramApi, tarotApi, sessionService)
         }
       } yield ()
 

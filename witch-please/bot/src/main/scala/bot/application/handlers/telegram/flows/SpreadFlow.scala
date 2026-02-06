@@ -14,6 +14,7 @@ import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
+import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
 
 import java.util.UUID
@@ -142,7 +143,7 @@ object SpreadFlow {
       cardOfDay <- tarotApi.getCardOfDayBySpread(spreadId, token)
       createdPosition = cards.map(card => CardPosition(card.position, card.id)).toSet
       progress = SpreadProgress(spread.cardsCount, createdPosition)
-      _ <- sessionService.setSpread(context.chatId, spreadId, progress)
+      _ <- sessionService.setSpread(context.chatId, BotSpread(spread.id, spread.status), progress)
 
       _ <- showSpread(context, spread, createdPosition.size, cardOfDay)(telegramApi, sessionService)
     } yield ()
@@ -151,14 +152,14 @@ object SpreadFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       session <- sessionService.get(context.chatId)
-      spreadId <- ZIO.fromOption(session.spreadId)
+      spread <- ZIO.fromOption(session.spread)
         .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
-      _ <- ZIO.logInfo(s"Delete spread $spreadId for chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Delete spread ${spread.spreadId} for chat ${context.chatId}")
 
-      _ <- tarotApi.deleteSpread(spreadId, token)
+      _ <- tarotApi.deleteSpread(spread.spreadId, token)
       _ <- telegramApi.sendText(context.chatId, s"Расклад удален")
       _ <- sessionService.clearSpread(context.chatId)
 
@@ -177,11 +178,17 @@ object SpreadFlow {
       (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
     val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
-    val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
-    val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadEdit(spread.id)))
-    val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
+
+    val modifyButtons =
+      if (SpreadStatus.isModify(spread.status))
+        val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
+        val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.spreadEdit(spread.id)))
+        val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
+        List(publishButton, editButton, deleteButton)
+      else Nil
+
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.SpreadsSelect))
-    val buttons = List(cardsButton, cardOfDayButton, publishButton, editButton, deleteButton, backButton)
+    val buttons = List(cardsButton, cardOfDayButton) ++ modifyButtons :+ backButton
 
     for {
       cardOfDayText <- CardOfDayFlow.getCardOfDayPositionText(context, cardOfDay)(sessionService)

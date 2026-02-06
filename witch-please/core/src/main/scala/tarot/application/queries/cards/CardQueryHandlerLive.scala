@@ -10,7 +10,7 @@ import zio.ZIO
 final class CardQueryHandlerLive(cardRepository: CardRepository) extends CardQueryHandler {
   override def getCard(cardId: CardId): ZIO[TarotEnv, TarotError, Card] =
     for {
-      _ <- ZIO.logInfo(s"Executing card query by cardId $cardId")
+      _ <- ZIO.logDebug(s"Executing card query by cardId $cardId")
 
       card <- cardRepository.getCard(cardId)
         .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Card $cardId not found")))
@@ -19,14 +19,14 @@ final class CardQueryHandlerLive(cardRepository: CardRepository) extends CardQue
 
   override def getCardsCount(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Int] =
     for {
-      _ <- ZIO.logInfo(s"Executing cards query by spreadId $spreadId")
+      _ <- ZIO.logDebug(s"Executing cards query by spreadId $spreadId")
       
       cardsCount <- cardRepository.getCardsCount(spreadId)
     } yield cardsCount.toInt
 
   override def getCards(spreadId: SpreadId): ZIO[TarotEnv, TarotError, List[Card]] =
     for {
-      _ <- ZIO.logInfo(s"Executing cards count query by spreadId $spreadId")
+      _ <- ZIO.logDebug(s"Executing cards count query by spreadId $spreadId")
       
       cards <- cardRepository.getCards(spreadId)
     } yield cards  

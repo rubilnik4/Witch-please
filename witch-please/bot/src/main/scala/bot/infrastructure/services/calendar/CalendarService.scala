@@ -35,7 +35,7 @@ object CalendarService {
     val fromPage = safePage * pageSize
     val toPage = math.min(slots.size, fromPage + pageSize)
     val calendarSlots = slots.slice(fromPage, toPage)
-    val calendarTime = CalendarTime(date, safePage, totalPages)
+    val calendarTime = CalendarTime(date, today, safePage, totalPages)
 
     CalendarTimeGrid(calendarTime, calendarSlots)
   }

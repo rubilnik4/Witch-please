@@ -10,14 +10,14 @@ import zio.ZIO
 final class ProjectQueryHandlerLive(userProjectRepository: UserProjectRepository) extends ProjectQueryHandler {
   override def getProjects(userId: UserId): ZIO[TarotEnv, TarotError, List[Project]] =
     for {
-      _ <- ZIO.logInfo(s"Executing projects query by userId $userId")
+      _ <- ZIO.logDebug(s"Executing projects query by userId $userId")
       
       projects <- userProjectRepository.getProjects(userId)
     } yield projects
 
   override def getDefaultProject(userId: UserId): ZIO[TarotEnv, TarotError, ProjectId]  =
     for {
-      _ <- ZIO.logInfo(s"Executing default project query for user $userId")
+      _ <- ZIO.logDebug(s"Executing default project query for user $userId")
 
       projectIds <- userProjectRepository.getProjectIds(userId)
       projectId <- ZIO.fromOption(projectIds.headOption)

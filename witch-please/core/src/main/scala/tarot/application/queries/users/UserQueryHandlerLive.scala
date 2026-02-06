@@ -12,7 +12,7 @@ final class UserQueryHandlerLive(
 ) extends UserQueryHandler {
   override def getUserByClientId(clientId: String): ZIO[TarotEnv, TarotError, User] =
     for {
-      _ <- ZIO.logInfo(s"Executing user query by clientId $clientId")
+      _ <- ZIO.logDebug(s"Executing user query by clientId $clientId")
       
       userMaybe <- userRepository.getUserByClientId(clientId)
       user <- ZIO.fromOption(userMaybe)
@@ -21,7 +21,7 @@ final class UserQueryHandlerLive(
 
   override def getAuthors: ZIO[TarotEnv, TarotError, List[Author]] =
     for {
-      _ <- ZIO.logInfo(s"Executing authors query")
+      _ <- ZIO.logDebug(s"Executing authors query")
 
       authors <- userProjectRepository.getAuthors(1)
     } yield authors

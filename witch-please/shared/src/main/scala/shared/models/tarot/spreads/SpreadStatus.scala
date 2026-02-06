@@ -9,3 +9,13 @@ enum SpreadStatus derives JsonCodec, Schema {
   case Published
   case Archived
 }
+
+object SpreadStatus {
+  def isModify(status: SpreadStatus): Boolean =
+    status match {
+      case Draft | Scheduled =>
+        true
+      case _ =>
+        false
+    }
+}
