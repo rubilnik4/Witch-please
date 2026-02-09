@@ -8,6 +8,7 @@ import shared.api.dto.tarot.cardsOfDay.{CardOfDayCreateRequest, CardOfDayRespons
 import shared.api.dto.tarot.channels.{ChannelCreateRequest, ChannelUpdateRequest, UserChannelResponse}
 import shared.api.dto.tarot.common.*
 import shared.api.dto.tarot.errors.TarotErrorResponse
+import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
 import shared.infrastructure.services.clients.SttpClient
@@ -259,5 +260,15 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       cardOfDayRequest = SttpClient.deleteAuthRequest(uri, token)
         .response(SttpClient.asJsonNoContent[TarotErrorResponse])
       response <- SttpClient.sendJson(client, cardOfDayRequest)
-    } yield response  
+    } yield response
+
+  override def getPhoto(photoId: UUID, token: String): ZIO[Any, ApiError, PhotoResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending get photo request by photoId: $photoId")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.photoGetPath(apiUrl.url, photoId))
+      photoRequest = SttpClient.getAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, PhotoResponse])
+      response <- SttpClient.sendJson(client, photoRequest)
+    } yield response
 }

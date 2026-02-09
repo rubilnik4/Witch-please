@@ -4,8 +4,8 @@ import shared.models.files.FileSourceType
 import tarot.domain.models.cards.Card
 import tarot.domain.models.cardsOfDay.CardOfDay
 import tarot.domain.models.photo.Photo
-import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.domain.models.spreads.Spread
+import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.layers.TarotEnv
 import zio.ZIO
 

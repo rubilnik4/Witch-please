@@ -5,6 +5,7 @@ import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.channels.*
 import shared.api.dto.tarot.common.*
+import shared.api.dto.tarot.photo.PhotoResponse
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.*
 import shared.models.api.ApiError
@@ -37,4 +38,5 @@ trait TarotApiService {
   def createCardOfDay(request: CardOfDayCreateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, IdResponse]
   def updateCardOfDay(request: CardOfDayUpdateRequest, cardOfDayId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def deleteCardOfDay(cardOfDayId: UUID, token: String): ZIO[Any, ApiError, Unit]
+  def getPhoto(photoId: UUID, token: String): ZIO[Any, ApiError, PhotoResponse]
 }

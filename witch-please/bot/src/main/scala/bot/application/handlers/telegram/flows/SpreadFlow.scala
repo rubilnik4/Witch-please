@@ -1,12 +1,13 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.AuthorCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.application.handlers.telegram.flows.CardOfDayFlow.getCardOfDayPositionText
 import bot.domain.models.session.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
 import shared.api.dto.tarot.photo.PhotoRequest
@@ -178,7 +179,6 @@ object SpreadFlow {
       (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
     val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
-
     val modifyButtons =
       if (SpreadStatus.isModify(spread.status))
         val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
@@ -186,10 +186,10 @@ object SpreadFlow {
         val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
         List(publishButton, editButton, deleteButton)
       else Nil
-
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.SpreadsSelect))
-    val buttons = List(cardsButton, cardOfDayButton) ++ modifyButtons :+ backButton
-
+    val photoButton = TelegramInlineKeyboardButton(s"🖼 Посмотреть фото", Some(TelegramCommands.showPhoto(spread.photo.id)))
+    val buttons = List(cardsButton, cardOfDayButton) ++ modifyButtons ++ List(photoButton, backButton)
+    
     for {
       cardOfDayText <- CardOfDayFlow.getCardOfDayPositionText(context, cardOfDay)(sessionService)
       summaryText =

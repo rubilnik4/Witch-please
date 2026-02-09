@@ -32,27 +32,27 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
     test("initialize test state") {
       for {
-        photoId <- TarotTestFixtures.createPhoto(channelId)
+        photoSourceId <- TarotTestFixtures.createPhoto(channelId)
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         _ <- TarotTestFixtures.createUserChannel(userId, channelId)
-        spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoId)
-        cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoId)
-        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoId)
+        spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoSourceId)
+        cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoSourceId)
+        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoSourceId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
-        
-        state = TestSpreadState.empty.withPhotoId(photoId).withUserId(userId.id).withToken(token)
+
+        state = TestSpreadState.empty.withPhotoSourceId(photoSourceId).withUserId(userId.id).withToken(token)
           .withSpreadId(spreadId.id).withCardIds(cardIds.map(_.id)).withCardOfDayId(cardOfDayId.id)
         _ <- ref.set(state)
-      } yield assertTrue(photoId.nonEmpty, token.nonEmpty)
+      } yield assertTrue(photoSourceId.nonEmpty, token.nonEmpty)
     },
 
     test("should update spread") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
 
@@ -62,7 +62,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         previousSpread <- spreadQueryHandler.getSpread(SpreadId(spreadId))
 
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        spreadRequest = TarotTestRequests.spreadUpdateRequest(cardsCount - 1, photoId)
+        spreadRequest = TarotTestRequests.spreadUpdateRequest(cardsCount - 1, photoSourceId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadUpdatePath("", spreadId), spreadRequest, token)
         _ <- app.runZIO(request)
 
@@ -72,7 +72,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         spread.id.id == spreadId,
         spreadCardsCount == previousSpread.cardsCount,
-        spread.photo.sourceId == photoId,
+        spread.photo.sourceId == photoSourceId,
         !spreadPhotoExist
       )
     },
@@ -81,7 +81,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
         
@@ -90,7 +90,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         previousCard <- cardQueryHandler.getCard(CardId(cardId))        
 
         app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
-        cardRequest = TarotTestRequests.cardUpdateRequest(photoId)
+        cardRequest = TarotTestRequests.cardUpdateRequest(photoSourceId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardUpdatePath("", cardId), cardRequest, token)
         _ <- app.runZIO(request)
 
@@ -98,7 +98,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
       } yield assertTrue(
         card.id.id == cardId,
-        card.photo.sourceId == photoId,
+        card.photo.sourceId == photoSourceId,
         !cardPhotoExist
       )
     },
@@ -107,7 +107,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(TarotError.NotFound("photoId not set"))
+        photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         cardOfDayId <- ZIO.fromOption(state.cardOfDayId).orElseFail(TarotError.NotFound("cardOfDayId not set"))
         cardId <- ZIO.fromOption(state.cardIds.flatMap(_.lastOption)).orElseFail(TarotError.NotFound("cardIds not set"))
@@ -117,7 +117,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         previousCard <- cardOfDayQueryHandler.getCardOfDay(CardOfDayId(cardOfDayId))
 
         app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
-        cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardId, photoId)
+        cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardId, photoSourceId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardOfDayUpdatePath("", cardOfDayId), cardOfDayRequest, token)
         _ <- app.runZIO(request)
 
@@ -126,7 +126,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         cardOfDay.id.id == cardOfDayId,
         cardOfDay.cardId.id == cardId,
-        cardOfDay.photo.sourceId == photoId,
+        cardOfDay.photo.sourceId == photoSourceId,
         !cardPhotoExist
       )
     },

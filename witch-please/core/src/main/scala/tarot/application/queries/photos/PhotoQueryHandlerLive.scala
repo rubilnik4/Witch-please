@@ -7,6 +7,15 @@ import tarot.layers.TarotEnv
 import zio.ZIO
 
 final class PhotoQueryHandlerLive(photoRepository: PhotoRepository) extends PhotoQueryHandler {
+  override def getPhoto(photoId: PhotoId): ZIO[TarotEnv, TarotError, Photo] =
+    for {
+      _ <- ZIO.logDebug(s"Executing photo query by photoId $photoId")
+
+      photo <- photoRepository.getPhoto(photoId)
+        .flatMap(ZIO.fromOption(_).orElseFail(TarotError.NotFound(s"Photo $photoId not found")))
+        .tapError(_ => ZIO.logError(s"Photo $photoId not found"))
+    } yield photo
+
   override def existPhoto(photoId: PhotoId): ZIO[TarotEnv, TarotError, Boolean] =
     for {
       _ <- ZIO.logDebug(s"Executing photo exists query by photoId $photoId")

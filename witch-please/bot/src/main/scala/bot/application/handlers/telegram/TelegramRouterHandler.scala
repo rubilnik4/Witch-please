@@ -29,6 +29,8 @@ object TelegramRouterHandler {
           handleClientCommand(context, clientCommand)(telegramApi, tarotApi, sessionService)
         case scheduleCommand: ScheduleCommand =>
           SchedulerFlow.handle(context, scheduleCommand)(telegramApi, tarotApi, sessionService)
+        case BotCommand.ShowPhoto(photoId) =>
+          PhotoFlow.showPhoto(context, photoId)(telegramApi, tarotApi, sessionService)
         case BotCommand.Noop =>
           ZIO.logInfo(s"Empty noop command for chat ${context.chatId}")
         case BotCommand.Help =>

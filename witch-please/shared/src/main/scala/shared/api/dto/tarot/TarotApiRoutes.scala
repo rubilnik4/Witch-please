@@ -15,6 +15,7 @@ case object TarotApiRoutes {
   val auth = "auth"
   val users ="users"
   val channels = "channel"
+  val photos = "photos"
 
   def userGetByClientIdPath(baseUrl: String, clientId: String): URL =
     ApiRoutes.make(baseUrl, apiPath, users, "by-client", clientId)
@@ -85,6 +86,9 @@ case object TarotApiRoutes {
   def cardOfDayBySpreadGetPath(baseUrl: String, spreadId: UUID): URL =
     ApiRoutes.make(baseUrl, apiPath, spreads, spreadId.toString, cardsOfDay)
 
+  def photoGetPath(baseUrl: String, photoId: UUID): URL =
+    ApiRoutes.make(baseUrl, apiPath, photos, photoId.toString)
+    
   def tokenAuthPath(baseUrl: String): URL =
     ApiRoutes.make(baseUrl, apiPath, TarotApiRoutes.auth)
 }

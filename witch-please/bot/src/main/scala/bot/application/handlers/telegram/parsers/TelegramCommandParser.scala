@@ -18,6 +18,8 @@ object TelegramCommandParser {
         TelegramClientParser.handle(command)  
       case command if command.startsWith(SchedulerCommands.Prefix) =>
         TelegramSchedulerParser.handle(command)
+      case command if command.startsWith(TelegramCommands.PhotoShow) =>
+        TelegramPhotoParser.handle(command)
       case command if command.startsWith(TelegramCommands.StubCommand) =>
         BotCommand.Noop
       case command if command.startsWith(TelegramCommands.Help) =>

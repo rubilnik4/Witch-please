@@ -1,11 +1,12 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.AuthorCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.photo.PhotoRequest
@@ -173,9 +174,9 @@ object CardOfDayFlow {
         val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardOfDayDelete(cardOfDay.id)))
         List(editButton, deleteButton)
       else Nil
- 
-    val backButton = TelegramInlineKeyboardButton("⬅ К раскладу", Some(AuthorCommands.spreadSelect(spread.spreadId)))
-    val buttons =  modifyButtons :+ backButton
+    val backButton = TelegramInlineKeyboardButton("⬅ К раскладу", Some(AuthorCommands.spreadSelect(spread.spreadId)))    
+    val photoButton = TelegramInlineKeyboardButton(s"🖼 Посмотреть фото", Some(TelegramCommands.showPhoto(cardOfDay.photo.id)))
+    val buttons =  modifyButtons ++ List(photoButton, backButton)
 
     for {
       positionText <- getCardOfDayPositionText(context, Some(cardOfDay))(sessionService)
@@ -183,8 +184,8 @@ object CardOfDayFlow {
         s""" Карта дня: “${cardOfDay.title}”
            | Номер карты: $positionText
            | Публикация: ${getScheduledText(cardOfDay)}
-           |""".stripMargin
-
+           |""".stripMargin        
+    
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()
 

@@ -1,10 +1,11 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.AuthorCommands
+import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.{BotPendingAction, BotSpread, CardMode, CardPosition}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.photo.PhotoRequest
@@ -174,10 +175,10 @@ object CardFlow {
         val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardEdit(card.id)))
         val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.cardDelete(card.id)))
         List(editButton, deleteButton)
-      else Nil
-  
+      else Nil  
     val backButton = TelegramInlineKeyboardButton("⬅ К картам", Some(AuthorCommands.spreadCardsSelect(spread.spreadId)))
-    val buttons = modifyButtons :+ backButton
+    val photoButton = TelegramInlineKeyboardButton(s"🖼 Посмотреть фото", Some(TelegramCommands.showPhoto(card.photo.id)))
+    val buttons = modifyButtons ++ List(photoButton, backButton)
 
     val summaryText =
       s""" Карта: “${card.title}”

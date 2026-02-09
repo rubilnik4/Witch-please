@@ -3,9 +3,9 @@ package tarot.models
 import java.util.UUID
 
 final case class TestSpreadState(
-  photoId: Option[String],
+  photoSourceId: Option[String],
   userId: Option[UUID],
-  token: Option[String],                          
+  token: Option[String],
   spreadId: Option[UUID],
   cardIds: Option[List[UUID]],
   cardOfDayId: Option[UUID]
@@ -16,8 +16,8 @@ object TestSpreadState {
     TestSpreadState(None, None, None, None, None, None)
     
   extension (state: TestSpreadState)
-    def withPhotoId(value: String): TestSpreadState =
-      state.copy(photoId = Some(value))
+    def withPhotoSourceId(value: String): TestSpreadState =
+      state.copy(photoSourceId = Some(value))
 
     def withUserId(value: UUID): TestSpreadState =
       state.copy(userId = Some(value))
