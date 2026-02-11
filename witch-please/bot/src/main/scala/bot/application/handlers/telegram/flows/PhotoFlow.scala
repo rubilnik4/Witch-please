@@ -5,6 +5,7 @@ import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
+import shared.models.photo.PhotoSource
 import zio.ZIO
 
 import java.util.UUID
@@ -20,7 +21,7 @@ object PhotoFlow {
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
       photo <- tarotApi.getPhoto(photoId, token)
-      fileId <- TelegramPhotoResolver.getFileId(photo)
+      fileId <- TelegramPhotoResolver.getFileId(PhotoSource(photo.sourceId, photo.sourceType, None))
       _ <- telegramApi.sendPhoto(context.chatId, fileId)
     } yield ()
 }
