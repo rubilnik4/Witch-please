@@ -1,5 +1,5 @@
 package shared.models.files
 
-enum FileStorageType:
+enum FileStoredType:
   case Local
   case S3

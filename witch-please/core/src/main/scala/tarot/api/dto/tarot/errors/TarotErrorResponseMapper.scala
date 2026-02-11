@@ -29,6 +29,8 @@ object TarotErrorResponseMapper {
       TarotErrorResponse.InternalServerError(s"Serialization failed", Some(msg))
     case TarotError.ParsingError(path, msg) =>
       TarotErrorResponse.InternalServerError(s"Parsing failed at '$path': $msg")
+    case TarotError.UnsupportedType(msg) =>
+      TarotErrorResponse.InternalServerError(s"Unsupported type error: $msg")
     case TarotError.Conflict(msg) =>
       TarotErrorResponse.ConflictError(s"Conflict error: $msg")
     case TarotError.Unauthorized(msg) =>

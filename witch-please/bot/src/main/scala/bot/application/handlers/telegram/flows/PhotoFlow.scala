@@ -3,9 +3,8 @@ package bot.application.handlers.telegram.flows
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
-import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
-import shared.infrastructure.services.telegram.TelegramApiService
+import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
 import zio.ZIO
 
 import java.util.UUID

@@ -31,6 +31,13 @@ object TelegramAuthorParser {
           case _ =>
             BotCommand.Unknown
         }
+      case AuthorCommands.SpreadClone :: spreadIdStr :: Nil =>
+        Try(UUID.fromString(spreadIdStr)).toOption match {
+          case Some(spreadId) =>
+            AuthorCommand.CloneSpread(spreadId)
+          case _ =>
+            BotCommand.Unknown
+        }  
       case AuthorCommands.SpreadSelect :: spreadIdStr :: Nil =>
         Try(UUID.fromString(spreadIdStr)).toOption match {
           case Some(spreadId) =>

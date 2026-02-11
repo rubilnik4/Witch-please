@@ -3,12 +3,12 @@ package tarot.application.commands.spreads
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.application.commands.spreads.commands.*
-import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.cards.Card
 import tarot.domain.models.cardsOfDay.CardOfDay
-import tarot.domain.models.photo.PhotoSource
+import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.*
+import tarot.domain.models.{TarotError, TarotErrorMapper}
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.*
@@ -26,8 +26,9 @@ final class SpreadCommandHandlerLive(
       projectQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.projectQueryHandler)
       projectId <- projectQueryHandler.getDefaultProject(command.userId)
 
-      photoFile <- getPhotoFile(command.photo)
-      spread <- Spread.toDomain(command, projectId, photoFile)
+      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
+      photoFile <- photoService.fetchAndStore(command.photo)
+      spread <- Spread.toDomain(command, projectId, photoFile.fileStored)
       spreadId <- spreadRepository.createSpread(spread)
     } yield spreadId
 
@@ -41,8 +42,9 @@ final class SpreadCommandHandlerLive(
       _ <- SpreadValidateHandler.validateModifyStatus(previousSpread)
       cards <- cardQueryHandler.getCards(command.spreadId)
 
-      photoFile <- getPhotoFile(command.photo)
-      spread = SpreadUpdate.toDomain(command, photoFile)
+      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
+      photoFile <- photoService.fetchAndStore(command.photo)
+      spread = SpreadUpdate.toDomain(command, photoFile.fileStored)
       _ <- spreadRepository.updateSpread(command.spreadId, spread)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
@@ -104,12 +106,24 @@ final class SpreadCommandHandlerLive(
       }
     } yield ()
 
-  private def getPhotoFile(photoFile: PhotoSource) =
+  override def cloneSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, SpreadId] =
     for {
-      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
-      photoFile <- photoService.fetchAndStore(photoFile.sourceId)
-    } yield photoFile
+      _ <- ZIO.logInfo(s"Executing clone command for spread $spreadId")
 
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      cardCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
+      cardOfDayCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardOfDayCommandHandler)
+      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
+      
+      spread <- spreadQueryHandler.getSpread(spreadId)
+      photoFile <- photoService.fetchAndStore(Photo.toPhotoSource(spread.photo))
+      cloneSpread <- Spread.clone(spread, photoFile.fileStored)
+      cloneSpreadId <- spreadRepository.createSpread(cloneSpread)
+      
+      _ <- cardCommandHandler.cloneCards(spreadId, cloneSpreadId)
+      _ <- cardOfDayCommandHandler.cloneCardOfDay(spreadId, cloneSpreadId)
+    } yield cloneSpreadId
+    
   private def validatePublishing(spread: Spread, cards: List[Card]) =
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")

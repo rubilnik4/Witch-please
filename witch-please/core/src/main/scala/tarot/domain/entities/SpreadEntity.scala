@@ -20,7 +20,7 @@ final case class SpreadEntity(
 )
 
 object SpreadEntity {
-  def toEntity(spread: Spread, photoId: UUID): SpreadEntity =
+  def toEntity(spread: Spread): SpreadEntity =
     SpreadEntity(
       id = spread.id.id,
       projectId = spread.projectId.id,
@@ -28,7 +28,7 @@ object SpreadEntity {
       cardCount = spread.cardsCount,
       description = spread.description,
       status = spread.status,
-      photoId = photoId,
+      photoId = spread.photo.id.id,
       createdAt = spread.createdAt,
       scheduledAt = spread.scheduledAt,
       publishedAt = spread.publishedAt

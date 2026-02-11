@@ -75,7 +75,7 @@ final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Ca
       cardOfDayId <- quill.transaction {
         for {
           photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(cardOfDay.photo))
-          cardOfDayEntity = CardOfDayEntity.toEntity(cardOfDay, photoId)
+          cardOfDayEntity = CardOfDayEntity.toEntity(cardOfDay)
           cardOfDayId <- cardOfDayDao.insertCardOfDay(cardOfDayEntity)
         } yield cardOfDayId
       }

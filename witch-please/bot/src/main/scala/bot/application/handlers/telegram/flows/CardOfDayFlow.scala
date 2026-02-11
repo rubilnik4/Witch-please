@@ -6,12 +6,11 @@ import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
-import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.TelegramApiService
+import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
 import shared.models.files.FileSourceType
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO

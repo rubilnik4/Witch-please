@@ -21,7 +21,7 @@ final case class CardOfDayEntity(
 )
 
 object CardOfDayEntity {
-  def toEntity(cardOfDay: CardOfDay, coverPhotoId: UUID): CardOfDayEntity =
+  def toEntity(cardOfDay: CardOfDay): CardOfDayEntity =
     CardOfDayEntity(
       id = cardOfDay.id.id,
       cardId = cardOfDay.cardId.id,
@@ -29,7 +29,7 @@ object CardOfDayEntity {
       title = cardOfDay.title,
       description = cardOfDay.description,
       status = cardOfDay.status,
-      photoId = coverPhotoId,
+      photoId = cardOfDay.photo.id.id,
       createdAt = cardOfDay.createdAt,
       scheduledAt = cardOfDay.scheduledAt,
       publishedAt = cardOfDay.publishedAt

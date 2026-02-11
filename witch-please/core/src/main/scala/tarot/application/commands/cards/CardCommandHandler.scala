@@ -12,4 +12,5 @@ trait CardCommandHandler {
   def updateCard(command: UpdateCardCommand): ZIO[TarotEnv, TarotError, Unit]
   def deleteCard(cardId: CardId): ZIO[TarotEnv, TarotError, Unit]
   def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit]
+  def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardId]]
 }

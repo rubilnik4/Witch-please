@@ -8,7 +8,6 @@ import zio.ZIO
 
 import java.time.Instant
 
-
 trait SpreadRepository {
   def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]]
   def getSpreads(projectId: ProjectId): ZIO[Any, TarotError, List[Spread]]

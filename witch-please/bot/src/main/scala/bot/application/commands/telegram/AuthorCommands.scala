@@ -10,6 +10,7 @@ object AuthorCommands {
   final val SpreadsSelect = s"${Prefix}_spreads_select"
   final val SpreadCreate = s"${Prefix}_spread_create"
   final val SpreadEdit = s"${Prefix}_spread_edit"
+  final val SpreadClone = s"${Prefix}_spread_clone"
   final val SpreadSelect = s"${Prefix}_spread_select" 
   final val SpreadPublish = s"${Prefix}_spread_publish"
   final val SpreadDelete = s"${Prefix}_spread_delete"
@@ -28,6 +29,9 @@ object AuthorCommands {
     
   def spreadEdit(spreadId: UUID): String =
     s"$SpreadEdit $spreadId"
+
+  def spreadClone(spreadId: UUID): String =
+    s"$SpreadClone $spreadId"
     
   def spreadSelect(spreadId: UUID): String =
     s"$SpreadSelect $spreadId"

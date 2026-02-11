@@ -68,7 +68,7 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
       spreadId <- quill.transaction {
         for {
           photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))
-          spreadEntity = SpreadEntity.toEntity(spread, photoId)
+          spreadEntity = SpreadEntity.toEntity(spread)
           spreadId <- spreadDao.insertSpread(spreadEntity)
         } yield spreadId
       }

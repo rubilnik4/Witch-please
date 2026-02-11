@@ -16,4 +16,5 @@ trait CardOfDayCommandHandler {
   def updateCardOfDay(command: UpdateCardOfDayCommand): ZIO[TarotEnv, TarotError, Unit]
   def deleteCardOfDay(cardOfDayId: CardOfDayId): ZIO[TarotEnv, TarotError, Unit]
   def publishCardOfDay(cardOfDayId: CardOfDayId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit]
+  def cloneCardOfDay(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, CardOfDayId]
 }

@@ -7,7 +7,6 @@ import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
-import bot.infrastructure.services.telegram.TelegramPhotoResolver
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
 import shared.api.dto.tarot.photo.PhotoRequest
@@ -66,6 +65,14 @@ object SpreadFlow {
       _ <- ZIO.logInfo(s"Edit spread $spreadId for chat ${context.chatId}")
 
       _ <- startSpreadPending(context, SpreadMode.Edit(spreadId))(telegramApi, sessionService)
+    } yield ()
+
+  def cloneSpread(context: TelegramContext, spreadId: UUID)(
+    telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Clone spread $spreadId for chat ${context.chatId}")
+
+     // _ <- startSpreadPending(context, SpreadMode.Edit(spreadId))(telegramApi, sessionService)
     } yield ()
 
   def setSpreadTitle(context: TelegramContext, spreadMode: SpreadMode, title: String)(
@@ -179,6 +186,7 @@ object SpreadFlow {
       (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
     val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
+    val cloneButton = TelegramInlineKeyboardButton("Повторить", Some(AuthorCommands.spreadClone(spread.id)))
     val modifyButtons =
       if (SpreadStatus.isModify(spread.status))
         val publishButton = TelegramInlineKeyboardButton("Публикация", Some(AuthorCommands.spreadPublish(spread.id)))
@@ -186,10 +194,10 @@ object SpreadFlow {
         val deleteButton = TelegramInlineKeyboardButton("Удалить", Some(AuthorCommands.spreadDelete(spread.id)))
         List(publishButton, editButton, deleteButton)
       else Nil
+    val photoButton = TelegramInlineKeyboardButton(s"🖼 Посмотреть фото", Some(TelegramCommands.showPhoto(spread.photo.id))) 
     val backButton = TelegramInlineKeyboardButton("⬅ К раскладам", Some(AuthorCommands.SpreadsSelect))
-    val photoButton = TelegramInlineKeyboardButton(s"🖼 Посмотреть фото", Some(TelegramCommands.showPhoto(spread.photo.id)))
-    val buttons = List(cardsButton, cardOfDayButton) ++ modifyButtons ++ List(photoButton, backButton)
-    
+    val buttons = List(cardsButton, cardOfDayButton) ++ modifyButtons ++ List(cloneButton, photoButton, backButton)
+
     for {
       cardOfDayText <- CardOfDayFlow.getCardOfDayPositionText(context, cardOfDay)(sessionService)
       summaryText =

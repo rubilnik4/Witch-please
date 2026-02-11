@@ -9,29 +9,29 @@ import zio.ZIO
 import java.util.UUID
 
 final case class PhotoEntity(
-  id: UUID,
-  fileId: UUID,
-  ownerType: PhotoOwnerType,
-  ownerId: UUID,
-  storageType: FileStorageType,
-  sourceType: FileSourceType,
-  sourceId: String,
-  path: Option[String],
-  bucket: Option[String],
-  key: Option[String]
+                              id: UUID,
+                              fileId: UUID,
+                              ownerType: PhotoOwnerType,
+                              ownerId: UUID,
+                              storageType: FileStoredType,
+                              sourceType: FileSourceType,
+                              sourceId: String,
+                              path: Option[String],
+                              bucket: Option[String],
+                              key: Option[String]
   )
 
 object PhotoEntity {
   def toDomain(photoSource: PhotoEntity): ZIO[Any, TarotError, Photo] =
     photoSource.storageType match {
-      case FileStorageType.Local =>
+      case FileStoredType.Local =>
         for {
           path <- ZIO.fromOption(photoSource.path)
             .orElseFail(TarotError.SerializationError("Missing 'path' for Local photo source"))
         } yield Photo.Local(PhotoId(photoSource.id), photoSource.fileId, path,
           photoSource.ownerType, photoSource.ownerId, photoSource.sourceType, photoSource.sourceId)
 
-      case FileStorageType.S3 =>
+      case FileStoredType.S3 =>
         for {
           bucket <- ZIO.fromOption(photoSource.bucket)
             .orElseFail(TarotError.SerializationError("Missing 'bucket' for S3 photo source"))
@@ -50,7 +50,7 @@ object PhotoEntity {
           fileId = fileId,
           ownerType = ownerType,
           ownerId = ownerId,
-          storageType = FileStorageType.Local,
+          storageType = FileStoredType.Local,
           sourceType = sourceType,
           sourceId = sourceId,
           path = Some(path),
@@ -64,7 +64,7 @@ object PhotoEntity {
           fileId = fileId,
           ownerType = ownerType,
           ownerId = ownerId,
-          storageType = FileStorageType.S3,
+          storageType = FileStoredType.S3,
           sourceType = sourceType,
           sourceId = sourceId,
           path = None,

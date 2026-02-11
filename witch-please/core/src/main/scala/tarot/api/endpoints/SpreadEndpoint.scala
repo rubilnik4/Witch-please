@@ -146,10 +146,29 @@ object SpreadEndpoint {
           } yield ()).mapResponseErrors
         }
       }
-  
+
+  private val cloneSpreadEndpoint: ZServerEndpoint[TarotEnv, Any] =
+    endpoint
+      .post
+      .in(TarotApiRoutes.apiPath / TarotApiRoutes.spreads / path[UUID]("spreadId") / "clone")
+      .out(jsonBody[IdResponse])
+      .errorOut(TapirError.tapirErrorOut)
+      .tag(tag)
+      .securityIn(auth.bearer[String]())
+      .zServerSecurityLogic(token => AuthValidator.verifyToken(Role.Admin)(token).mapResponseErrors)
+      .serverLogic { tokenPayload =>
+        spreadId =>
+          (for {
+            _ <- ZIO.logInfo(s"User ${tokenPayload.userId} requested to clone spread: $spreadId")
+
+            handler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
+            spreadId <- handler.cloneSpread(SpreadId(spreadId))
+          } yield IdResponse(spreadId.id)).mapResponseErrors
+      }
+
   val endpoints: List[ZServerEndpoint[TarotEnv, Any]] =
     List(
-      getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint,
+      getSpreadsEndpoint, getSpreadEndpoint, postSpreadEndpoint, cloneSpreadEndpoint,
       putSpreadEndpoint, deleteSpreadEndpoint, publishSpreadEndpoint
     )
 }

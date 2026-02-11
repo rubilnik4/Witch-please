@@ -50,6 +50,14 @@ final class PhotoDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
+  def insertPhotos(photos: List[PhotoEntity]): ZIO[Any, SQLException, List[UUID]] =
+    run(
+      quote {
+        liftQuery(photos).foreach { photo =>
+          photoTable.insertValue(photo).returning(_.id)
+        }
+      })
+
   def deletePhoto(photoId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {

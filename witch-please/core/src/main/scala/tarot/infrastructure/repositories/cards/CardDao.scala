@@ -73,6 +73,14 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
           .returning(_.id)
       })
 
+  def insertCards(cards: List[CardEntity]): ZIO[Any, SQLException, List[UUID]] =
+    run(
+      quote {
+        liftQuery(cards).foreach { card =>
+          cardTable.insertValue(card).returning(_.id)
+        }
+      })  
+
   def updateCard(cardId: UUID, card: CardUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {

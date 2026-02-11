@@ -8,7 +8,7 @@ import zio.{Cause, Chunk, ZIO}
 import java.util.UUID
 
 final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:  
-  override def storeFile(storedFile: StoredFile): ZIO[Any, Throwable, FileStorage] =
+  override def storeFile(storedFile: FileBytes): ZIO[Any, Throwable, FileStored] =
     val id = UUID.randomUUID()
     val fullPath = getFullPath(id.toString)
     for {
@@ -26,7 +26,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
       _ <- Files.writeBytes(fullPath, Chunk.fromArray(storedFile.bytes))
         .tapError(ex => ZIO.logErrorCause(s"Failed to write file ${storedFile.fileName} to $fullPath", Cause.fail(ex)))
         .mapError(ex => new RuntimeException(s"Failed to write file ${storedFile.fileName} to $fullPath", ex))
-    } yield FileStorage.Local(id, fullPath.toString)
+    } yield FileStored.Local(id, fullPath.toString)
 
   override def deleteFile(id: UUID): ZIO[Any, Throwable, Boolean] =
     val fullPath = getFullPath(id.toString)
@@ -39,7 +39,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
         .mapError(ex => new RuntimeException(s"Failed to delete file at $fullPath", ex))
     } yield deleted
     
-  override def getResourceFile(resourcePath: String): ZIO[Any, Throwable, StoredFile] =
+  override def getResourceFile(resourcePath: String): ZIO[Any, Throwable, FileBytes] =
     for {
       _ <- ZIO.logDebug(s"Attempting to get photo from resource: $resourcePath")
 
@@ -58,7 +58,7 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
         .tapError(ex =>
           ZIO.logErrorCause(s"Could not read stream: $resourcePath", Cause.fail(ex)))
         .mapError(ex => new RuntimeException(s"Could not read stream: $resourcePath", ex))
-    } yield StoredFile(fileName, bytes)
+    } yield FileBytes(fileName, bytes)
   
   private def getFullPath(fileName: String) =
     rootPath / fileName

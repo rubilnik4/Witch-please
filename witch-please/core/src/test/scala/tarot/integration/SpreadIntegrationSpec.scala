@@ -8,6 +8,7 @@ import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.ClientType
+import shared.models.tarot.photo.PhotoOwnerType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
@@ -87,7 +88,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         spread <- ZIOHttpClient.getResponse[SpreadResponse](response)
       } yield assertTrue(
-        spread.id == spreadId)
+        spread.id == spreadId,
+        spread.photo.ownerId == spreadId,
+        spread.photo.ownerType == PhotoOwnerType.Spread
+      )
     },
 
     test("should get authors") {
@@ -156,7 +160,10 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         card <- ZIOHttpClient.getResponse[CardResponse](response)
       } yield assertTrue(
-        card.id == cardId)
+        card.id == cardId,
+        card.photo.ownerId == cardId,
+        card.photo.ownerType == PhotoOwnerType.Card
+      )
     },
 
     test("should get cards") {
@@ -172,7 +179,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         cards <- ZIOHttpClient.getResponse[List[CardResponse]](response)
       } yield assertTrue(
         cards.nonEmpty,
-        cards.length == cardsCount)
+        cards.length == cardsCount
+      )
     },
 
     test("should get cards count") {
@@ -222,7 +230,9 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         cardOfDay <- ZIOHttpClient.getResponse[CardOfDayResponse](response)
       } yield assertTrue(
-        cardOfDay.id == cardOfDayId
+        cardOfDay.id == cardOfDayId,
+        cardOfDay.photo.ownerId == cardOfDayId,
+        cardOfDay.photo.ownerType == PhotoOwnerType.CardOfDay
       )
     },
 

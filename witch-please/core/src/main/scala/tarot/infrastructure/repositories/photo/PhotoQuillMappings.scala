@@ -11,6 +11,6 @@ object PhotoQuillMappings {
   given MappedEncoding[FileSourceType, String] = MappedEncoding(_.toString)
   given MappedEncoding[String, FileSourceType] = MappedEncoding(FileSourceType.valueOf)
 
-  given MappedEncoding[FileStorageType, String] = MappedEncoding(_.toString)
-  given MappedEncoding[String, FileStorageType] = MappedEncoding(FileStorageType.valueOf)
+  given MappedEncoding[FileStoredType, String] = MappedEncoding(_.toString)
+  given MappedEncoding[String, FileStoredType] = MappedEncoding(FileStoredType.valueOf)
 }

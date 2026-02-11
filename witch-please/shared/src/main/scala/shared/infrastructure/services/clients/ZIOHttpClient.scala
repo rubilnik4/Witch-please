@@ -24,6 +24,12 @@ object ZIOHttpClient {
   def postAuthRequest[Request: JsonEncoder](url: URL, body: Request, token: String): http.Request =
     postRequestInternal(url, body, Some(token))
 
+  def postRequest(url: URL): http.Request =
+    postRequestInternal(url,  None)
+
+  def postAuthRequest(url: URL, token: String): http.Request =
+    postRequestInternal(url, Some(token))  
+
   private def postRequestInternal[Request: JsonEncoder](url: URL, body: Request, token: Option[String]): http.Request = {
     val headers = getAuthHeaders(token)
     Request
@@ -31,6 +37,13 @@ object ZIOHttpClient {
       .setHeaders(Headers(headers))
   }
 
+  private def postRequestInternal(url: URL, token: Option[String]): http.Request = {
+    val headers = getAuthHeaders(token)
+    Request
+      .post(url, Body.empty)
+      .setHeaders(Headers(headers))
+  }
+  
   def putRequest[Request: JsonEncoder](url: URL, body: Request): http.Request =
     putRequestInternal(url, body, None)
 

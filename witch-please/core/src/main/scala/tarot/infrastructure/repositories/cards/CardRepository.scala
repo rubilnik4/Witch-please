@@ -15,6 +15,7 @@ trait CardRepository {
   def getCardsCount(spreadId: SpreadId): ZIO[Any, TarotError, Long]
   def existCardPosition(spreadId: SpreadId, position: Int): ZIO[Any, TarotError, Boolean]
   def createCard(card: Card): ZIO[Any, TarotError, CardId]
+  def createCards(cards: List[Card]): ZIO[Any, TarotError, List[CardId]]
   def updateCard(cardId: CardId, card: CardUpdate): ZIO[Any, TarotError, Unit]
   def deleteCard(cardId: CardId): ZIO[Any, TarotError, Boolean]
 }

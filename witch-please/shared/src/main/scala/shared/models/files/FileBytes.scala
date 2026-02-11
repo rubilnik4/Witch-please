@@ -1,6 +1,6 @@
 package shared.models.files
 
-final case class StoredFile(
+final case class FileBytes(
   fileName: String, 
   bytes: Array[Byte]
 )

@@ -1,11 +1,11 @@
 package tarot.application.commands.cards
 
-import shared.models.files.FileStorage
+import shared.models.photo.PhotoSource
 import tarot.application.commands.cards.commands.{CreateCardCommand, UpdateCardCommand}
 import tarot.application.commands.spreads.SpreadValidateHandler
 import tarot.domain.models.TarotError
 import tarot.domain.models.cards.*
-import tarot.domain.models.photo.PhotoSource
+import tarot.domain.models.spreads.SpreadId
 import tarot.infrastructure.repositories.cards.CardRepository
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -33,8 +33,9 @@ final class CardCommandHandlerLive(
           ZIO.fail(TarotError.Conflict(s"Card position ${command.position} already exists in spread ${command.spreadId}"))
       }
 
-      photoFile <- getPhotoSource(command.photo)
-      card <- Card.toDomain(command, photoFile)
+      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
+      photoFile <- photoService.fetchAndStore(command.photo)
+      card <- Card.toDomain(command, photoFile.fileStored)
       cardId <- cardRepository.createCard(card)
     } yield cardId
 
@@ -49,8 +50,9 @@ final class CardCommandHandlerLive(
       spread <- spreadQueryHandler.getSpread(previousCard.spreadId)
       _ <- SpreadValidateHandler.validateModifyStatus(spread)
 
-      photoFile <- getPhotoSource(command.photo)
-      card = CardUpdate.toDomain(command, photoFile)
+      photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
+      photoFile <- photoService.fetchAndStore(command.photo)
+      card = CardUpdate.toDomain(command, photoFile.fileStored)
       _ <- cardRepository.updateCard(command.cardId, card)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
@@ -87,10 +89,24 @@ final class CardCommandHandlerLive(
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
       _ <- photoCommandHandler.deletePhoto(card.photo.id, card.photo.fileId)
     } yield ()
-    
-  private def getPhotoSource(photoFile: PhotoSource): ZIO[TarotEnv, TarotError, FileStorage] =
+
+  override def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardId]] =
     for {
+      _ <- ZIO.logInfo(s"Executing clone cards command by spread $spreadId")
+
+      cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
-      photoFile <- photoService.fetchAndStore(photoFile.sourceId)
-    } yield photoFile
+      
+      cards <- cardQueryHandler.getCards(spreadId)
+      photoSources = cards.map(card => PhotoSource(card.photo.sourceId, card.photo.sourceType, Some(card.id.id.toString)))
+      photoFiles <- photoService.fetchAndStore(photoSources)
+      clonedCards <- ZIO.foreach(cards) { card =>       
+        for {
+          photoFile <- ZIO.fromOption(photoFiles.find(photoFile => photoFile.photoSource.parentId.contains(card.id.id.toString)))
+            .orElseFail(TarotError.NotFound(s"Photo file not found for ${card.id}"))
+          cloned <- Card.clone(card, cloneSpreadId, photoFile.fileStored)
+        } yield cloned
+      }
+      cardIds <- cardRepository.createCards(clonedCards)
+    } yield cardIds
 }

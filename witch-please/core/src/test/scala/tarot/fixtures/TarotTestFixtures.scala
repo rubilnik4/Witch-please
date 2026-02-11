@@ -1,6 +1,7 @@
 package tarot.fixtures
 
 import shared.models.files.FileSourceType
+import shared.models.photo.PhotoSource
 import shared.models.tarot.authorize.ClientType
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.cards.commands.CreateCardCommand
@@ -12,7 +13,6 @@ import tarot.domain.models.*
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.CardOfDayId
 import tarot.domain.models.channels.UserChannelId
-import tarot.domain.models.photo.PhotoSource
 import tarot.domain.models.spreads.*
 import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
@@ -52,7 +52,7 @@ object TarotTestFixtures {
     } yield token.token
 
   def createSpread(userId: UserId, cardsCount: Int, photoId: String): ZIO[TarotEnv, TarotError, SpreadId] =
-    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    val photo = PhotoSource(photoId, FileSourceType.Telegram, None)
     val command = getSpreadCommand(userId, cardsCount, photo)
     for {
       spreadHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.spreadCommandHandler)
@@ -60,7 +60,7 @@ object TarotTestFixtures {
     } yield spreadId
 
   def createCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardId]] =
-    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    val photo = PhotoSource(photoId, FileSourceType.Telegram, None)
     for {
       cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
       cardIds <- ZIO.foreach(0 until cardCount) { position =>
@@ -70,7 +70,7 @@ object TarotTestFixtures {
     } yield cardIds.toList
 
   def createCardOfDay(cardId: CardId, spreadId: SpreadId, photoId: String): ZIO[TarotEnv, TarotError, CardOfDayId] =
-    val photo = PhotoSource(FileSourceType.Telegram, photoId)
+    val photo = PhotoSource(photoId, FileSourceType.Telegram, None)
     for {
       cardOfDayCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardOfDayCommandHandler)
       command = getCardOfDayCommand(cardId, spreadId, photo)

@@ -1,7 +1,7 @@
 package tarot.domain.models.spreads
 
 import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileStorage
+import shared.models.files.FileStored
 import shared.models.tarot.photo.PhotoOwnerType
 import tarot.application.commands.spreads.commands.UpdateSpreadCommand
 import tarot.domain.models.photo.Photo
@@ -18,7 +18,7 @@ final case class SpreadUpdate(
 )
 
 object SpreadUpdate {
-  def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStorage): SpreadUpdate =
+  def toDomain(command: UpdateSpreadCommand, storedPhoto: FileStored): SpreadUpdate =
     val photo = Photo.toPhoto(UUID.randomUUID(), storedPhoto, PhotoOwnerType.Spread,
       command.spreadId.id, command.photo.sourceType, command.photo.sourceId)
     SpreadUpdate(

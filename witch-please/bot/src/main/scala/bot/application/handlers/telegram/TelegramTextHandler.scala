@@ -43,14 +43,18 @@ object TelegramTextHandler {
           CardOfDayFlow.setCardOfDayTitle(context, cardMode, cardId, text)(telegramApi, tarotApi, sessionService)
         case Some(BotPendingAction.CardOfDayDescription(cardMode, cardId, title)) =>
           CardOfDayFlow.setCardOfDayDescription(context, cardMode, cardId, title, text)(telegramApi, tarotApi, sessionService)
-        case None
-             | Some(BotPendingAction.ChannelChannelId(_))
-             | Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_))
-             | Some(BotPendingAction.CardOfDayPhoto(_,_,_,_))=>
+        case Some(BotPendingAction.SpreadPhoto(_,_,_,_)) | Some(BotPendingAction.CardPhoto(_,_,_))
+             | Some(BotPendingAction.CardOfDayPhoto(_,_,_,_)) =>
+          for {
+            _ <- ZIO.logInfo(s"Used text message instead of photo ${context.chatId}: $text")
+            telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+            _ <- telegramApiService.sendText(context.chatId, "Принимаю только фото!")
+          } yield ()
+        case None | Some(BotPendingAction.ChannelChannelId(_)) =>
           for {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
-            _ <- telegramApiService.sendText(context.chatId, "Пожалуйста, используйте команды. Введите /help.")
+            _ <- telegramApiService.sendText(context.chatId, "Используйте команды. Введите /help.")
           } yield ()
       }
     } yield ()

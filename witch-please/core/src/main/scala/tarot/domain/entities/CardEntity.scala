@@ -16,14 +16,14 @@ final case class CardEntity(
 )
 
 object CardEntity {
-  def toEntity(card: Card, coverPhotoId: UUID): CardEntity =
+  def toEntity(card: Card): CardEntity =
     CardEntity(
       id = card.id.id,
       position = card.position,
       spreadId = card.spreadId.id,
       title = card.title,
       description = card.description,
-      photoId = coverPhotoId,
+      photoId = card.photo.id.id,
       createdAt = card.createdAt
     )
 }

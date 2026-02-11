@@ -71,7 +71,7 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
       cardId <- quill.transaction {
         for {
           photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo))
-          cardEntity = CardEntity.toEntity(card, photoId)
+          cardEntity = CardEntity.toEntity(card)
           cardId <- cardDao.insertCard(cardEntity)
         } yield cardId
       }
@@ -79,6 +79,22 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
         .mapError(e => DatabaseError(s"Failed to create card ${card.id}", e.getCause))
     } yield CardId(cardId)
 
+  override def createCards(cards: List[Card]): ZIO[Any, TarotError, List[CardId]] =
+    val ids = cards.map(_.id)
+    for {      
+      _ <- ZIO.logDebug(s"Creating cards $ids")
+
+      cardIds <- quill.transaction {
+          for {
+            photoIds <- photoDao.insertPhotos(cards.map(_.photo).map(PhotoEntity.toEntity))
+            cardEntities = cards.map(CardEntity.toEntity) 
+            cardIds <- cardDao.insertCards(cardEntities)
+          } yield cardIds
+        }
+        .tapError(e => ZIO.logErrorCause(s"Failed to create cards $ids", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to create card $ids", e.getCause))
+    } yield cardIds.map(CardId(_))
+  
   override def updateCard(cardId: CardId, card: CardUpdate): ZIO[Any, TarotError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Updating card $cardId")

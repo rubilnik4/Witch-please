@@ -97,15 +97,12 @@ final class TelegramApiServiceLive(token: String, client: SttpBackend[Task, Any]
 
   override def downloadPhoto(fileId: String): ZIO[Any, ApiError, TelegramFile] =
     for {
-      _ <- ZIO.logDebug(s"Fetching telegram file path for fileId: $fileId")
+      _ <- ZIO.logDebug(s"Downloading telegram file path for fileId: $fileId")
       
       fileRequest = getFileRequest(fileId)
       fileResponse <- SttpClient.sendJson(client, fileRequest)
       telegramFile <- TelegramApi.getTelegramResponse(fileResponse)
-      fileName = telegramFile.filePath.split("/").lastOption.getOrElse(s"${telegramFile.fileId}.jpg")
-
-      _ <- ZIO.logDebug(s"Downloading telegram image from path: $telegramFile.filePath")
-      
+      fileName = telegramFile.filePath.split("/").lastOption.getOrElse(s"${telegramFile.fileId}.jpg")      
       imageRequest = getDownloadImageRequest(telegramFile.filePath)
       telegramImage <- SttpClient.sendJsonForBytes(client, imageRequest)
     } yield TelegramFile(fileName, telegramImage)

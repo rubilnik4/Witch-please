@@ -15,5 +15,6 @@ trait SpreadCommandHandler {
   def scheduleSpread(command: ScheduleSpreadCommand): ZIO[TarotEnv, TarotError, Unit]
   def publishSpread(spread: Spread, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit]
   def deleteSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, Unit]
+  def cloneSpread(spreadId: SpreadId): ZIO[TarotEnv, TarotError, SpreadId]
 }
 

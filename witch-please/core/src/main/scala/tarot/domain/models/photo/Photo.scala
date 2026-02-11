@@ -1,6 +1,7 @@
 package tarot.domain.models.photo
 
 import shared.models.files.*
+import shared.models.photo.PhotoSource
 import shared.models.tarot.photo.PhotoOwnerType
 
 import java.util.UUID
@@ -36,12 +37,18 @@ object Photo {
    sourceId: String
   ) extends Photo
 
-  def toPhoto(id: UUID, photoFile: FileStorage, ownerType: PhotoOwnerType,
+  def toPhoto(id: UUID, photoFile: FileStored, ownerType: PhotoOwnerType,
               ownerId: UUID, sourceType: FileSourceType, sourceId: String): Photo =
     photoFile match {
-      case FileStorage.Local(fileId, path) =>
+      case FileStored.Local(fileId, path) =>
         Photo.Local(PhotoId(id), fileId, path, ownerType, ownerId, sourceType, sourceId)
-      case FileStorage.S3(fileId, bucket, key) =>
+      case FileStored.S3(fileId, bucket, key) =>
         Photo.S3(PhotoId(id), fileId, bucket, key, ownerType, ownerId, sourceType, sourceId)
     }
+
+  def toPhotoSource(photo: Photo): PhotoSource =
+    toPhotoSource(photo, None)
+    
+  def toPhotoSource(photo: Photo, parentId: Option[String]): PhotoSource =
+    PhotoSource(photo.sourceId, photo.sourceType, parentId)  
 }

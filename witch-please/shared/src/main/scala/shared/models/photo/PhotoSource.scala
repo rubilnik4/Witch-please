@@ -1,8 +1,9 @@
-package tarot.domain.models.photo
+package shared.models.photo
 
 import shared.models.files.FileSourceType
 
 final case class PhotoSource(
+  sourceId: String,
   sourceType: FileSourceType,
-  sourceId: String
+  parentId: Option[String]                          
 )

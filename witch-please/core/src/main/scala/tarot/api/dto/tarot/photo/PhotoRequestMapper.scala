@@ -2,10 +2,11 @@ package tarot.api.dto.tarot.photo
 
 import shared.api.dto.tarot.photo.{PhotoRequest, PhotoResponse}
 import shared.api.dto.tarot.spreads.{SpreadCreateRequest, SpreadRequest}
+import shared.models.photo.PhotoSource
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.photo.{PhotoSource, Photo}
+import tarot.domain.models.photo.Photo
 import zio.{IO, ZIO}
 
 object PhotoRequestMapper {
@@ -14,8 +15,9 @@ object PhotoRequestMapper {
 
   private def toDomain(request: PhotoRequest): PhotoSource =
     PhotoSource(
-      sourceType = request.sourceType,
       sourceId = request.sourceId,
+      sourceType = request.sourceType,
+      parentId = None
     )
 
   private def validate(request: PhotoRequest) =

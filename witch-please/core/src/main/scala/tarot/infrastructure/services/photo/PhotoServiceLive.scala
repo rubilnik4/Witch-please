@@ -1,19 +1,32 @@
 package tarot.infrastructure.services.photo
 
 import shared.infrastructure.services.storage.FileStorageService
-import shared.infrastructure.services.telegram.TelegramApiService
+import shared.infrastructure.services.telegram.*
 import shared.models.files.*
+import shared.models.photo.{PhotoFile, PhotoSource}
 import tarot.domain.models.{TarotError, TarotErrorMapper}
 import zio.ZIO
 
-final class PhotoServiceLive(telegram: TelegramApiService, storage: FileStorageService) extends PhotoService:
-  override def fetchAndStore(fileId: String): ZIO[Any, TarotError, FileStorage] =
+final class PhotoServiceLive(
+  telegram: TelegramApiService, 
+  storage: FileStorageService
+) extends PhotoService:
+  
+  override def fetchAndStore(photoSource: PhotoSource): ZIO[Any, TarotError, PhotoFile] =
     for {
-      _ <- ZIO.logInfo(s"Downloading photo: $fileId")
+      _ <- ZIO.logDebug(s"Fetch and store photo: ${photoSource.sourceId}")
+      
+      fileId <- TelegramPhotoResolver.getFileId(photoSource)
+        .mapError(error => TarotError.UnsupportedType(error.getMessage))
+      
       telegramFile <- telegram.downloadPhoto(fileId).mapError(TarotErrorMapper.toTarotError)
+      fileBytes = FileBytes(telegramFile.fileName, telegramFile.bytes)
+      fileStored <- storage.storeFile(fileBytes)
+        .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
+      
+    } yield PhotoFile(fileStored, photoSource)
 
-      _ <- ZIO.logInfo(s"Storing photo: ${telegramFile.fileName}")
-      photoFile = StoredFile(telegramFile.fileName, telegramFile.bytes)
-      photoSource <- storage.storeFile(photoFile)
-        .mapError(err => TarotError.StorageError(err.getMessage, err.getCause))
-    } yield photoSource
+  override def fetchAndStore(photoSources: List[PhotoSource], parallelism: Int): ZIO[Any, TarotError, List[PhotoFile]] =
+    ZIO.withParallelism(parallelism.max(parallelism)) {
+      ZIO.foreachPar(photoSources)(fetchAndStore)
+    }
