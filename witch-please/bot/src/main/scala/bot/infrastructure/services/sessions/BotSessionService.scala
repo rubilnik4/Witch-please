@@ -2,6 +2,7 @@ package bot.infrastructure.services.sessions
 
 import bot.domain.models.session.*
 import bot.layers.BotEnv
+import shared.models.tarot.cards.CardPosition
 import zio.ZIO
 
 import java.time.*

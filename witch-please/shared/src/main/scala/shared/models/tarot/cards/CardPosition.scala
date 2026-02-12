@@ -1,4 +1,4 @@
-package bot.domain.models.session
+package shared.models.tarot.cards
 
 import java.util.UUID
 

@@ -59,14 +59,14 @@ object CardOfDay {
       cardOfDay <- cardOfDayAt
     } yield Duration.between(scheduled, cardOfDay)
 
-  def clone(cardOfDay: CardOfDay, spreadId: SpreadId, photoFile: FileStored): UIO[CardOfDay] =
+  def clone(cardOfDay: CardOfDay, spreadId: SpreadId, cardId: CardId, photoFile: FileStored): UIO[CardOfDay] =
     val id = UUID.randomUUID()
     val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, PhotoOwnerType.CardOfDay, id, cardOfDay.photo.sourceType, cardOfDay.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       cloneCardOfDay = CardOfDay(
         id = CardOfDayId(id),
-        cardId = cardOfDay.cardId,        
+        cardId = cardId,        
         spreadId = spreadId,
         title = cardOfDay.title,
         description = cardOfDay.description,

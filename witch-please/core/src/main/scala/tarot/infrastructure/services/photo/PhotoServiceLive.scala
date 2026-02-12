@@ -18,11 +18,13 @@ final class PhotoServiceLive(
       
       fileId <- TelegramPhotoResolver.getFileId(photoSource)
         .mapError(error => TarotError.UnsupportedType(error.getMessage))
+        .tapError(error => ZIO.logError(s"Photo service unsupported type: ${error.message}"))
       
       telegramFile <- telegram.downloadPhoto(fileId).mapError(TarotErrorMapper.toTarotError)
       fileBytes = FileBytes(telegramFile.fileName, telegramFile.bytes)
       fileStored <- storage.storeFile(fileBytes)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
+        .tapError(error => ZIO.logError(s"Photo service storage error: ${error.message}"))
       
     } yield PhotoFile(fileStored, photoSource)
 

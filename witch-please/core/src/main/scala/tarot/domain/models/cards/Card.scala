@@ -2,6 +2,7 @@ package tarot.domain.models.cards
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.files.FileStored
+import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.photo.PhotoOwnerType
 import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.domain.models.photo.*
@@ -52,4 +53,7 @@ object Card {
         photo = photo,
         createdAt = createdAt)
     } yield cloneCard
+    
+  def toCardPosition(card: Card): CardPosition =
+    CardPosition(card.position, card.id.id)  
 }

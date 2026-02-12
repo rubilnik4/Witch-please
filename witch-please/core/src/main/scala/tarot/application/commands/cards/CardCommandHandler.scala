@@ -2,7 +2,7 @@ package tarot.application.commands.cards
 
 import tarot.application.commands.cards.commands.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.cards.{Card, CardId}
+import tarot.domain.models.cards.{Card, CardCloneId, CardId}
 import tarot.domain.models.spreads.SpreadId
 import tarot.layers.TarotEnv
 import zio.ZIO
@@ -12,5 +12,5 @@ trait CardCommandHandler {
   def updateCard(command: UpdateCardCommand): ZIO[TarotEnv, TarotError, Unit]
   def deleteCard(cardId: CardId): ZIO[TarotEnv, TarotError, Unit]
   def deleteCard(card: Card): ZIO[TarotEnv, TarotError, Unit]
-  def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardId]]
+  def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardCloneId]]
 }

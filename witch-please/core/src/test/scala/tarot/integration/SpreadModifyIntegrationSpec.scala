@@ -12,6 +12,7 @@ import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId}
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
+import tarot.integration.SpreadDeleteIntegrationSpec.{cardOfDayCardPosition, cardsCount}
 import tarot.integration.SpreadIntegrationSpec.test
 import tarot.integration.SpreadPublishIntegrationSpec.channelId
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
@@ -28,7 +29,8 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
   private final val channelId = 12345
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
-
+  private final val cardOfDayCardPosition = 0
+  
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
     test("initialize test state") {
       for {
@@ -36,14 +38,15 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         _ <- TarotTestFixtures.createUserChannel(userId, channelId)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoSourceId)
-        cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoSourceId)
-        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoSourceId)
+        cardPositions <- TarotTestFixtures.createCards(spreadId, cardsCount, photoSourceId)
+        cardOfDayCardId <- TarotTestFixtures.getCardId(cardPositions, cardOfDayCardPosition)
+        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardOfDayCardId, spreadId, photoSourceId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
 
         state = TestSpreadState.empty.withPhotoSourceId(photoSourceId).withUserId(userId.id).withToken(token)
-          .withSpreadId(spreadId.id).withCardIds(cardIds.map(_.id)).withCardOfDayId(cardOfDayId.id)
+          .withSpreadId(spreadId.id).withCardPositions(cardPositions).withCardOfDayId(cardOfDayId.id)
         _ <- ref.set(state)
       } yield assertTrue(photoSourceId.nonEmpty, token.nonEmpty)
     },
@@ -83,21 +86,22 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         state <- ref.get
         photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+        cardPosition <- ZIO.fromOption(state.cardPositions.flatMap(_.headOption))
+          .orElseFail(TarotError.NotFound("card positions not set"))        
         
         cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
         photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
-        previousCard <- cardQueryHandler.getCard(CardId(cardId))        
+        previousCard <- cardQueryHandler.getCard(CardId(cardPosition.cardId))        
 
         app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
         cardRequest = TarotTestRequests.cardUpdateRequest(photoSourceId)
-        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardUpdatePath("", cardId), cardRequest, token)
+        request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardUpdatePath("", cardPosition.cardId), cardRequest, token)
         _ <- app.runZIO(request)
 
-        card <- cardQueryHandler.getCard(CardId(cardId))
+        card <- cardQueryHandler.getCard(CardId(cardPosition.cardId))
         cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
       } yield assertTrue(
-        card.id.id == cardId,
+        card.id.id == cardPosition.cardId,
         card.photo.sourceId == photoSourceId,
         !cardPhotoExist
       )
@@ -110,14 +114,15 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         cardOfDayId <- ZIO.fromOption(state.cardOfDayId).orElseFail(TarotError.NotFound("cardOfDayId not set"))
-        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.lastOption)).orElseFail(TarotError.NotFound("cardIds not set"))
-
+        cardPositions <- ZIO.fromOption(state.cardPositions).orElseFail(TarotError.NotFound("card positions not set"))
+        cardOfDayCardId <- TarotTestFixtures.getCardId(cardPositions, cardPositions.map(_.position).max)
+        
         cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
         photoQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.photoQueryHandler)
         previousCard <- cardOfDayQueryHandler.getCardOfDay(CardOfDayId(cardOfDayId))
 
         app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
-        cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardId, photoSourceId)
+        cardOfDayRequest = TarotTestRequests.cardOfDayUpdateRequest(cardOfDayCardId.id, photoSourceId)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.cardOfDayUpdatePath("", cardOfDayId), cardOfDayRequest, token)
         _ <- app.runZIO(request)
 
@@ -125,7 +130,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
       } yield assertTrue(
         cardOfDay.id.id == cardOfDayId,
-        cardOfDay.cardId.id == cardId,
+        cardOfDay.cardId.id == cardOfDayCardId,
         cardOfDay.photo.sourceId == photoSourceId,
         !cardPhotoExist
       )

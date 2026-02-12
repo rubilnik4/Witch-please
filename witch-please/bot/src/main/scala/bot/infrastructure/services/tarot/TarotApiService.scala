@@ -25,6 +25,7 @@ trait TarotApiService {
   def getSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, SpreadResponse]
   def getSpreads(token: String): ZIO[Any, ApiError, List[SpreadResponse]]
   def createSpread(request: SpreadCreateRequest, token: String): ZIO[Any, ApiError, IdResponse]
+  def cloneSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, IdResponse]
   def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def deleteSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def publishSpread(request: SpreadPublishRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit]

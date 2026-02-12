@@ -8,11 +8,14 @@ import shared.api.dto.tarot.spreads.*
 import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.ClientType
+import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.photo.PhotoOwnerType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
+import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
+import tarot.integration.SpreadDeleteIntegrationSpec.cardOfDayCardPosition
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
@@ -29,7 +32,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
   private final val channelId = 12345
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
-
+  private final val cardOfDayCardPosition = 0
+  
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread API integration")(
     test("initialize test state") {
       for {
@@ -73,7 +77,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         spreads <- ZIOHttpClient.getResponse[List[SpreadResponse]](response)
       } yield assertTrue(
           spreads.nonEmpty,
-          spreads.head.id == spreadId)
+          spreads.map(_.id).contains(spreadId)
+      )
     },
 
     test("should get spread") {
@@ -106,7 +111,8 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         authors <- ZIOHttpClient.getResponse[List[AuthorResponse]](response)
       } yield assertTrue(
         authors.nonEmpty,
-        authors.head.id == userId)
+        authors.map(_.id).contains(userId)
+      )
     },
 
     test("should send card to current spread") {
@@ -118,17 +124,19 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
 
         app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
-        cardIds <- ZIO.foreach(0 until cardsCount) { position =>
+        cardPositions <- ZIO.foreach(0 until cardsCount) { position =>
           val cardRequest = TarotTestRequests.cardCreateRequest(position, photoSourceId)
           val request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardCreatePath("", spreadId), cardRequest, token)
           for {
             response <- app.runZIO(request)
             cardId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)
-          } yield cardId
-        }.map(_.toList)
+          } yield CardPosition(position, cardId)
+        }.map(_.toList)      
 
-        _ <- ref.set(state.withCardIds(cardIds))
-      } yield assertTrue(cardIds.forall(id => id.toString.nonEmpty))
+        _ <- ref.set(state.withCardPositions(cardPositions))
+      } yield assertTrue(
+        cardPositions.length == cardsCount
+      )
     },
 
     test("can't create existing card to current spread") {
@@ -153,15 +161,16 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
         state <- ref.get
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
-        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+        cardPosition <- ZIO.fromOption(state.cardPositions.flatMap(_.headOption))
+          .orElseFail(TarotError.NotFound("cardPosition not set"))
 
         app = ZioHttpInterpreter().toHttp(CardEndpoint.endpoints)
-        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardGetPath("", cardId), token)
+        request = ZIOHttpClient.getAuthRequest(TarotApiRoutes.cardGetPath("", cardPosition.cardId), token)
         response <- app.runZIO(request)
         card <- ZIOHttpClient.getResponse[CardResponse](response)
       } yield assertTrue(
-        card.id == cardId,
-        card.photo.ownerId == cardId,
+        card.id == cardPosition.cardId,
+        card.photo.ownerId == cardPosition.cardId,
         card.photo.ownerType == PhotoOwnerType.Card
       )
     },
@@ -206,10 +215,11 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         photoSourceId <- ZIO.fromOption(state.photoSourceId).orElseFail(TarotError.NotFound("photoSourceId not set"))
         token <- ZIO.fromOption(state.token).orElseFail(TarotError.NotFound("token not set"))
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
-        cardId <- ZIO.fromOption(state.cardIds.flatMap(_.headOption)).orElseFail(TarotError.NotFound("cardIds not set"))
+        cardPositions <- ZIO.fromOption(state.cardPositions).orElseFail(TarotError.NotFound("cardPositions not set"))
+        cardOfDayCardId <- TarotTestFixtures.getCardId(cardPositions, cardOfDayCardPosition)
 
         app = ZioHttpInterpreter().toHttp(CardOfDayEndpoint.endpoints)
-        cardOfDayRequest = TarotTestRequests.cardOfDayCreateRequest(cardId, photoSourceId)
+        cardOfDayRequest = TarotTestRequests.cardOfDayCreateRequest(cardOfDayCardId.id, photoSourceId)
         request = ZIOHttpClient.postAuthRequest(TarotApiRoutes.cardOfDayCreatePath("", spreadId), cardOfDayRequest, token)
         response <- app.runZIO(request)
         cardOfDayId <- ZIOHttpClient.getResponse[IdResponse](response).map(_.id)

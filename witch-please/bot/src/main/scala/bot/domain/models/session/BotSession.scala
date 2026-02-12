@@ -1,5 +1,6 @@
 package bot.domain.models.session
 
+import shared.models.tarot.cards.CardPosition
 import zio.ZIO
 
 import java.time.*

@@ -1,7 +1,7 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
-import bot.domain.models.session.{BotPendingAction, BotSpread, CardMode, CardPosition}
+import bot.domain.models.session.{BotPendingAction, BotSpread, CardMode}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -11,6 +11,7 @@ import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
 import shared.models.files.FileSourceType
+import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
 

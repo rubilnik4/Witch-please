@@ -14,6 +14,7 @@ import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
+import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
 
@@ -68,11 +69,18 @@ object SpreadFlow {
     } yield ()
 
   def cloneSpread(context: TelegramContext, spreadId: UUID)(
-    telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Clone spread $spreadId for chat ${context.chatId}")
 
-     // _ <- startSpreadPending(context, SpreadMode.Edit(spreadId))(telegramApi, sessionService)
+      session <- sessionService.get(context.chatId)
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      
+      spreadId <- tarotApi.cloneSpread(spreadId, token).map(_.id)
+      _ <- telegramApi.sendText(context.chatId, s"Расклад скопирован")
+      
+      _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def setSpreadTitle(context: TelegramContext, spreadMode: SpreadMode, title: String)(
@@ -90,8 +98,6 @@ object SpreadFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle spread cards count from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
 
       _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadDescription(spreadMode, title, cardCount))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание расклада")

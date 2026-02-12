@@ -90,7 +90,7 @@ final class CardCommandHandlerLive(
       _ <- photoCommandHandler.deletePhoto(card.photo.id, card.photo.fileId)
     } yield ()
 
-  override def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardId]] =
+  override def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardCloneId]] =
     for {
       _ <- ZIO.logInfo(s"Executing clone cards command by spread $spreadId")
 
@@ -104,9 +104,11 @@ final class CardCommandHandlerLive(
         for {
           photoFile <- ZIO.fromOption(photoFiles.find(photoFile => photoFile.photoSource.parentId.contains(card.id.id.toString)))
             .orElseFail(TarotError.NotFound(s"Photo file not found for ${card.id}"))
-          cloned <- Card.clone(card, cloneSpreadId, photoFile.fileStored)
-        } yield cloned
+          clonedCard <- Card.clone(card, cloneSpreadId, photoFile.fileStored)
+        } yield (clonedCard, card.id)
       }
-      cardIds <- cardRepository.createCards(clonedCards)
-    } yield cardIds
+      _ <- cardRepository.createCards(clonedCards.map((clonedCard, _) => clonedCard))
+    } yield clonedCards.map { (clonedCard, originalCardId) =>
+      CardCloneId(clonedCard.id, originalCardId) 
+    }
 }

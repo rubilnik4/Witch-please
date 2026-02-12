@@ -71,7 +71,6 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       response <- SttpClient.sendJson(client, authRequest)
     } yield response
 
-
   override def getDefaultChannel(token: String): ZIO[Any, ApiError, Option[UserChannelResponse]] =
     for {
       _ <- ZIO.logDebug(s"Sending get default channel request")
@@ -91,7 +90,7 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
         .response(asJsonEither[TarotErrorResponse, IdResponse])
       response <- SttpClient.sendJson(client, channelRequest)
     } yield response
-
+    
   override def updateChannel(request: ChannelUpdateRequest, userChannelId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Sending update channel ${request.channelId} request: $userChannelId")
@@ -132,6 +131,16 @@ final class TarotApiServiceLive(apiUrl: TarotApiUrl, client: SttpBackend[Task, A
       response <- SttpClient.sendJson(client, spreadRequest)
     } yield response
 
+  override def cloneSpread(spreadId: UUID, token: String): ZIO[Any, ApiError, IdResponse] =
+    for {
+      _ <- ZIO.logDebug(s"Sending clone spread $spreadId request")
+
+      uri <- SttpClient.toSttpUri(TarotApiRoutes.spreadClonePath(apiUrl.url, spreadId))
+      spreadRequest = SttpClient.postAuthRequest(uri, token)
+        .response(asJsonEither[TarotErrorResponse, IdResponse])
+      response <- SttpClient.sendJson(client, spreadRequest)
+    } yield response
+    
   override def updateSpread(request: SpreadUpdateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Sending update spread $spreadId request")

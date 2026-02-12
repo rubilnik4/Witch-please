@@ -24,6 +24,7 @@ object SpreadCloneIntegrationSpec extends ZIOSpecDefault {
   private final val channelId = 12345
   private final val clientType = ClientType.Telegram
   private final val clientSecret = "test-secret-token"
+  private final val cardOfDayCardPosition = 0
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
     test("initialize test state") {
@@ -32,14 +33,15 @@ object SpreadCloneIntegrationSpec extends ZIOSpecDefault {
         userId <- TarotTestFixtures.createUser(clientId, clientType, clientSecret)
         _ <- TarotTestFixtures.createUserChannel(userId, channelId)
         spreadId <- TarotTestFixtures.createSpread(userId, cardsCount, photoSourceId)
-        cardIds <- TarotTestFixtures.createCards(spreadId, cardsCount, photoSourceId)
-        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardIds.head, spreadId, photoSourceId)
+        cardPositions <- TarotTestFixtures.createCards(spreadId, cardsCount, photoSourceId)
+        cardOfDayCardId <- TarotTestFixtures.getCardId(cardPositions, cardOfDayCardPosition)
+        cardOfDayId <- TarotTestFixtures.createCardOfDay(cardOfDayCardId, spreadId, photoSourceId)
         token <- TarotTestFixtures.createToken(clientType, clientSecret, userId)
 
         ref <- ZIO.service[Ref.Synchronized[TestSpreadState]]
 
         state = TestSpreadState.empty.withPhotoSourceId(photoSourceId).withUserId(userId.id).withToken(token)
-          .withSpreadId(spreadId.id).withCardIds(cardIds.map(_.id)).withCardOfDayId(cardOfDayId.id)
+          .withSpreadId(spreadId.id).withCardPositions(cardPositions).withCardOfDayId(cardOfDayId.id)
         _ <- ref.set(state)
       } yield assertTrue(photoSourceId.nonEmpty, token.nonEmpty)
     },
@@ -78,9 +80,13 @@ object SpreadCloneIntegrationSpec extends ZIOSpecDefault {
         originalCardsByPosition.keySet == cardsByPosition.keySet,
         originalCardsByPosition.forall { case (position, originalCard) =>
           val card = cardsByPosition(position)
-          originalCard.id.id != card.id.id && originalCard.photo.sourceId == card.photo.sourceId
+          card.id.id != originalCard.id.id &&
+            card.spreadId == spread.id &&
+            card.photo.sourceId == originalCard.photo.sourceId
         },
-        cardOfDay.id.id != originalCardOfDay.id.id ,
+        cardOfDay.id.id != originalCardOfDay.id.id,
+        cards.find(_.position == cardOfDayCardPosition).map(_.id).contains(cardOfDay.cardId),
+        cardOfDay.spreadId == spread.id,
         cardOfDay.photo.sourceId == originalCardOfDay.photo.sourceId
       )
     },

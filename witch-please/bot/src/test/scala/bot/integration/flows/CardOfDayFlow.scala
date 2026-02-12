@@ -1,10 +1,11 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.{BotPendingAction, CardOfDayMode, CardPosition}
+import bot.domain.models.session.{BotPendingAction, CardOfDayMode}
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
+import shared.models.tarot.cards.CardPosition
 import zio.http.{Response, Routes}
 import zio.{Scope, ZIO}
 

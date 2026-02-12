@@ -55,7 +55,7 @@ object TelegramRouterHandler {
           case AuthorCommand.EditSpread(spreadId) =>
             SpreadFlow.editSpread(context, spreadId)(telegramApi, sessionService)
           case AuthorCommand.CloneSpread(spreadId) =>
-            SpreadFlow.cloneSpread(context, spreadId)(telegramApi, sessionService)
+            SpreadFlow.cloneSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectSpreads =>
             SpreadFlow.selectSpreads(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectSpread(spreadId) =>

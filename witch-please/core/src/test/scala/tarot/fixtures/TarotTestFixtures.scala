@@ -3,6 +3,7 @@ package tarot.fixtures
 import shared.models.files.FileSourceType
 import shared.models.photo.PhotoSource
 import shared.models.tarot.authorize.ClientType
+import shared.models.tarot.cards.CardPosition
 import shared.models.telegram.TelegramFile
 import tarot.application.commands.cards.commands.CreateCardCommand
 import tarot.application.commands.cardsOfDay.commands.CreateCardOfDayCommand
@@ -17,6 +18,8 @@ import tarot.domain.models.spreads.*
 import tarot.domain.models.users.UserId
 import tarot.layers.TarotEnv
 import zio.ZIO
+
+import java.util.UUID
 
 object TarotTestFixtures {
   final val resourcePath = "photos/test.png"
@@ -59,15 +62,15 @@ object TarotTestFixtures {
       spreadId <- spreadHandler.createSpread(command)
     } yield spreadId
 
-  def createCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardId]] =
+  def createCards(spreadId: SpreadId, cardCount: Int, photoId: String): ZIO[TarotEnv, TarotError, List[CardPosition]] =
     val photo = PhotoSource(photoId, FileSourceType.Telegram, None)
     for {
       cardHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
-      cardIds <- ZIO.foreach(0 until cardCount) { position =>
+      cardPositions <- ZIO.foreach(0 until cardCount) { position =>
         val command = getCardCommand(position, spreadId, cardCount, photo)
-        cardHandler.createCard(command)
-      }
-    } yield cardIds.toList
+        cardHandler.createCard(command).map(cardId => CardPosition(position, cardId.id))
+      }.map(_.toList)
+    } yield cardPositions
 
   def createCardOfDay(cardId: CardId, spreadId: SpreadId, photoId: String): ZIO[TarotEnv, TarotError, CardOfDayId] =
     val photo = PhotoSource(photoId, FileSourceType.Telegram, None)
@@ -76,6 +79,10 @@ object TarotTestFixtures {
       command = getCardOfDayCommand(cardId, spreadId, photo)
       cardOfDayId <- cardOfDayCommandHandler.createCardOfDay(command)
     } yield cardOfDayId
+
+  def getCardId(cardPositions: List[CardPosition], position: Int): ZIO[Any, TarotError, CardId] =
+    ZIO.fromOption(cardPositions.find(_.position == position).map(_.cardId).map(CardId(_)))
+      .orElseFail(TarotError.NotFound("card position not fount"))
     
   private def getAuthorCommand(clientId: String, clientType: ClientType, clientSecret: String) =
     CreateAuthorCommand(

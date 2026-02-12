@@ -1,5 +1,7 @@
 package tarot.models
 
+import shared.models.tarot.cards.CardPosition
+
 import java.util.UUID
 
 final case class TestSpreadState(
@@ -7,7 +9,7 @@ final case class TestSpreadState(
   userId: Option[UUID],
   token: Option[String],
   spreadId: Option[UUID],
-  cardIds: Option[List[UUID]],
+  cardPositions: Option[List[CardPosition]],
   cardOfDayId: Option[UUID]
 )
 
@@ -28,8 +30,8 @@ object TestSpreadState {
     def withSpreadId(value: UUID): TestSpreadState =
       state.copy(spreadId = Some(value))
 
-    def withCardIds(values: List[UUID]): TestSpreadState =
-      state.copy(cardIds = Some(values))
+    def withCardPositions(values: List[CardPosition]): TestSpreadState =
+      state.copy(cardPositions = Some(values))
 
     def withCardOfDayId(value: UUID): TestSpreadState =
       state.copy(cardOfDayId = Some(value))

@@ -111,17 +111,23 @@ final class SpreadCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing clone command for spread $spreadId")
 
       spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
       cardCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardCommandHandler)
       cardOfDayCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.cardOfDayCommandHandler)
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       
       spread <- spreadQueryHandler.getSpread(spreadId)
+      cardOfDay <- cardOfDayQueryHandler.getCardOfDayBySpread(spreadId)
+      
       photoFile <- photoService.fetchAndStore(Photo.toPhotoSource(spread.photo))
       cloneSpread <- Spread.clone(spread, photoFile.fileStored)
       cloneSpreadId <- spreadRepository.createSpread(cloneSpread)
       
-      _ <- cardCommandHandler.cloneCards(spreadId, cloneSpreadId)
-      _ <- cardOfDayCommandHandler.cloneCardOfDay(spreadId, cloneSpreadId)
+      cardCloneIds <- cardCommandHandler.cloneCards(spreadId, cloneSpreadId)
+      cardOfDayCardId <- ZIO.fromOption(cardCloneIds.find(_.originalCardId == cardOfDay.cardId).map(_.cardId))
+        .orElseFail(TarotError.NotFound(s"Card of day by card ${cardOfDay.cardId} not found"))
+        .tapError(_ => ZIO.logError(s"Card of day by card ${cardOfDay.cardId} not found"))
+      _ <- cardOfDayCommandHandler.cloneCardOfDay(cardOfDay, spreadId, cloneSpreadId, cardOfDayCardId)
     } yield cloneSpreadId
     
   private def validatePublishing(spread: Spread, cards: List[Card]) =

@@ -22,12 +22,21 @@ object SttpClient {
     getRequest(uri)
       .auth.bearer(token)
 
+  def postRequest(uri: Uri): RequestT[Identity, Either[String, String], Any] =
+    basicRequest
+      .post(uri)
+      .contentType(jsonContentType)
+      
   def postRequest[Request: JsonEncoder](uri: Uri, request: Request): RequestT[Identity, Either[String, String], Any] =
     basicRequest
       .post(uri)
       .body(request.toJson)
       .contentType(jsonContentType)
 
+  def postAuthRequest(uri: Uri, token: String): RequestT[Identity, Either[String, String], Any] =
+    postRequest(uri)
+      .auth.bearer(token)
+      
   def postAuthRequest[Request: JsonEncoder](uri: Uri, request: Request, token: String): RequestT[Identity, Either[String, String], Any] =
     postRequest(uri, request)
       .auth.bearer(token)

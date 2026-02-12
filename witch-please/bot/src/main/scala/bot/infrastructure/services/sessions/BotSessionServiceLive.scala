@@ -5,6 +5,7 @@ import bot.infrastructure.repositories.sessions.BotSessionRepository
 import bot.infrastructure.services.authorize.SecretService
 import bot.layers.BotEnv
 import shared.infrastructure.services.common.DateTimeService
+import shared.models.tarot.cards.CardPosition
 import zio.ZIO
 
 import java.time.*

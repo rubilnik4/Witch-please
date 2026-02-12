@@ -3,6 +3,7 @@ package tarot.application.commands.cardsOfDay
 import tarot.application.commands.cardsOfDay.commands.{CreateCardOfDayCommand, UpdateCardOfDayCommand}
 import tarot.application.commands.spreads.SpreadValidateHandler
 import tarot.domain.models.TarotError
+import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId, CardOfDayStatusUpdate, CardOfDayUpdate}
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.SpreadId
@@ -81,16 +82,14 @@ final class CardOfDayCommandHandlerLive(
       _ <- cardOfDayRepository.updateCardOfDayStatus(cardOfDayStatusUpdate)
     } yield ()
 
-  override def cloneCardOfDay(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, CardOfDayId] =
+  override def cloneCardOfDay(cardOfDay: CardOfDay, spreadId: SpreadId, cloneSpreadId: SpreadId, cloneCardId: CardId): ZIO[TarotEnv, TarotError, CardOfDayId] =
     for {
       _ <- ZIO.logInfo(s"Executing clone card of day command by spread $spreadId")
-
-      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+      
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
-
-      cardOfDay <- cardOfDayQueryHandler.getCardOfDayBySpread(spreadId)
+     
       photoFile <- photoService.fetchAndStore(Photo.toPhotoSource(cardOfDay.photo))
-      cloneCardOfDay <- CardOfDay.clone(cardOfDay, cloneSpreadId, photoFile.fileStored)
+      cloneCardOfDay <- CardOfDay.clone(cardOfDay, cloneSpreadId, cloneCardId, photoFile.fileStored)
       cardOfDayId <- cardOfDayRepository.createCardOfDay(cloneCardOfDay)
     } yield cardOfDayId
 }
