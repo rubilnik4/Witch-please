@@ -6,7 +6,7 @@ import zio.schema.*
 
 final case class SpreadCreateRequest(
   title: String,
-  cardCount: Int,
+  cardsCount: Int,
   description: String,
   photo: PhotoRequest
 ) extends SpreadRequest derives JsonCodec, Schema

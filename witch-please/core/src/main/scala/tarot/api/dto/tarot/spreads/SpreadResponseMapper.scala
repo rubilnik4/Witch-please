@@ -1,18 +1,9 @@
 package tarot.api.dto.tarot.spreads
 
 import shared.api.dto.tarot.spreads.SpreadResponse
-import shared.api.dto.tarot.users.*
-import shared.models.tarot.authorize.ClientType
 import tarot.api.dto.tarot.photo.PhotoResponseMapper
-import tarot.application.commands.users.commands.CreateAuthorCommand
 import tarot.domain.models.TarotError
-import tarot.domain.models.TarotError.ValidationError
-import tarot.domain.models.projects.Project
 import tarot.domain.models.spreads.Spread
-import tarot.domain.models.users.User
-import zio.json.*
-import zio.schema.*
-import zio.{IO, ZIO}
 
 object SpreadResponseMapper {
   def toResponse(spread: Spread): SpreadResponse =
@@ -20,6 +11,7 @@ object SpreadResponseMapper {
       id = spread.id.id,
       title = spread.title,
       cardsCount = spread.cardsCount,
+      description = spread.description,
       status = spread.status,
       photo = PhotoResponseMapper.toResponse(spread.photo),
       createdAt = spread.createdAt,

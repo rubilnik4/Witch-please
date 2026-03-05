@@ -8,7 +8,7 @@ object TelegramMessage {
   final case class Text(context: TelegramContext, text: String) extends TelegramMessage
   final case class Command(context: TelegramContext, command: String) extends TelegramMessage
   final case class Forward(context: TelegramContext, channelId: Long, channelName: String) extends TelegramMessage
-  final case class Photo(context: TelegramContext, fileId: String) extends TelegramMessage
+  final case class Photo(context: TelegramContext, sourceId: String) extends TelegramMessage
   final case class Unknown() extends TelegramMessage
 
   def fromRequest(message: TelegramWebhookRequest): TelegramMessage =

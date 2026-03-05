@@ -116,7 +116,9 @@ object TelegramAuthorParser {
             AuthorCommand.DeleteCardOfDay(cardOfDayId)
           case _ =>
             BotCommand.Unknown
-        }  
+        }
+      case List(AuthorCommands.KeepCurrent) =>
+        AuthorCommand.KeepCurrent
       case _ =>
         BotCommand.Unknown
     }

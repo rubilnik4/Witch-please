@@ -1,7 +1,8 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.{BotPendingAction, SpreadMode}
+import bot.domain.models.session.SpreadMode
+import bot.domain.models.session.pending.*
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -22,7 +23,7 @@ object SpreadFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("SpreadTitle", chatId) {
-        case BotPendingAction.SpreadTitle(mode) if mode == spreadMode => () }
+        case BotPending.Spread(SpreadPending(mode, SpreadDraft.AwaitingTitle)) if mode == spreadMode => () }
     } yield ()
 
   def spreadTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -31,7 +32,7 @@ object SpreadFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("SpreadCardCount", chatId) {
-        case BotPendingAction.SpreadCardsCount(mode, t) if t == title => t }
+        case BotPending.Spread(SpreadPending(mode, SpreadDraft.AwaitingCardsCount(t))) if t == title => t }
     } yield ()
 
   def spreadCardCount(app: Routes[BotEnv, Response], chatId: Long, cardCount: Int): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -40,7 +41,7 @@ object SpreadFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("SpreadDescription", chatId) {
-        case BotPendingAction.SpreadDescription(mode, _, c) if c == cardCount => c }
+        case BotPending.Spread(SpreadPending(mode, SpreadDraft.AwaitingDescription(_,c))) if c == cardCount => c }
     } yield ()
 
   def spreadDescription(app: Routes[BotEnv, Response], chatId: Long, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -49,7 +50,7 @@ object SpreadFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("SpreadPhoto", chatId) {
-        case BotPendingAction.SpreadPhoto(mode, _, _, d) if d == description => d
+        case BotPending.Spread(SpreadPending(mode, SpreadDraft.AwaitingPhoto(_,_,d))) if d == description => d
       }
     } yield ()
     

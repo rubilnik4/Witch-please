@@ -1,13 +1,17 @@
 package bot.application.handlers.telegram
 
+import bot.application.handlers.telegram.TelegramTextHandler.handleSpread
 import bot.application.handlers.telegram.flows.*
-import bot.domain.models.session.BotPendingAction
+import bot.domain.models.session.pending.{BotPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.TelegramContext
+import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
+import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object TelegramPhotoHandler {
-  def handle(context: TelegramContext, fileId: String): ZIO[BotEnv, Throwable, Unit] =
+  def handle(context: TelegramContext, sourceId: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
@@ -17,19 +21,17 @@ object TelegramPhotoHandler {
       _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action ${session.pending}")
       
       _ <- session.pending match {      
-        case Some(BotPendingAction.SpreadPhoto(spreadMode, title, cardCount, description)) =>
-          SpreadFlow.setSpreadPhoto(context, spreadMode, title, cardCount, description, fileId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardPhoto(cardMode, title, description)) =>
-          CardFlow.setCardPhoto(context, cardMode,  title, description, fileId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, title, description)) =>
-          CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, title, description, fileId)(telegramApi, tarotApi, sessionService)  
+        case Some(BotPending.Spread(pending)) =>
+          handleSpread(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
+        case Some(BotPending.CardPhoto(cardMode, title, description)) =>
+          CardFlow.setCardPhoto(context, cardMode,  title, description, sourceId)(telegramApi, tarotApi, sessionService)
+        case Some(BotPending.CardOfDayPhoto(cardOfDayMode, cardId, title, description)) =>
+          CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, title, description, sourceId)(telegramApi, tarotApi, sessionService)  
         case None
-             | Some(BotPendingAction.ChannelChannelId(_))
-             | Some(BotPendingAction.SpreadTitle(_)) | Some(BotPendingAction.SpreadCardsCount(_,_)) 
-             | Some(BotPendingAction.SpreadDescription(_,_,_)) 
-             | Some(BotPendingAction.CardTitle(_)) | Some(BotPendingAction.CardDescription(_,_))
-             | Some(BotPendingAction.CardOfDayCardId(_)) | Some(BotPendingAction.CardOfDayTitle(_,_))
-             | Some(BotPendingAction.CardOfDayDescription(_,_,_))
+             | Some(BotPending.ChannelChannelId(_))           
+             | Some(BotPending.CardTitle(_)) | Some(BotPending.CardDescription(_,_))
+             | Some(BotPending.CardOfDayCardId(_)) | Some(BotPending.CardOfDayTitle(_,_))
+             | Some(BotPending.CardOfDayDescription(_,_,_))
         =>
           for {
             _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")
@@ -37,4 +39,20 @@ object TelegramPhotoHandler {
           } yield ()
       }
     } yield ()
+
+  private def handleSpread(context: TelegramContext, sourceId: String, pending: SpreadPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    pending.draft match {
+      case SpreadDraft.AwaitingPhoto(_,_,_) =>
+        SpreadFlow.setSpreadPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
+      case SpreadDraft.Start
+           | SpreadDraft.AwaitingTitle
+           | SpreadDraft.AwaitingCardsCount(_)
+           | SpreadDraft.AwaitingDescription(_,_)
+           | SpreadDraft.Complete(_,_,_,_) =>
+        for {
+          _ <- ZIO.logInfo(s"Used photo message instead of ${pending.draft} in chat ${context.chatId}")
+          _ <- telegramApi.sendText(context.chatId, "Принимаю только фото!")
+        } yield ()
+    }
 }

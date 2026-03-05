@@ -1,7 +1,8 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.{BotPendingAction, ChannelMode}
+import bot.domain.models.session.ChannelMode
+import bot.domain.models.session.pending.BotPending
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -22,7 +23,7 @@ object ChannelFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("ChannelChannelId", chatId) {
-        case BotPendingAction.ChannelChannelId(mode) if mode == channelMode => () }
+        case BotPending.ChannelChannelId(mode) if mode == channelMode => () }
     } yield ()
 
   def channelChannelId(app: Routes[BotEnv, Response], chatId: Long, channelId: Long): ZIO[Scope & BotEnv, Throwable, Unit] =

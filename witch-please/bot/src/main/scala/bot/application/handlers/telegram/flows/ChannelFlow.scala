@@ -1,7 +1,8 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.*
-import bot.domain.models.session.{BotChannel, BotPendingAction, ChannelMode}
+import bot.domain.models.session.pending.BotPending
+import bot.domain.models.session.{BotChannel, ChannelMode}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -92,7 +93,7 @@ object ChannelFlow {
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- sessionService.clearChannel(context.chatId)
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.ChannelChannelId(channelMode))
+      _ <- sessionService.setPending(context.chatId, BotPending.ChannelChannelId(channelMode))
       _ <- telegramApi.sendText(context.chatId, s"Добавь бот в свой канал и перешли ему любой пост из этого канала")
     } yield ()
 

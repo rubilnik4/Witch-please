@@ -1,7 +1,7 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.BotPendingAction
+import bot.domain.models.session.pending.BotPending
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -17,7 +17,7 @@ object CommonFlow {
     } yield response
 
   def expectPending[A](name: String, chatId: Long)(
-    pending: PartialFunction[BotPendingAction, A]): ZIO[BotEnv, Throwable, A] =
+    pending: PartialFunction[BotPending, A]): ZIO[BotEnv, Throwable, A] =
     for {
       botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
       session <- botSessionService.get(chatId)

@@ -1,6 +1,5 @@
 package bot.application.commands
 
-import java.time.*
 import java.util.UUID
 
 sealed trait AuthorCommand extends BotCommand
@@ -25,4 +24,5 @@ object AuthorCommand {
   final case class EditCardOfDay(cardOfDayId: UUID) extends AuthorCommand
   final case class DeleteCardOfDay(cardOfDayId: UUID) extends AuthorCommand
   final case class SelectCardOfDay(spreadId: UUID) extends AuthorCommand
+  case object KeepCurrent extends AuthorCommand
 }

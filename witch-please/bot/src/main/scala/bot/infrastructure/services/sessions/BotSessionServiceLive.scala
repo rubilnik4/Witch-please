@@ -1,6 +1,7 @@
 package bot.infrastructure.services.sessions
 
 import bot.domain.models.session.*
+import bot.domain.models.session.pending.BotPending
 import bot.infrastructure.repositories.sessions.BotSessionRepository
 import bot.infrastructure.services.authorize.SecretService
 import bot.layers.BotEnv
@@ -79,7 +80,7 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.withPending(session, None, now))
     } yield ()
 
-  override def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit] =
+  override def setPending(chatId: Long, pending: BotPending): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logDebug(s"Set pending action $pending for chat $chatId")
 

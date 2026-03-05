@@ -1,19 +1,17 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
-import bot.application.handlers.telegram.flows.CardOfDayFlow.getCardOfDayPositionText
+import bot.application.commands.telegram.*
 import bot.domain.models.session.*
+import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
-import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
 import shared.infrastructure.services.telegram.TelegramApiService
-import shared.models.files.FileSourceType
 import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
@@ -53,19 +51,19 @@ object SpreadFlow {
     } yield ()
 
   def createSpread(context: TelegramContext)(
-    telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Create spread for chat ${context.chatId}")
 
-      _ <- startSpreadPending(context, SpreadMode.Create)(telegramApi, sessionService)
+      _ <- startSpreadPending(context, SpreadMode.Create)(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def editSpread(context: TelegramContext, spreadId: UUID)(
-    telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Edit spread $spreadId for chat ${context.chatId}")
 
-      _ <- startSpreadPending(context, SpreadMode.Edit(spreadId))(telegramApi, sessionService)
+      _ <- startSpreadPending(context, SpreadMode.Edit(spreadId))(telegramApi, tarotApi, sessionService)
     } yield ()
 
   def cloneSpread(context: TelegramContext, spreadId: UUID)(
@@ -77,74 +75,92 @@ object SpreadFlow {
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
-      spreadId <- tarotApi.cloneSpread(spreadId, token).map(_.id)
+      _ <- tarotApi.cloneSpread(spreadId, token).map(_.id)
       _ <- telegramApi.sendText(context.chatId, s"Расклад скопирован")
       
       _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  def setSpreadTitle(context: TelegramContext, spreadMode: SpreadMode, title: String)(
+  private def setSpreadStartDraft(context: TelegramContext, pending: SpreadPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    pending.draft match {
+      case SpreadDraft.Start =>
+        val nextDraft = SpreadDraft.AwaitingTitle
+        val nextPending = SpreadPending(pending.spreadMode, nextDraft)
+        for {          
+          _ <- sessionService.setPending(context.chatId, BotPending.Spread(nextPending))
+          _ <- setSpreadParameter(context, pending, "Напиши название расклада")(telegramApi, tarotApi, sessionService)
+        } yield ()        
+      case _ =>
+        ZIO.logError(s"Used pending $pending instead of start draft chat=${context.chatId}") *>
+          ZIO.fail(new IllegalStateException(s"Used pending $pending instead of start draft"))
+    }
+    
+  def setSpreadTextDraft(context: TelegramContext, text: String, pending: SpreadPending)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Handle spread title from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Handle text spread draft ${pending.draft} from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadCardsCount(spreadMode, title))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Укажи количество карт в раскладе")
-    } yield ()
-
-  def setSpreadCardsCount(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle spread cards count from chat ${context.chatId}")
-
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadDescription(spreadMode, title, cardCount))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание расклада")
-    } yield ()
-
-  def setSpreadDescription(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int, description: String)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle spread description from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
-
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadPhoto(spreadMode, title, cardCount, description))
-      _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для расклада")
-    } yield ()
-
-  def setSpreadPhoto(context: TelegramContext, spreadMode: SpreadMode, title: String, cardCount: Int, description: String, fileId: String)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
-        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-
-      photo = PhotoRequest(FileSourceType.Telegram, fileId)
-      spreadId <- spreadMode match {
-        case SpreadMode.Create =>
-          val request = SpreadCreateRequest(title, cardCount, description, photo)
+      (nextDraft, nextAction) <- pending.draft match {
+        case SpreadDraft.Start | SpreadDraft.Complete(_,_,_,_) =>
+          ZIO.logError(s"Couldn't used start or complete pending in text draft chat=${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Couldn't used start or complete  pending in text draft"))
+        case SpreadDraft.AwaitingTitle =>
+          val nextDraft = SpreadDraft.AwaitingCardsCount(text)
+          val nextPending = setSpreadParameter(context, pending, "Укажи количество карт в раскладе")(telegramApi, tarotApi, sessionService)
+          ZIO.succeed(nextDraft -> nextPending)
+        case SpreadDraft.AwaitingCardsCount(title) =>
           for {
-            spreadId <- tarotApi.createSpread(request, token).map(_.id)
-            _ <- telegramApi.sendText(context.chatId, s"Расклад создан")
-          } yield spreadId
-        case SpreadMode.Edit(spreadId) =>
-          val request = SpreadUpdateRequest(title, cardCount, description, photo)
-          for {
-            _ <- tarotApi.updateSpread(request, spreadId, token)
-            _ <- telegramApi.sendText(context.chatId, s"Расклад обновлён")
-          } yield spreadId
+            cardsCount <- ZIO.fromOption(text.trim.toIntOption)
+              .orElseFail(new IllegalArgumentException("cardsCount is not an int"))
+              .filterOrFail(_ > 0)(new IllegalArgumentException("cardsCount must be > 0"))
+              .tapError { _ =>
+                ZIO.logInfo(s"Cards count must be greater than 0 for chat ${context.chatId}") *>
+                  telegramApi.sendText(context.chatId, "Число карт должно быть больше 0").unit
+              }
+            nextDraft = SpreadDraft.AwaitingDescription(title, cardsCount)
+            nextPending = setSpreadParameter(context, pending, "Укажи подробное описание расклада")(telegramApi, tarotApi, sessionService)
+          } yield nextDraft -> nextPending
+        case SpreadDraft.AwaitingDescription(title, cardCount) =>
+          val nextDraft = SpreadDraft.AwaitingPhoto(title, cardCount, text)
+          val nextPending = setSpreadParameter(context, pending, "Прикрепи фото для расклада")(telegramApi, tarotApi, sessionService)
+          ZIO.succeed(nextDraft -> nextPending)
+        case draft @ SpreadDraft.AwaitingPhoto(_,_,_) =>
+          val nextPending =
+            ZIO.logInfo(s"Used text instead of photo chat=${context.chatId}") *>
+              telegramApi.sendText(context.chatId, "Принимаю только фото!").unit
+          ZIO.succeed(draft -> nextPending)
       }
-
-      _ <- selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+      nextPending = SpreadPending(pending.spreadMode, nextDraft)
+      _ <- sessionService.setPending(context.chatId, BotPending.Spread(nextPending))
+      _ <- nextAction
     } yield ()
 
-  def selectSpread(context: TelegramContext, spreadId: UUID)
-        (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def setSpreadPhotoDraft(context: TelegramContext, photoSourceId: String, pending: SpreadPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    pending.draft match {
+      case SpreadDraft.AwaitingPhoto(title, cardsCount, description) =>
+        val nextDraft = SpreadDraft.Complete(title, cardsCount, description, photoSourceId)
+        val nextPending = SpreadPending(pending.spreadMode, nextDraft)
+        setSpreadCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
+      case _ =>
+        ZIO.logInfo(s"Used photo instead of text chat=${context.chatId}") *>
+          telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
+    }
+
+  private def setSpreadCompleteDraft(context: TelegramContext, pending: SpreadPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    pending.draft match {
+      case SpreadDraft.Complete(title, cardsCount, description, photoSourceId) =>
+        val snapshot = SpreadSnapshot(title, cardsCount, description, photoSourceId)
+        submitSpread(context, pending.spreadMode, snapshot)(telegramApi, tarotApi, sessionService)
+      case _ =>
+        ZIO.logError(s"Used pending $pending instead of complete draft chat=${context.chatId}") *>
+          ZIO.fail(new IllegalStateException(s"Used pending $pending instead of complete draft"))
+    }
+
+  def selectSpread(context: TelegramContext, spreadId: UUID)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get spread settings command by spreadId $spreadId for chat ${context.chatId}")
 
@@ -157,7 +173,8 @@ object SpreadFlow {
       cardOfDay <- tarotApi.getCardOfDayBySpread(spreadId, token)
       createdPosition = cards.map(card => CardPosition(card.position, card.id)).toSet
       progress = SpreadProgress(spread.cardsCount, createdPosition)
-      _ <- sessionService.setSpread(context.chatId, BotSpread(spread.id, spread.status), progress)
+      snapShot = SpreadSnapshot.toSnapShot(spread)
+      _ <- sessionService.setSpread(context.chatId, BotSpread(spread.id, spread.status, snapShot), progress)
 
       _ <- showSpread(context, spread, createdPosition.size, cardOfDay)(telegramApi, sessionService)
     } yield ()
@@ -181,15 +198,65 @@ object SpreadFlow {
     } yield ()
 
   private def startSpreadPending(context: TelegramContext, spreadMode: SpreadMode)(
-    telegramApi: TelegramApiService, sessionService: BotSessionService) =
-  for {
-    _ <- sessionService.clearSpread(context.chatId)
-    _ <- sessionService.setPending(context.chatId, BotPendingAction.SpreadTitle(spreadMode))
-    _ <- telegramApi.sendReplyText(context.chatId, "Напиши название расклада")
-  } yield ()
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
+    val pending = SpreadPending(spreadMode, SpreadDraft.Start)
+    setSpreadStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
+  }
 
-  private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int, cardOfDay: Option[CardOfDayResponse])
-      (telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def submitSpread(context: TelegramContext, spreadMode: SpreadMode, snapshot: SpreadSnapshot)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")
+
+      session <- sessionService.get(context.chatId)
+        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
+      token <- ZIO.fromOption(session.token)
+        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+
+      spreadId <- spreadMode match {
+        case SpreadMode.Create =>
+          for {
+            spreadId <- tarotApi.createSpread(SpreadSnapshot.toCreateRequest(snapshot), token).map(_.id)
+            _ <- telegramApi.sendText(context.chatId, s"Расклад создан")
+          } yield spreadId
+        case SpreadMode.Edit(spreadId) =>
+          for {
+            _ <- tarotApi.updateSpread(SpreadSnapshot.toUpdateRequest(snapshot), spreadId, token)
+            _ <- telegramApi.sendText(context.chatId, s"Расклад обновлён")
+          } yield spreadId
+      }
+      _ <- selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
+    } yield ()
+
+  private def setSpreadParameter(context: TelegramContext, pending: SpreadPending, buttonText: String)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      session <- sessionService.get(context.chatId)
+      _ <- pending.spreadMode match {
+        case SpreadMode.Create =>
+          telegramApi.sendReplyText(context.chatId, buttonText)
+        case SpreadMode.Edit(_) =>
+          for {
+            spread <- ZIO.fromOption(session.spread)
+              .orElseFail(new RuntimeException(s"spread not found in session for chat ${context.chatId}"))
+            currentValue = pending.draft match {
+              case SpreadDraft.Start => None
+              case SpreadDraft.AwaitingTitle => Some(spread.snapShot.title)
+              case SpreadDraft.AwaitingCardsCount(_) => Some(spread.snapShot.cardsCount)
+              case SpreadDraft.AwaitingDescription(_,_) => Some(spread.snapShot.description)
+              case SpreadDraft.AwaitingPhoto(_,_,_) => None
+              case SpreadDraft.Complete(_,_,_,_) => None
+            }
+            currentBlock = currentValue.fold("")(value => s"\nТекущее: $value\n")
+            text = s"""$buttonText$currentBlock""".stripMargin.trim
+            keepButton = TelegramInlineKeyboardButton("Оставить текущее", Some(AuthorCommands.KeepCurrent))
+            _ <- telegramApi.sendInlineButtons(context.chatId, text, List(keepButton))
+          } yield ()
+      }
+    } yield ()
+
+  private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int, cardOfDay: Option[CardOfDayResponse])(
+    telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     val cardsButton = TelegramInlineKeyboardButton("Карты", Some(AuthorCommands.spreadCardsSelect(spread.id)))
     val cardOfDayButton = TelegramInlineKeyboardButton("Карта дня", Some(AuthorCommands.spreadCardOfDaySelect(spread.id)))
     val cloneButton = TelegramInlineKeyboardButton("Повторить", Some(AuthorCommands.spreadClone(spread.id)))

@@ -9,8 +9,8 @@ final class TelegramCommandHandlerLive extends TelegramCommandHandler {
     message match {
       case TelegramMessage.Text(context, text) =>
         TelegramTextHandler.handle(context, text)
-      case TelegramMessage.Photo(context, fileId) =>
-        TelegramPhotoHandler.handle(context, fileId)
+      case TelegramMessage.Photo(context, sourceId) =>
+        TelegramPhotoHandler.handle(context, sourceId)
       case TelegramMessage.Command(context, command) =>
         TelegramRouterHandler.handle(context, command)
       case TelegramMessage.Forward(context, channelId, channelName) =>

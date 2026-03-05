@@ -9,7 +9,7 @@ import java.util.UUID
 
 final case class SpreadUpdateRequest(
   title: String,
-  cardCount: Int,
+  cardsCount: Int,
   description: String,
   photo: PhotoRequest
 ) extends SpreadRequest derives JsonCodec, Schema

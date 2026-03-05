@@ -1,6 +1,7 @@
 package bot.infrastructure.services.sessions
 
 import bot.domain.models.session.*
+import bot.domain.models.session.pending.BotPending
 import bot.layers.BotEnv
 import shared.models.tarot.cards.CardPosition
 import zio.ZIO
@@ -14,7 +15,7 @@ trait BotSessionService {
   def setUser(chatId: Long, userId: UUID, token: String): ZIO[BotEnv, Throwable, Unit]
   def clearChannel(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setChannel(chatId: Long, channel: BotChannel): ZIO[BotEnv, Throwable, Unit]
-  def setPending(chatId: Long, pending: BotPendingAction): ZIO[BotEnv, Throwable, Unit]
+  def setPending(chatId: Long, pending: BotPending): ZIO[BotEnv, Throwable, Unit]
   def clearPending(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setSpread(chatId: Long, spread: BotSpread, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit]
   def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit]

@@ -4,4 +4,8 @@ import shared.models.tarot.spreads.SpreadStatus
 
 import java.util.UUID
 
-final case class BotSpread(spreadId: UUID, status: SpreadStatus)
+final case class BotSpread(
+  spreadId: UUID, 
+  status: SpreadStatus, 
+  snapShot: SpreadSnapshot
+)

@@ -1,5 +1,6 @@
 package bot.domain.models.session
 
+import bot.domain.models.session.pending.BotPending
 import shared.models.tarot.cards.CardPosition
 import zio.ZIO
 
@@ -11,7 +12,7 @@ final case class BotSession(
   token: Option[String],
   userId: Option[UUID],
   channel: Option[BotChannel],
-  pending: Option[BotPendingAction],
+  pending: Option[BotPending],
   spread: Option[BotSpread],
   spreadProgress: Option[SpreadProgress],
   cardId: Option[UUID],
@@ -40,7 +41,7 @@ object BotSession {
       pending = None,
       updatedAt = now)
 
-  def withPending(session: BotSession, pending: Option[BotPendingAction], now: Instant): BotSession =
+  def withPending(session: BotSession, pending: Option[BotPending], now: Instant): BotSession =
     session.copy(pending = pending, updatedAt = now)  
 
   def withSpread(session: BotSession, spread: BotSpread, spreadProgress: SpreadProgress, now: Instant): BotSession =

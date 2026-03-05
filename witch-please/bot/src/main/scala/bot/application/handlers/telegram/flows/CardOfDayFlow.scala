@@ -2,6 +2,7 @@ package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.*
+import bot.domain.models.session.pending.BotPending
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
 import bot.infrastructure.services.sessions.BotSessionService
@@ -74,7 +75,7 @@ object CardOfDayFlow {
 
             cardId <- ZIO.fromOption(progress.createdPositions.find(_.position == position).map(_.cardId))
               .orElseFail(new RuntimeException("Card id in spread progress not found"))
-            _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayTitle(cardOfDayMode, cardId))
+            _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayTitle(cardOfDayMode, cardId))
             _ <- telegramApi.sendReplyText(context.chatId, s"Укажи название карты дня")
           } yield ()
         else {
@@ -93,7 +94,7 @@ object CardOfDayFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayDescription(cardOfDayMode, cardId, title))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayDescription(cardOfDayMode, cardId, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты дня")
     } yield ()  
 
@@ -104,7 +105,7 @@ object CardOfDayFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayPhoto(cardOfDayMode, cardId, title, description))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayPhoto(cardOfDayMode, cardId, title, description))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты дня")
     } yield ()
 
@@ -161,7 +162,7 @@ object CardOfDayFlow {
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- sessionService.clearCardOfDay(context.chatId)
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardOfDayCardId(cardOfDayMode))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayCardId(cardOfDayMode))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи номер карты дня для твоего расклада")
     } yield ()
 

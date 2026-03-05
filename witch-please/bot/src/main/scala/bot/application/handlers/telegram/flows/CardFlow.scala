@@ -1,7 +1,8 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
-import bot.domain.models.session.{BotPendingAction, BotSpread, CardMode}
+import bot.domain.models.session.pending.BotPending
+import bot.domain.models.session.{BotSpread, CardMode}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.BotSessionService
 import bot.infrastructure.services.tarot.TarotApiService
@@ -94,7 +95,7 @@ object CardFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardDescription(cardMode, title))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardDescription(cardMode, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты")
     } yield ()
 
@@ -105,11 +106,11 @@ object CardFlow {
 
       session <- sessionService.get(context.chatId)
 
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardPhoto(cardMode, title, description))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardPhoto(cardMode, title, description))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты")
     } yield ()
 
-  def setCardPhoto(context: TelegramContext, cardMode: CardMode, title: String, description: String, fileId: String)(
+  def setCardPhoto(context: TelegramContext, cardMode: CardMode, title: String, description: String, sourceId: String)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
@@ -122,7 +123,7 @@ object CardFlow {
       token <- ZIO.fromOption(session.token)
         .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
       
-      photo = PhotoRequest(FileSourceType.Telegram, fileId)
+      photo = PhotoRequest(FileSourceType.Telegram, sourceId)
       _ <- cardMode match {
         case CardMode.Create(position) =>
           val request = CardCreateRequest(position, title, description, photo)
@@ -165,7 +166,7 @@ object CardFlow {
     telegramApi: TelegramApiService, sessionService: BotSessionService) =
     for {
       _ <- sessionService.clearCard(context.chatId)
-      _ <- sessionService.setPending(context.chatId, BotPendingAction.CardTitle(cardMode))
+      _ <- sessionService.setPending(context.chatId, BotPending.CardTitle(cardMode))
       _ <- telegramApi.sendReplyText(context.chatId, s"Напиши название карты")
     } yield ()
 

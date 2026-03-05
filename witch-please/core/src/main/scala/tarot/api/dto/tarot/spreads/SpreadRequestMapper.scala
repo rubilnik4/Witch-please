@@ -22,7 +22,7 @@ object SpreadRequestMapper {
     } yield CreateSpreadCommand(
         userId = userId,
         title = request.title,
-        cardsCount = request.cardCount,
+        cardsCount = request.cardsCount,
         description = request.description,
         photo = photo
       )
@@ -33,7 +33,7 @@ object SpreadRequestMapper {
     } yield UpdateSpreadCommand(
       spreadId = spreadId,
       title = request.title,
-      cardCount = request.cardCount,
+      cardCount = request.cardsCount,
       description = request.description,
       photo = photo
     )
@@ -41,7 +41,7 @@ object SpreadRequestMapper {
   private def validate(request: SpreadRequest) =
     for {
       _ <- ZIO.fail(ValidationError("title must not be empty")).when(request.title.trim.isEmpty)
-      _ <- ZIO.fail(ValidationError("cardCount must be > 0")).when(request.cardCount <= 0)
+      _ <- ZIO.fail(ValidationError("cardCount must be > 0")).when(request.cardsCount <= 0)
       _ <- ZIO.fail(ValidationError("description must not be empty")).when(request.description.trim.isEmpty)
     } yield ()
 }

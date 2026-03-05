@@ -23,6 +23,7 @@ object AuthorCommands {
   final val CardOfDayCreate = s"${Prefix}_card_of_day_create"
   final val CardOfDayEdit = s"${Prefix}_card_of_day_edit"
   final val CardOfDayDelete = s"${Prefix}_card_of_day_delete"
+  final val KeepCurrent = s"${Prefix}_keep_current"
   
   def channelEdit(userChannelId: UUID): String =
     s"$ChannelEdit $userChannelId"

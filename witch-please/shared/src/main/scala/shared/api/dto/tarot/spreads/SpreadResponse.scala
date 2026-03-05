@@ -10,8 +10,9 @@ import java.util.UUID
 
 final case class SpreadResponse(
   id: UUID,
-  title: String,
+  title: String,                          
   cardsCount: Int,
+  description: String,
   status: SpreadStatus,
   photo: PhotoResponse,
   createdAt: Instant,

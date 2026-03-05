@@ -27,10 +27,10 @@ object TarotTestRequests {
       name = "test channel"
     )  
 
-  def spreadCreateRequest(cardCount: Int, photoId: String): SpreadCreateRequest =
+  def spreadCreateRequest(cardsCount: Int, photoId: String): SpreadCreateRequest =
     SpreadCreateRequest(
       title = "Spread integration test",
-      cardCount = cardCount,
+      cardsCount = cardsCount,
       description = "Spread integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )
@@ -38,7 +38,7 @@ object TarotTestRequests {
   def spreadUpdateRequest(cardCount: Int, photoId: String): SpreadUpdateRequest =
     SpreadUpdateRequest(
       title = "Spread integration test",
-      cardCount = cardCount,
+      cardsCount = cardCount,
       description = "Spread integration test",
       photo = PhotoRequest(FileSourceType.Telegram, photoId)
     )

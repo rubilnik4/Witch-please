@@ -1,7 +1,8 @@
 package bot.integration.flows
 
 import bot.api.BotApiRoutes
-import bot.domain.models.session.{BotPendingAction, CardOfDayMode}
+import bot.domain.models.session.CardOfDayMode
+import bot.domain.models.session.pending.BotPending
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -23,7 +24,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayCardId", chatId) {
-        case BotPendingAction.CardOfDayCardId(mode) if mode == cardOfDayMode => () }
+        case BotPending.CardOfDayCardId(mode) if mode == cardOfDayMode => () }
     } yield ()
 
   def cardOfDayCardId(app: Routes[BotEnv, Response], chatId: Long, cardPosition: CardPosition): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -32,7 +33,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayTitle", chatId) {
-        case BotPendingAction.CardOfDayTitle(mode, cardId) if cardId == cardPosition.cardId => cardId }
+        case BotPending.CardOfDayTitle(mode, cardId) if cardId == cardPosition.cardId => cardId }
     } yield ()
 
   def cardOfDayTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -41,7 +42,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayDescription", chatId) {
-        case BotPendingAction.CardOfDayDescription(mode, _, t) if t == title => title
+        case BotPending.CardOfDayDescription(mode, _, t) if t == title => title
       }
     } yield ()
 
@@ -51,7 +52,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayPhoto", chatId) {
-        case BotPendingAction.CardOfDayPhoto(mode, _, _, d) if d == description => d }
+        case BotPending.CardOfDayPhoto(mode, _, _, d) if d == description => d }
     } yield ()
 
   def selectCardOfDay(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =

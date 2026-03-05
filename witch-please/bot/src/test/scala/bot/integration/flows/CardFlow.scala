@@ -2,7 +2,8 @@ package bot.integration.flows
 
 import bot.api.BotApiRoutes
 import bot.domain.models.session.CardMode
-import bot.domain.models.session.{BotPendingAction, CardMode}
+import bot.domain.models.session.CardMode
+import bot.domain.models.session.pending.BotPending
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -24,7 +25,7 @@ object CardFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardTitle", chatId) {
-        case BotPendingAction.CardTitle(mode) if mode == cardMode => () }
+        case BotPending.CardTitle(mode) if mode == cardMode => () }
     } yield ()
 
   def cardTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -33,7 +34,7 @@ object CardFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardDescription", chatId) {
-        case BotPendingAction.CardDescription(mode, t) if t == title => t }
+        case BotPending.CardDescription(mode, t) if t == title => t }
     } yield ()
 
   def cardDescription(app: Routes[BotEnv, Response], chatId: Long, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -42,6 +43,6 @@ object CardFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardPhoto", chatId) {
-        case BotPendingAction.CardPhoto(mode, _, d) if d == description => d }
+        case BotPending.CardPhoto(mode, _, d) if d == description => d }
     } yield ()
 }

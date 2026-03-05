@@ -14,7 +14,6 @@ import tarot.application.jobs.publish.PublishJobResult
 import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
-import tarot.integration.SpreadIntegrationSpec.cardOfDayCardPosition
 import tarot.integration.SpreadPublishIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
