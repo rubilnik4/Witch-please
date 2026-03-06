@@ -19,7 +19,7 @@ import zio.http.*
 import zio.test.*
 import zio.test.TestAspect.sequential
 
-object SpreadDeleteIntegrationSpec extends ZIOSpecDefault {
+object CardDeleteIntegrationSpec extends ZIOSpecDefault {
   private final val cardsCount = 3
   private final val clientId = "123456789"
   private final val channelId = 12345
