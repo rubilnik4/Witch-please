@@ -130,7 +130,7 @@ object SpreadModifyIntegrationSpec extends ZIOSpecDefault {
         cardPhotoExist <- photoQueryHandler.existPhoto(previousCard.photo.id)
       } yield assertTrue(
         cardOfDay.id.id == cardOfDayId,
-        cardOfDay.cardId.id == cardOfDayCardId,
+        cardOfDay.cardId.id == cardOfDayCardId.id,
         cardOfDay.photo.sourceId == photoSourceId,
         !cardPhotoExist
       )

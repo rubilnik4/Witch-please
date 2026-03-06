@@ -26,7 +26,7 @@ object SpreadCloneIntegrationSpec extends ZIOSpecDefault {
   private final val clientSecret = "test-secret-token"
   private final val cardOfDayCardPosition = 0
 
-  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread modify API integration")(
+  override def spec: Spec[TestEnvironment & Scope, Any] = suite("Spread clone API integration")(
     test("initialize test state") {
       for {
         photoSourceId <- TarotTestFixtures.createPhoto(channelId)
