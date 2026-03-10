@@ -89,7 +89,7 @@ object SpreadFlow {
         val nextPending = SpreadPending(pending.spreadMode, nextDraft)
         for {          
           _ <- sessionService.setPending(context.chatId, BotPending.Spread(nextPending))
-          _ <- setSpreadParameter(context, pending, "Напиши название расклада")(telegramApi, tarotApi, sessionService)
+          _ <- setSpreadParameter(context, pending)(telegramApi, tarotApi, sessionService)
         } yield ()        
       case _ =>
         ZIO.logError(s"Used pending $pending instead of start draft chat=${context.chatId}") *>
@@ -107,7 +107,7 @@ object SpreadFlow {
             ZIO.fail(new IllegalStateException(s"Couldn't used start or complete  pending in text draft"))
         case SpreadDraft.AwaitingTitle =>
           val nextDraft = SpreadDraft.AwaitingCardsCount(text)
-          val nextPending = setSpreadParameter(context, pending, "Укажи количество карт в раскладе")(telegramApi, tarotApi, sessionService)
+          val nextPending = setSpreadParameter(context, pending)(telegramApi, tarotApi, sessionService)
           ZIO.succeed(nextDraft -> nextPending)
         case SpreadDraft.AwaitingCardsCount(title) =>
           for {
@@ -119,11 +119,11 @@ object SpreadFlow {
                   telegramApi.sendText(context.chatId, "Число карт должно быть больше 0").unit
               }
             nextDraft = SpreadDraft.AwaitingDescription(title, cardsCount)
-            nextPending = setSpreadParameter(context, pending, "Укажи подробное описание расклада")(telegramApi, tarotApi, sessionService)
+            nextPending = setSpreadParameter(context, pending)(telegramApi, tarotApi, sessionService)
           } yield nextDraft -> nextPending
         case SpreadDraft.AwaitingDescription(title, cardCount) =>
           val nextDraft = SpreadDraft.AwaitingPhoto(title, cardCount, text)
-          val nextPending = setSpreadParameter(context, pending, "Прикрепи фото для расклада")(telegramApi, tarotApi, sessionService)
+          val nextPending = setSpreadParameter(context, pending)(telegramApi, tarotApi, sessionService)
           ZIO.succeed(nextDraft -> nextPending)
         case draft @ SpreadDraft.AwaitingPhoto(_,_,_) =>
           val nextPending =
@@ -228,32 +228,43 @@ object SpreadFlow {
       _ <- selectSpread(context, spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  private def setSpreadParameter(context: TelegramContext, pending: SpreadPending, buttonText: String)(
+  private def setSpreadParameter(context: TelegramContext, pending: SpreadPending)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      session <- sessionService.get(context.chatId)
+      (buttonText, currentValue) <- getSpreadCurrentText(context, pending)(sessionService)
+
       _ <- pending.spreadMode match {
         case SpreadMode.Create =>
           telegramApi.sendReplyText(context.chatId, buttonText)
         case SpreadMode.Edit(_) =>
+          val currentBlock = currentValue.fold("")(value => s"\nТекущее: $value\n")
+          val text = s"""$buttonText$currentBlock""".trim
+          val keepButton = TelegramInlineKeyboardButton("Оставить текущее", Some(AuthorCommands.KeepCurrent))
           for {
-            spread <- ZIO.fromOption(session.spread)
-              .orElseFail(new RuntimeException(s"spread not found in session for chat ${context.chatId}"))
-            currentValue = pending.draft match {
-              case SpreadDraft.Start => None
-              case SpreadDraft.AwaitingTitle => Some(spread.snapShot.title)
-              case SpreadDraft.AwaitingCardsCount(_) => Some(spread.snapShot.cardsCount)
-              case SpreadDraft.AwaitingDescription(_,_) => Some(spread.snapShot.description)
-              case SpreadDraft.AwaitingPhoto(_,_,_) => None
-              case SpreadDraft.Complete(_,_,_,_) => None
-            }
-            currentBlock = currentValue.fold("")(value => s"\nТекущее: $value\n")
-            text = s"""$buttonText$currentBlock""".stripMargin.trim
-            keepButton = TelegramInlineKeyboardButton("Оставить текущее", Some(AuthorCommands.KeepCurrent))
             _ <- telegramApi.sendInlineButtons(context.chatId, text, List(keepButton))
           } yield ()
       }
     } yield ()
+
+  private def getSpreadCurrentText(context: TelegramContext, pending: SpreadPending)(sessionService: BotSessionService) =
+    for {
+      session <- sessionService.get(context.chatId)
+
+      (buttonText, currentValue) <- pending.draft match {
+        case SpreadDraft.Start =>
+          ZIO.succeed("Напиши название расклада" -> session.spread.map(_.snapShot.title))
+        case SpreadDraft.AwaitingTitle =>
+          ZIO.succeed("Укажи количество карт в раскладе" -> session.spread.map(_.snapShot.cardsCount.toString))
+        case SpreadDraft.AwaitingCardsCount(_) =>
+          ZIO.succeed("Укажи подробное описание расклада" -> session.spread.map(_.snapShot.description))
+        case SpreadDraft.AwaitingDescription(_, _) =>
+          ZIO.succeed("Прикрепи фото для расклада" -> None)
+        case SpreadDraft.AwaitingPhoto(_, _, _) =>
+          ZIO.dieMessage("BUG: setSpreadParameter called for AwaitingPhoto state")
+        case SpreadDraft.Complete(_, _, _, _) =>
+          ZIO.dieMessage("BUG: setSpreadParameter called for Complete state")
+      }
+    } yield (buttonText, currentValue)
 
   private def showSpread(context: TelegramContext, spread: SpreadResponse, cardsPositions: Int, cardOfDay: Option[CardOfDayResponse])(
     telegramApi: TelegramApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
