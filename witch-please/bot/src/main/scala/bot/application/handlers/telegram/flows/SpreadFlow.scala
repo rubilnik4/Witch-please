@@ -5,7 +5,7 @@ import bot.domain.models.session.*
 import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
@@ -24,9 +24,7 @@ object SpreadFlow {
     for {
       _ <- ZIO.logInfo(s"Select spreads from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       _ <- sessionService.clearSpread(context.chatId)
       spreads <- tarotApi.getSpreads(token)
@@ -71,9 +69,7 @@ object SpreadFlow {
     for {
       _ <- ZIO.logInfo(s"Clone spread $spreadId for chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
       
       _ <- tarotApi.cloneSpread(spreadId, token).map(_.id)
       _ <- telegramApi.sendText(context.chatId, s"Расклад скопирован")
@@ -164,9 +160,7 @@ object SpreadFlow {
     for {
       _ <- ZIO.logInfo(s"Get spread settings command by spreadId $spreadId for chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       spread <- tarotApi.getSpread(spreadId, token)
       cards <- tarotApi.getCards(spreadId, token)
@@ -181,12 +175,9 @@ object SpreadFlow {
 
   def deleteSpread(context: TelegramContext)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+    for {      
+      token <- SessionRequire.token(context.chatId)
+      spread <- SessionRequire.spread(context.chatId)
       
       _ <- ZIO.logInfo(s"Delete spread ${spread.spreadId} for chat ${context.chatId}")
 
@@ -208,10 +199,7 @@ object SpreadFlow {
     for {
       _ <- ZIO.logInfo(s"Handle spread photo from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-        .orElseFail(new RuntimeException(s"ProjectId not found in session for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       spreadId <- spreadMode match {
         case SpreadMode.Create =>

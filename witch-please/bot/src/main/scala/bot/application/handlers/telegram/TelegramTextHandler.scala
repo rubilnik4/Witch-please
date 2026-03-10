@@ -4,7 +4,7 @@ import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.pending.SpreadDraft.AwaitingTitle
 import bot.domain.models.session.pending.{BotPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.*
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.infrastructure.services.telegram.TelegramApiService
@@ -17,10 +17,8 @@ object TelegramTextHandler {
       tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
 
-      session <- sessionService.get(context.chatId)
-      pending <- ZIO.fromOption(session.pending)
-        .orElseFail(new RuntimeException(s"Pending not found in session for chat ${context.chatId}"))
-      _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action ${session.pending}")
+      pending <- SessionRequire.pending(context.chatId)
+      _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action $pending")
       
       _ <- pending match {
         case BotPending.Spread(pending) =>

@@ -4,13 +4,13 @@ import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.pending.BotPending
 import bot.domain.models.session.{BotSpread, CardMode}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cards.*
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
+import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
 import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
@@ -24,9 +24,7 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Select cards by spread $spreadId from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       _ <- sessionService.clearCard(context.chatId)
       cards <- tarotApi.getCards(spreadId, token)
@@ -38,9 +36,7 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Get cards command by spread $spreadId for chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      cardsCount <- ZIO.fromOption(session.spreadProgress.map(_.cardsCount))
-        .orElseFail(new RuntimeException(s"Cards count not found in session for chat ${context.chatId}"))
+      cardsCount <- SessionRequire.cardsCount(context.chatId)
 
       cardButtons = (1 to cardsCount).map { position =>
         cards.find(_.position == position - 1) match {
@@ -60,11 +56,8 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Get card settings command by cardId $cardId for chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
+      token <- SessionRequire.token(context.chatId)
 
       card <- tarotApi.getCard(cardId, token)
       _ <- sessionService.setCard(context.chatId, cardId)
@@ -93,8 +86,6 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Handle card title from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-
       _ <- sessionService.setPending(context.chatId, BotPending.CardDescription(cardMode, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты")
     } yield ()
@@ -103,8 +94,6 @@ object CardFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card description from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
 
       _ <- sessionService.setPending(context.chatId, BotPending.CardPhoto(cardMode, title, description))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты")
@@ -115,14 +104,10 @@ object CardFlow {
     for {
       _ <- ZIO.logInfo(s"Handle card photo from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
-      cardCount <- ZIO.fromOption(session.spreadProgress.map(_.cardsCount))
-        .orElseFail(new RuntimeException(s"CardCount not found in session for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-      
+      token <- SessionRequire.token(context.chatId)
+      spread <- SessionRequire.spread(context.chatId)
+      cardsCount <- SessionRequire.cardsCount(context.chatId)
+
       photo = PhotoRequest(FileSourceType.Telegram, sourceId)
       _ <- cardMode match {
         case CardMode.Create(position) =>
@@ -146,11 +131,8 @@ object CardFlow {
   def deleteCard(context: TelegramContext, cardId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
+      token <- SessionRequire.token(context.chatId)
 
       _ <- ZIO.logInfo(s"Delete card $cardId for chat ${context.chatId}")
 

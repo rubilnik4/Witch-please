@@ -4,7 +4,7 @@ import bot.application.handlers.telegram.flows.SpreadFlow
 import bot.application.handlers.telegram.flows.SpreadFlow.*
 import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.infrastructure.services.telegram.TelegramApiService
@@ -38,9 +38,7 @@ object TelegramKeepCurrentHandler {
   private def spreadKeepCurrent(context: TelegramContext, pending: SpreadPending)
       (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"spread not found in session for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
       _ <- pending.draft match {
         case draft @ (SpreadDraft.Start | SpreadDraft.Complete(_,_,_,_)) =>
           ZIO.logError(s"Couldn't use $draft step to keep current in chat ${context.chatId}") *>

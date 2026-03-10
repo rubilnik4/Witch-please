@@ -6,7 +6,7 @@ import bot.application.handlers.telegram.markup.SchedulerMarkup
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.calendar.CalendarService
 import bot.infrastructure.services.datetime.DateFormatter
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.spreads.SpreadPublishRequest
@@ -56,9 +56,7 @@ object SchedulerFlow {
           for {
             _ <- ZIO.logInfo(s"Select time page $page from chat ${context.chatId}")
 
-            session <- sessionService.get(context.chatId)
-            date <- ZIO.fromOption(session.date)
-              .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
+            date <- SessionRequire.date(context.chatId)
             _ <- showTimeKeyboard(context, date, page)(telegramApi)
           } yield ()
         case ScheduleCommand.SelectTime(time) =>
@@ -76,10 +74,7 @@ object SchedulerFlow {
       
       _ <- sessionService.setTime(context.chatId, time)
 
-      session <- sessionService.get(context.chatId)
-      date <- ZIO.fromOption(session.date)
-        .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
-
+      date <- SessionRequire.date(context.chatId)
       _ <- showDelayKeyboard(context, date, 0)(telegramApi)
     } yield ()
 
@@ -90,13 +85,9 @@ object SchedulerFlow {
 
       _ <- sessionService.setCardOfDayDelay(context.chatId, delay)
 
-      session <- sessionService.get(context.chatId)
-      date <- ZIO.fromOption(session.date)
-        .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
-      time <- ZIO.fromOption(session.time)
-        .orElseFail(new RuntimeException(s"Time not found in session for chat ${context.chatId}"))
-      cardOfDayDelay <- ZIO.fromOption(session.cardOfDayDelay)
-        .orElseFail(new RuntimeException(s"Card of day delay not found in session for chat ${context.chatId}"))
+      date <- SessionRequire.date(context.chatId)
+      time <- SessionRequire.time(context.chatId)
+      cardOfDayDelay <- SessionRequire.cardOfDayDelay(context.chatId)
 
       month = YearMonth.of(date.getYear, date.getMonth)
       buttons = List(
@@ -115,17 +106,11 @@ object SchedulerFlow {
       _ <- ZIO.logInfo(s"Confirm datetime from chat ${context.chatId}")
 
       projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found for chat ${context.chatId}"))
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      date <- ZIO.fromOption(session.date)
-        .orElseFail(new RuntimeException(s"Date not found in session for chat ${context.chatId}"))
-      time <- ZIO.fromOption(session.time)
-        .orElseFail(new RuntimeException(s"Time not found in session for chat ${context.chatId}"))
-      cardOfDayDelay <- ZIO.fromOption(session.cardOfDayDelay)
-        .orElseFail(new RuntimeException(s"Card of day delay not found in session for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
+      token <- SessionRequire.token(context.chatId)
+      date <- SessionRequire.date(context.chatId)
+      time <- SessionRequire.time(context.chatId)
+      cardOfDayDelay <- SessionRequire.cardOfDayDelay(context.chatId)
 
       dateTime = LocalDateTime.of(date, time)
       today <- DateTimeService.currentLocalDateTime()

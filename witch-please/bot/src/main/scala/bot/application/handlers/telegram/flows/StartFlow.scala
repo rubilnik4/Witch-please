@@ -29,10 +29,8 @@ object StartFlow {
     for {
       _ <- ZIO.logInfo(s"Start as admin command for chat ${context.chatId}")
 
-      username <- ZIO.fromOption(context.username)
-        .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
+      username <- getUsername(context)
       token <- setUser(context, username)(telegramApi, tarotApi, sessionService)
-
       _ <- ChannelFlow.selectChannel(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
@@ -41,9 +39,7 @@ object StartFlow {
     for {
       _ <- ZIO.logInfo(s"Start as user command for chat ${context.chatId}")
 
-      username <- ZIO.fromOption(context.username)
-        .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))    
-
+      username <- getUsername(context)
       _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username страждущий!")
       _ <- ClientFlow.showAuthors(context)(telegramApi, tarotApi, sessionService)
     } yield ()
@@ -61,4 +57,8 @@ object StartFlow {
       _ <- sessionService.setUser(context.chatId, userId.id, token)
       _ <- telegramApi.sendText(context.chatId, s"Приветствую тебя $username хозяйка таро!")
     }  yield token
+
+  private def getUsername(context: TelegramContext) =
+    ZIO.fromOption(context.username)
+      .orElseFail(new RuntimeException(s"UserId not found in context for chat ${context.username}"))
 }

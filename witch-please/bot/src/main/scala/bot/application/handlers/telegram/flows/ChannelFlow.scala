@@ -4,7 +4,7 @@ import bot.application.commands.telegram.*
 import bot.domain.models.session.pending.BotPending
 import bot.domain.models.session.{BotChannel, ChannelMode}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.channels.*
@@ -21,9 +21,7 @@ object ChannelFlow {
     for {
       _ <- ZIO.logInfo(s"Select channel by user ${context.username} from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       channelMaybe <- tarotApi.getDefaultChannel(token)
       _ <- channelMaybe match {
@@ -32,16 +30,6 @@ object ChannelFlow {
         case Some(channel) =>
           showAuthorChannel(context, channel)(telegramApi, tarotApi, sessionService)
       }
-    } yield ()
-
-  private def showAuthorChannel(context: TelegramContext, userChannel: UserChannelResponse)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
-    for {
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-      _ <- sessionService.setChannel(context.chatId, BotChannel(userChannel.id, userChannel.channelId))
-      _ <- showChannel(context, userChannel)(telegramApi, sessionService)
     } yield ()
 
   def createChannel(context: TelegramContext)(
@@ -65,9 +53,7 @@ object ChannelFlow {
     for {
       _ <- ZIO.logInfo(s"Handle channel $channelId from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
 
       _ <- channelMode match {
         case ChannelMode.Create =>
@@ -95,6 +81,15 @@ object ChannelFlow {
       _ <- sessionService.clearChannel(context.chatId)
       _ <- sessionService.setPending(context.chatId, BotPending.ChannelChannelId(channelMode))
       _ <- telegramApi.sendText(context.chatId, s"Добавь бот в свой канал и перешли ему любой пост из этого канала")
+    } yield ()
+
+  private def showAuthorChannel(context: TelegramContext, userChannel: UserChannelResponse)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
+    for {
+      token <- SessionRequire.token(context.chatId)
+
+      _ <- sessionService.setChannel(context.chatId, BotChannel(userChannel.id, userChannel.channelId))
+      _ <- showChannel(context, userChannel)(telegramApi, sessionService)
     } yield ()
 
   private def showChannel(context: TelegramContext, userChannel: UserChannelResponse)(

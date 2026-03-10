@@ -5,13 +5,13 @@ import bot.domain.models.session.*
 import bot.domain.models.session.pending.BotPending
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.*
 import shared.api.dto.tarot.photo.PhotoRequest
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
+import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.files.FileSourceType
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
@@ -24,9 +24,7 @@ object CardOfDayFlow {
     for {
       _ <- ZIO.logInfo(s"Select card of day by spread $spreadId from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      token <- SessionRequire.token(context.chatId)
      
       cardOfDayMaybe <- tarotApi.getCardOfDayBySpread(spreadId, token)
       _ <- cardOfDayMaybe match {
@@ -40,9 +38,8 @@ object CardOfDayFlow {
   private def showSpreadCardOfDay(context: TelegramContext, cardOfDay: CardOfDayResponse, spreadId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService) =
     for {
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
+
       _ <- sessionService.setCardOfDay(context.chatId, cardOfDay.id)
       _ <- showCardOfDay(context, cardOfDay, spread)(telegramApi, sessionService)
     } yield ()
@@ -66,8 +63,8 @@ object CardOfDayFlow {
   def setCardOfDayCardId(context: TelegramContext, cardOfDayMode: CardOfDayMode, position: Int)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      session <- sessionService.get(context.chatId)
-      progress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("Spread progress not found"))
+      progress <- SessionRequire.spreadProgress(context.chatId)
+
       _ <-
         if (progress.createdPositions.exists(_.position == position))
           for {
@@ -80,7 +77,7 @@ object CardOfDayFlow {
           } yield ()
         else {
           for {
-            spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("Spread id not found"))
+            spread <- SessionRequire.spread(context.chatId)
             _ <- telegramApi.sendText(context.chatId, "Карта с такой позицией ещё не создана")
             _ <- SpreadFlow.selectSpread(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
           } yield ()
@@ -92,8 +89,6 @@ object CardOfDayFlow {
     for {
       _ <- ZIO.logInfo(s"Handle card of day title from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-
       _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayDescription(cardOfDayMode, cardId, title))
       _ <- telegramApi.sendReplyText(context.chatId, s"Укажи подробное описание карты дня")
     } yield ()  
@@ -102,8 +97,6 @@ object CardOfDayFlow {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle card of day description from chat ${context.chatId}")
-
-      session <- sessionService.get(context.chatId)
 
       _ <- sessionService.setPending(context.chatId, BotPending.CardOfDayPhoto(cardOfDayMode, cardId, title, description))
       _ <- telegramApi.sendReplyText(context.chatId, s"Прикрепи фото для карты дня")
@@ -114,11 +107,8 @@ object CardOfDayFlow {
     for {
       _ <- ZIO.logInfo(s"Handle card of day photo from chat ${context.chatId}")
 
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found in session for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
+      spread <- SessionRequire.spread(context.chatId)
+      token <- SessionRequire.token(context.chatId)
 
       photo = PhotoRequest(FileSourceType.Telegram, fileId)
       _ <- cardOfDayMode match {
@@ -143,13 +133,10 @@ object CardOfDayFlow {
   def deleteCardOfDay(context: TelegramContext, cardOfDayId: UUID)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      session <- sessionService.get(context.chatId)
-      spread <- ZIO.fromOption(session.spread)
-        .orElseFail(new RuntimeException(s"SpreadId not found for chat ${context.chatId}"))
-      token <- ZIO.fromOption(session.token)
-        .orElseFail(new RuntimeException(s"Token not found in session for chat ${context.chatId}"))
-
       _ <- ZIO.logInfo(s"Delete card of day $cardOfDayId for chat ${context.chatId}")
+
+      spread <- SessionRequire.spread(context.chatId)
+      token <- SessionRequire.token(context.chatId)
 
       _ <- tarotApi.deleteCardOfDay(cardOfDayId, token)
       _ <- telegramApi.sendText(context.chatId, s"Карта дня удалена")
@@ -193,8 +180,7 @@ object CardOfDayFlow {
     (sessionService: BotSessionService): ZIO[BotEnv, Throwable, String] =
     ZIO.foreach(cardOfDay) { cardOfDay =>
       for {
-        session <- sessionService.get(context.chatId)
-        progress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("Spread progress not found"))
+        progress <- SessionRequire.spreadProgress(context.chatId)
       } yield
         progress.createdPositions.find(_.cardId == cardOfDay.cardId).map(_.position.+(1).toString).getOrElse("—")
     }.map(_.getOrElse("—"))

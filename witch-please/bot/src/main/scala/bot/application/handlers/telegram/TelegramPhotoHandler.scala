@@ -4,7 +4,7 @@ import bot.application.handlers.telegram.TelegramTextHandler.handleSpread
 import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.pending.{BotPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
+import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.infrastructure.services.telegram.TelegramApiService
@@ -16,25 +16,24 @@ object TelegramPhotoHandler {
       telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+
+      pending <- SessionRequire.pending(context.chatId)
+      _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action $pending")
       
-      session <- sessionService.get(context.chatId)
-      _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action ${session.pending}")
-      
-      _ <- session.pending match {      
-        case Some(BotPending.Spread(pending)) =>
+      _ <- pending match {      
+        case BotPending.Spread(pending) =>
           handleSpread(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
-        case Some(BotPending.CardPhoto(cardMode, title, description)) =>
+        case BotPending.CardPhoto(cardMode, title, description) =>
           CardFlow.setCardPhoto(context, cardMode,  title, description, sourceId)(telegramApi, tarotApi, sessionService)
-        case Some(BotPending.CardOfDayPhoto(cardOfDayMode, cardId, title, description)) =>
+        case BotPending.CardOfDayPhoto(cardOfDayMode, cardId, title, description) =>
           CardOfDayFlow.setCardOfDayPhoto(context, cardOfDayMode, cardId, title, description, sourceId)(telegramApi, tarotApi, sessionService)  
-        case None
-             | Some(BotPending.ChannelChannelId(_))           
-             | Some(BotPending.CardTitle(_)) | Some(BotPending.CardDescription(_,_))
-             | Some(BotPending.CardOfDayCardId(_)) | Some(BotPending.CardOfDayTitle(_,_))
-             | Some(BotPending.CardOfDayDescription(_,_,_))
+        case BotPending.ChannelChannelId(_) 
+             | BotPending.CardTitle(_) | BotPending.CardDescription(_,_)
+             | BotPending.CardOfDayCardId(_) | BotPending.CardOfDayTitle(_,_)
+             | BotPending.CardOfDayDescription(_,_,_)
         =>
           for {
-            _ <- ZIO.logError(s"Unknown photo pending action ${session.pending} from chat ${context.chatId}")
+            _ <- ZIO.logError(s"Unknown photo pending action ${pending} from chat ${context.chatId}")
             _ <- telegramApi.sendText(context.chatId, "Неизвестная команда отправки фото")
           } yield ()
       }
