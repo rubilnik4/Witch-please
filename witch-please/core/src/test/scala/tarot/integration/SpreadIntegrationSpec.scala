@@ -13,9 +13,7 @@ import shared.models.tarot.photo.PhotoOwnerType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
-import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
-import tarot.integration.SpreadDeleteIntegrationSpec.cardOfDayCardPosition
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*

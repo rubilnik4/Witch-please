@@ -12,9 +12,7 @@ import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.{CardOfDay, CardOfDayId}
 import tarot.domain.models.spreads.*
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
-import tarot.integration.SpreadDeleteIntegrationSpec.{cardOfDayCardPosition, cardsCount}
 import tarot.integration.SpreadIntegrationSpec.test
-import tarot.integration.SpreadPublishIntegrationSpec.channelId
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
 import tarot.models.TestSpreadState
 import zio.*
