@@ -7,14 +7,10 @@ import java.util.UUID
 enum BotPending:
 //  case Channel(action: ChannelPending)
   case Spread(pending: SpreadPending)
-//  case Card(action: CardPending)
+  case Card(pending: CardPending)
 //  case CardOfDay(action: CardOfDayPending)
 
   case ChannelChannelId(channelMode: ChannelMode)
-
-  case CardTitle(cardMode: CardMode)
-  case CardDescription(cardMode: CardMode, title: String)
-  case CardPhoto(cardMode: CardMode, title: String, description: String)
 
   case CardOfDayCardId(cardMode: CardOfDayMode)
   case CardOfDayTitle(cardMode: CardOfDayMode, cardId: UUID)

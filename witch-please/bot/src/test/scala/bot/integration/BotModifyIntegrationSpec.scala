@@ -135,7 +135,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         spreadProgress.cardsCount == cardsCount + 1,
         spreadProgress.createdPositions.size == cardsCount,
         !spreadProgress.createdPositions.exists(_.cardId == cardId),
-        session.cardId.isEmpty,
+        session.card.isEmpty,
         session.pending.isEmpty
       )
     },
@@ -314,7 +314,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         session.spread.isEmpty,
         session.spreadProgress.isEmpty,
         session.cardOfDayId.isEmpty,
-        session.cardId.isEmpty
+        session.card.isEmpty
       )
     },
   ).provideShared(

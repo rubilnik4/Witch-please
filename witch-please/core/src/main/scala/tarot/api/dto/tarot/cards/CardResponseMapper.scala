@@ -12,6 +12,7 @@ object CardResponseMapper {
       position = card.position,
       spreadId = card.spreadId.id,
       title = card.title,
+      description = card.description,
       photo = PhotoResponseMapper.toResponse(card.photo),
       createdAt = card.createdAt
     )

@@ -32,7 +32,7 @@ trait TarotApiService {
   def getCard(cardId: UUID, token: String): ZIO[Any, ApiError, CardResponse]
   def getCards(spreadId: UUID, token: String): ZIO[Any, ApiError, List[CardResponse]]
   def getCardsCount(spreadId: UUID, token: String): ZIO[Any, ApiError, Int]
-  def createCard(request: CardCreateRequest, spreadId: UUID, position: Int, token: String): ZIO[Any, ApiError, IdResponse]
+  def createCard(request: CardCreateRequest, spreadId: UUID, token: String): ZIO[Any, ApiError, IdResponse]
   def updateCard(request: CardUpdateRequest, cardId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def deleteCard(cardId: UUID, token: String): ZIO[Any, ApiError, Unit]
   def getCardOfDayBySpread(spreadId: UUID, token: String): ZIO[Any, ApiError, Option[CardOfDayResponse]]

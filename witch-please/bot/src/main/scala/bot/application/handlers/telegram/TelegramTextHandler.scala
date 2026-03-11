@@ -2,7 +2,7 @@ package bot.application.handlers.telegram
 
 import bot.application.handlers.telegram.flows.*
 import bot.domain.models.session.pending.SpreadDraft.AwaitingTitle
-import bot.domain.models.session.pending.{BotPending, SpreadDraft, SpreadPending}
+import bot.domain.models.session.pending.{BotPending, CardDraft, CardPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.*
 import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
 import bot.infrastructure.services.tarot.TarotApiService
@@ -23,10 +23,8 @@ object TelegramTextHandler {
       _ <- pending match {
         case BotPending.Spread(pending) =>
           handleSpread(context, text, pending)(telegramApi, tarotApi, sessionService)
-        case BotPending.CardTitle(cardMode) =>
-          CardFlow.setCardTitle(context, cardMode, text)(telegramApi, tarotApi, sessionService)
-        case BotPending.CardDescription(cardMode, title) =>
-          CardFlow.setCardDescription(context, cardMode, title, text)(telegramApi, tarotApi, sessionService)
+        case BotPending.Card(pending) =>
+          handleCard(context, text, pending)(telegramApi, tarotApi, sessionService)     
         case BotPending.CardOfDayCardId(cardOfDayMode) =>
           text.toIntOption match {
             case Some(position) if position > 0 =>
@@ -43,7 +41,7 @@ object TelegramTextHandler {
             _ <- ZIO.logInfo(s"Ignored plain text from ${context.chatId}: $text")
             _ <- telegramApi.sendText(context.chatId, "Используйте команды. Введите /help.")
           } yield ()
-        case BotPending.CardPhoto(_,_,_) | BotPending.CardOfDayPhoto(_,_,_,_) =>
+        case BotPending.CardOfDayPhoto(_,_,_,_) =>
           for {
             _ <- ZIO.logInfo(s"Used text message instead of photo ${context.chatId}: $text")
             _ <- telegramApi.sendText(context.chatId, "Принимаю только фото!")
@@ -61,8 +59,20 @@ object TelegramTextHandler {
         SpreadFlow.setSpreadTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
       case SpreadDraft.Start | SpreadDraft.AwaitingPhoto(_,_,_) | SpreadDraft.Complete(_,_,_,_) =>
         for {
-          _ <- ZIO.logWarning(s"Used text message instead of ${pending.draft} in chat ${context.chatId}")
+          _ <- ZIO.logWarning(s"Used spread text message instead of ${pending.draft} in chat ${context.chatId}")
           _ <- telegramApi.sendText(context.chatId, "Принимаю только текст!")
         } yield ()
     }
+
+  private def handleCard(context: TelegramContext, text: String, pending: CardPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    pending.draft match {
+      case CardDraft.AwaitingTitle | CardDraft.AwaitingDescription(_) =>
+        CardFlow.setCardTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
+      case CardDraft.Start | CardDraft.AwaitingPhoto(_,_) | CardDraft.Complete(_,_,_) =>
+        for {
+          _ <- ZIO.logWarning(s"Used card text message instead of ${pending.draft} in chat ${context.chatId}")
+          _ <- telegramApi.sendText(context.chatId, "Принимаю только текст!")
+        } yield ()
+    }  
 }

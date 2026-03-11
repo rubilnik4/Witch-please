@@ -12,6 +12,7 @@ final case class CardResponse(
   position: Int,
   spreadId: UUID,
   title: String,
+  description: String,
   photo: PhotoResponse,
   createdAt: Instant
 ) derives JsonCodec, Schema

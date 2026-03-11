@@ -20,7 +20,7 @@ trait BotSessionService {
   def setSpread(chatId: Long, spread: BotSpread, spreadProgress: SpreadProgress): ZIO[BotEnv, Throwable, Unit]
   def clearSpread(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def clearSpreadProgress(chatId: Long): ZIO[BotEnv, Throwable, Unit]
-  def setCard(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit]
+  def setCard(chatId: Long, card: BotCard): ZIO[BotEnv, Throwable, Unit]
   def clearCard(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setCardPosition(chatId: Long, position: CardPosition): ZIO[BotEnv, Throwable, Unit]
   def deleteCardPosition(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit]

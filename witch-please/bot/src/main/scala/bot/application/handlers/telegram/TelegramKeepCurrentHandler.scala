@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram
 
-import bot.application.handlers.telegram.flows.SpreadFlow
+import bot.application.handlers.telegram.flows.{CardFlow, SpreadFlow}
 import bot.application.handlers.telegram.flows.SpreadFlow.*
 import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
@@ -20,12 +20,12 @@ object TelegramKeepCurrentHandler {
       _ <- session.pending match {
         case Some(BotPending.Spread(spreadPending)) =>
           spreadKeepCurrent(context, spreadPending)(telegramApi, tarotApi, sessionService)
+        case Some(BotPending.Card(cardPending)) =>
+          cardKeepCurrent(context, cardPending)(telegramApi, tarotApi, sessionService)  
         case None
-             | Some(BotPending.ChannelChannelId(_))
-             | Some(BotPending.CardTitle(_)) | Some(BotPending.CardDescription(_,_))
+             | Some(BotPending.ChannelChannelId(_))            
              | Some(BotPending.CardOfDayCardId(_)) | Some(BotPending.CardOfDayTitle(_,_))
              | Some(BotPending.CardOfDayDescription(_,_,_))
-             | Some(BotPending.CardPhoto(_,_,_))
              | Some(BotPending.CardOfDayPhoto(_,_,_,_))
         =>
           for {
@@ -35,14 +35,14 @@ object TelegramKeepCurrentHandler {
       }
     } yield ()
 
-  private def spreadKeepCurrent(context: TelegramContext, pending: SpreadPending)
-      (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def spreadKeepCurrent(context: TelegramContext, pending: SpreadPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       spread <- SessionRequire.spread(context.chatId)
       _ <- pending.draft match {
         case draft @ (SpreadDraft.Start | SpreadDraft.Complete(_,_,_,_)) =>
-          ZIO.logError(s"Couldn't use $draft step to keep current in chat ${context.chatId}") *>
-            ZIO.fail(new IllegalStateException(s"Couldn't use $draft step to keep current"))
+          ZIO.logError(s"Couldn't use spread $draft step to keep current in chat ${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Couldn't use spread $draft step to keep current"))
         case SpreadDraft.AwaitingTitle =>
           SpreadFlow.setSpreadTextDraft(context, spread.snapShot.title, pending)(telegramApi, tarotApi, sessionService)
         case SpreadDraft.AwaitingCardsCount(_) =>
@@ -53,4 +53,21 @@ object TelegramKeepCurrentHandler {
           SpreadFlow.setSpreadPhotoDraft(context, spread.snapShot.photoSourceId, pending)(telegramApi, tarotApi, sessionService)
       }
     } yield ()
+
+  private def cardKeepCurrent(context: TelegramContext, pending: CardPending)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      card <- SessionRequire.card(context.chatId)
+      _ <- pending.draft match {
+        case draft @ (CardDraft.Start | CardDraft.Complete(_,_,_)) =>
+          ZIO.logError(s"Couldn't use card $draft step to keep current in chat ${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Couldn't use card $draft step to keep current"))
+        case CardDraft.AwaitingTitle =>
+          CardFlow.setCardTextDraft(context, card.snapShot.title, pending)(telegramApi, tarotApi, sessionService)       
+        case CardDraft.AwaitingDescription(_) =>
+          CardFlow.setCardPhotoDraft(context, card.snapShot.description, pending)(telegramApi, tarotApi, sessionService)
+        case draft @ CardDraft.AwaitingPhoto(_,_) =>
+          CardFlow.setCardPhotoDraft(context, card.snapShot.photoSourceId, pending)(telegramApi, tarotApi, sessionService)
+      }
+    } yield ()  
 }

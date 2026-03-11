@@ -20,15 +20,13 @@ object TelegramForwardHandler {
       _ <- pending match {
         case BotPending.ChannelChannelId(channelMode) =>
           ChannelFlow.setChannel(context, channelMode, channelId, channelName)(telegramApi, tarotApi, sessionService)      
-        case BotPending.Spread(_)
-             | BotPending.CardTitle(_) | BotPending.CardDescription(_,_)
+        case BotPending.Spread(_) | BotPending.Card(_)
              | BotPending.CardOfDayCardId(_) | BotPending.CardOfDayTitle(_,_)
              | BotPending.CardOfDayDescription(_,_,_)
-             | BotPending.CardPhoto(_,_,_)
              | BotPending.CardOfDayPhoto(_,_,_,_)
         =>
           for {
-            _ <- ZIO.logError(s"Unknown forward pending action ${pending} from chat ${context.chatId}")
+            _ <- ZIO.logError(s"Unknown forward pending action $pending from chat ${context.chatId}")
             _ <- telegramApi.sendText(context.chatId, "Неизвестная команда пересланного сообщения")
           } yield ()
       }

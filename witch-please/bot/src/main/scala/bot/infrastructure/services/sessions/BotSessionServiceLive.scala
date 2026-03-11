@@ -128,12 +128,12 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.updateZIO(chatId)(session => BotSession.deleteCardPosition(session, cardId, now))
     } yield ()
     
-  override def setCard(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
+  override def setCard(chatId: Long, card: BotCard): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logDebug(s"Set card $cardId for chat $chatId")
+      _ <- ZIO.logDebug(s"Set card ${card.cardId} for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.update(chatId)(session => BotSession.withCard(session, cardId, now))
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withCard(session, card, now))
     } yield ()
 
   override def clearCard(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
