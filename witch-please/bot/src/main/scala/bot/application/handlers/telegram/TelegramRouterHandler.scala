@@ -75,9 +75,9 @@ object TelegramRouterHandler {
           case AuthorCommand.SelectCard(cardId) =>
             CardFlow.selectCard(context, cardId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.CreateCardOfDay =>
-            CardOfDayFlow.createCardOfDay(context)(telegramApi, sessionService)
+            CardOfDayFlow.createCardOfDay(context)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.EditCardOfDay(cardOfDayId) =>
-            CardOfDayFlow.editCardOfDay(context, cardOfDayId)(telegramApi, sessionService)
+            CardOfDayFlow.editCardOfDay(context, cardOfDayId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.DeleteCardOfDay(cardOfDayId) =>
             CardOfDayFlow.deleteCardOfDay(context, cardOfDayId)(telegramApi, tarotApi, sessionService)
           case AuthorCommand.SelectCardOfDay(spreadId) =>

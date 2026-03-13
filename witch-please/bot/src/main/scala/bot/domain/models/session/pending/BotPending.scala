@@ -1,21 +1,13 @@
 package bot.domain.models.session.pending
 
-import bot.domain.models.session.{CardMode, CardOfDayMode, ChannelMode}
-
-import java.util.UUID
+import bot.domain.models.session.ChannelMode
 
 enum BotPending:
 //  case Channel(action: ChannelPending)
   case Spread(pending: SpreadPending)
   case Card(pending: CardPending)
-//  case CardOfDay(action: CardOfDayPending)
+  case CardOfDay(pending: CardOfDayPending)
 
   case ChannelChannelId(channelMode: ChannelMode)
-
-  case CardOfDayCardId(cardMode: CardOfDayMode)
-  case CardOfDayTitle(cardMode: CardOfDayMode, cardId: UUID)
-  case CardOfDayDescription(cardMode: CardOfDayMode, cardId: UUID, title: String)
-  case CardOfDayPhoto(cardMode: CardOfDayMode, cardId: UUID, title: String, description: String)
-
 
 

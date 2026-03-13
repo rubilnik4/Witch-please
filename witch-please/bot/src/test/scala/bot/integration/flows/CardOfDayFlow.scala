@@ -2,7 +2,7 @@ package bot.integration.flows
 
 import bot.api.BotApiRoutes
 import bot.domain.models.session.CardOfDayMode
-import bot.domain.models.session.pending.BotPending
+import bot.domain.models.session.pending.*
 import bot.layers.BotEnv
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
@@ -24,7 +24,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayCardId", chatId) {
-        case BotPending.CardOfDayCardId(mode) if mode == cardOfDayMode => () }
+        case BotPending.CardOfDay(CardOfDayPending(mode, CardOfDayDraft.AwaitingCardId)) if mode == cardOfDayMode => () }
     } yield ()
 
   def cardOfDayCardId(app: Routes[BotEnv, Response], chatId: Long, cardPosition: CardPosition): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -33,7 +33,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayTitle", chatId) {
-        case BotPending.CardOfDayTitle(mode, cardId) if cardId == cardPosition.cardId => cardId }
+        case BotPending.CardOfDay(CardOfDayPending(mode, CardOfDayDraft.AwaitingTitle(cardId))) if cardId == cardPosition.cardId => cardId }
     } yield ()
 
   def cardOfDayTitle(app: Routes[BotEnv, Response], chatId: Long, title: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -42,8 +42,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayDescription", chatId) {
-        case BotPending.CardOfDayDescription(mode, _, t) if t == title => title
-      }
+        case BotPending.CardOfDay(CardOfDayPending(mode, CardOfDayDraft.AwaitingDescription(_, t))) if t == title => t }
     } yield ()
 
   def cardOfDayDescription(app: Routes[BotEnv, Response], chatId: Long, description: String): ZIO[Scope & BotEnv, Throwable, Unit] =
@@ -52,7 +51,7 @@ object CardOfDayFlow {
     for {
       _ <- app.runZIO(request)
       _ <- CommonFlow.expectPending("CardOfDayPhoto", chatId) {
-        case BotPending.CardOfDayPhoto(mode, _, _, d) if d == description => d }
+        case BotPending.CardOfDay(CardOfDayPending(mode, CardOfDayDraft.AwaitingPhoto(_, _, d))) if d == description => d }
     } yield ()
 
   def selectCardOfDay(app: Routes[BotEnv, Response], chatId: Long, spreadId: UUID): ZIO[Scope & BotEnv, Throwable, Unit] =

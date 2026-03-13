@@ -96,9 +96,9 @@ object CardFlow {
       _ <- selectCards(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  private def startCardPending(context: TelegramContext, cardMode: CardMode)(
+  private def startCardPending(context: TelegramContext, mode: CardMode)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
-    val pending = CardPending(cardMode, CardDraft.Start)
+    val pending = CardPending(mode, CardDraft.Start)
     setCardStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
   }
   
@@ -124,8 +124,8 @@ object CardFlow {
 
       (nextDraft, nextAction) <- pending.draft match {
         case CardDraft.Start | CardDraft.Complete(_,_,_) =>
-          ZIO.logError(s"Couldn't used card start or complete pending in text draft chat=${context.chatId}") *>
-            ZIO.fail(new IllegalStateException(s"Couldn't used card start or complete  pending in text draft"))
+          ZIO.logError(s"Couldn't used card start or complete pending in text draft in chat ${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Couldn't used card start or complete pending in text draft"))
         case CardDraft.AwaitingTitle =>
           val nextDraft = CardDraft.AwaitingDescription(text)
           val nextPending = sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
@@ -136,7 +136,7 @@ object CardFlow {
           ZIO.succeed(nextDraft -> nextPending)
         case draft @ CardDraft.AwaitingPhoto(_,_) =>
           val nextPending =
-            ZIO.logInfo(s"Used text instead of card photo chat=${context.chatId}") *>
+            ZIO.logInfo(s"Used text instead of card photo in chat ${context.chatId}") *>
               telegramApi.sendText(context.chatId, "Принимаю только фото!").unit
           ZIO.succeed(draft -> nextPending)
       }
@@ -153,7 +153,7 @@ object CardFlow {
         val nextPending = CardPending(pending.mode, nextDraft)
         setCardCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
       case _ =>
-        ZIO.logInfo(s"Used photo instead of card text chat=${context.chatId}") *>
+        ZIO.logInfo(s"Used photo instead of card text in chat ${context.chatId}") *>
           telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
     }
 
@@ -164,18 +164,18 @@ object CardFlow {
         val snapshot = CardSnapshot(title, description, photoSourceId)
         submitCard(context, pending.mode, snapshot)(telegramApi, tarotApi, sessionService)
       case _ =>
-        ZIO.logError(s"Used card pending $pending instead of complete draft chat=${context.chatId}") *>
+        ZIO.logError(s"Used card pending $pending instead of complete draft in chat ${context.chatId}") *>
           ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of complete draft"))
     }
     
-  private def submitCard(context: TelegramContext, cardMode: CardMode, snapshot: CardSnapshot)(
+  private def submitCard(context: TelegramContext, mode: CardMode, snapshot: CardSnapshot)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Submit card $cardMode from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Submit card $mode from chat ${context.chatId}")
 
       token <- SessionRequire.token(context.chatId)
       spread <- SessionRequire.spread(context.chatId)
-      _ <- cardMode match {
+      _ <- mode match {
         case CardMode.Create(position) =>         
           for {
             cardId <- tarotApi.createCard(CardSnapshot.toCreateRequest(position, snapshot), spread.spreadId, token)
@@ -214,11 +214,11 @@ object CardFlow {
         case CardDraft.AwaitingDescription(_) =>
           ZIO.succeed("Прикрепи фото для карты" -> session.spread.map(_.snapShot.description))
         case CardDraft.AwaitingPhoto(_,_) =>
-          ZIO.logError(s"setCardParameter called for AwaitingPhoto state chat=${context.chatId}") *>
-            ZIO.dieMessage("setCardParameter called for AwaitingPhoto state")
+          ZIO.logError(s"Card called for AwaitingPhoto state chat=${context.chatId}") *>
+            ZIO.dieMessage("Card called for AwaitingPhoto state")
         case CardDraft.Complete(_,_,_) =>
-          ZIO.logError(s"setCardParameter called for Complete state chat=${context.chatId}") *>
-            ZIO.dieMessage("setCardParameter called for Complete state")
+          ZIO.logError(s"Card called for Complete state chat=${context.chatId}") *>
+            ZIO.dieMessage("Card called for Complete state")
       }
     } yield (buttonText, currentValue)
     

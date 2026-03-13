@@ -110,9 +110,9 @@ object SpreadFlow {
       _ <- selectSpreads(context)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  private def startSpreadPending(context: TelegramContext, spreadMode: SpreadMode)(
+  private def startSpreadPending(context: TelegramContext, mode: SpreadMode)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
-    val pending = SpreadPending(spreadMode, SpreadDraft.Start)
+    val pending = SpreadPending(mode, SpreadDraft.Start)
     setSpreadStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
   }
   
@@ -145,24 +145,24 @@ object SpreadFlow {
           val nextPending = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
           ZIO.succeed(nextDraft -> nextPending)
         case SpreadDraft.AwaitingCardsCount(title) =>
-          for {
-            cardsCount <- ZIO.fromOption(text.trim.toIntOption)
-              .orElseFail(new IllegalArgumentException("cardsCount is not an int"))
-              .filterOrFail(_ > 0)(new IllegalArgumentException("cardsCount must be > 0"))
-              .tapError { _ =>
+          text.trim.toIntOption match {
+            case Some(cardsCount) if cardsCount > 0 =>
+              val nextDraft = SpreadDraft.AwaitingDescription(title, cardsCount)
+              val nextAction = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+              ZIO.succeed(nextDraft -> nextAction)
+            case _ =>
+              val nextAction =
                 ZIO.logInfo(s"Cards count must be greater than 0 for chat ${context.chatId}") *>
-                  telegramApi.sendText(context.chatId, "Число карт должно быть больше 0").unit
-              }
-            nextDraft = SpreadDraft.AwaitingDescription(title, cardsCount)
-            nextPending = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-          } yield nextDraft -> nextPending
+                  telegramApi.sendText(context.chatId, "Число карт должно быть больше 0. Введи число ещё раз.")
+              ZIO.succeed(pending.draft -> nextAction)
+          }
         case SpreadDraft.AwaitingDescription(title, cardCount) =>
           val nextDraft = SpreadDraft.AwaitingPhoto(title, cardCount, text)
           val nextPending = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
           ZIO.succeed(nextDraft -> nextPending)
         case draft @ SpreadDraft.AwaitingPhoto(_,_,_) =>
           val nextPending =
-            ZIO.logInfo(s"Used text instead of spread photo chat=${context.chatId}") *>
+            ZIO.logInfo(s"Used text instead of spread photo in chat ${context.chatId}") *>
               telegramApi.sendText(context.chatId, "Принимаю только фото!").unit
           ZIO.succeed(draft -> nextPending)
       }
@@ -179,7 +179,7 @@ object SpreadFlow {
         val nextPending = SpreadPending(pending.mode, nextDraft)
         setSpreadCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
       case _ =>
-        ZIO.logInfo(s"Used photo instead of spread text chat=${context.chatId}") *>
+        ZIO.logInfo(s"Used photo instead of spread text in chat ${context.chatId}") *>
           telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
     }
 
@@ -190,17 +190,17 @@ object SpreadFlow {
         val snapshot = SpreadSnapshot(title, cardsCount, description, photoSourceId)
         submitSpread(context, pending.mode, snapshot)(telegramApi, tarotApi, sessionService)
       case _ =>
-        ZIO.logError(s"Used spread pending $pending instead of complete draft chat=${context.chatId}") *>
+        ZIO.logError(s"Used spread pending $pending instead of complete draft in chat ${context.chatId}") *>
           ZIO.fail(new IllegalStateException(s"Used spread pending $pending instead of complete draft"))
     }
 
-  private def submitSpread(context: TelegramContext, spreadMode: SpreadMode, snapshot: SpreadSnapshot)(
+  private def submitSpread(context: TelegramContext, mode: SpreadMode, snapshot: SpreadSnapshot)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logInfo(s"Submit spread $spreadMode from chat ${context.chatId}")
+      _ <- ZIO.logInfo(s"Submit spread $mode from chat ${context.chatId}")
 
       token <- SessionRequire.token(context.chatId)
-      spreadId <- spreadMode match {
+      spreadId <- mode match {
         case SpreadMode.Create =>
           for {
             spreadId <- tarotApi.createSpread(SpreadSnapshot.toCreateRequest(snapshot), token).map(_.id)
@@ -240,11 +240,11 @@ object SpreadFlow {
         case SpreadDraft.AwaitingDescription(_,_) =>
           ZIO.succeed("Прикрепи фото для расклада" -> None)
         case SpreadDraft.AwaitingPhoto(_,_,_) =>
-          ZIO.logError(s"setSpreadParameter called for AwaitingPhoto state chat=${context.chatId}") *>
-            ZIO.dieMessage("setSpreadParameter called for AwaitingPhoto state")
+          ZIO.logError(s"Spread called for AwaitingPhoto state chat=${context.chatId}") *>
+            ZIO.dieMessage("Spread called for AwaitingPhoto state")
         case SpreadDraft.Complete(_,_,_,_) =>
-          ZIO.logError(s"setSpreadParameter called for Complete state chat=${context.chatId}") *>
-            ZIO.dieMessage("setSpreadParameter called for Complete state")
+          ZIO.logError(s"Spread called for Complete state chat=${context.chatId}") *>
+            ZIO.dieMessage("Spread called for Complete state")
       }
     } yield (buttonText, currentValue)
 
