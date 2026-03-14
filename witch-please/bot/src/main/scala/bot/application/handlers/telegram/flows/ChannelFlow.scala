@@ -46,12 +46,6 @@ object ChannelFlow {
       _ <- ChannelDraftFlow.setChannelStartDraft(context, pending)
     } yield ()
 
-  def setChannel(context: TelegramContext, pending: ChannelPending, channelId: Long, name: String): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle channel $channelId from chat ${context.chatId}")
-      _ <- ChannelDraftFlow.setChannelForwardDraft(context, channelId, name, pending)
-    } yield ()
-
   def submitChannel(context: TelegramContext, mode: ChannelMode, channelId: Long, name: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Submit channel $channelId from chat ${context.chatId}")

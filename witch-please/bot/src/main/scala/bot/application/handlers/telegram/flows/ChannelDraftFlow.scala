@@ -25,13 +25,13 @@ object ChannelDraftFlow {
       }
     } yield ()
 
-  def setChannelForwardDraft(context: TelegramContext, channelId: Long, name: String, pending: ChannelPending): ZIO[BotEnv, Throwable, Unit] =
+  def setChannelForwardDraft(context: TelegramContext, channelId: Long, channelName: String, pending: ChannelPending): ZIO[BotEnv, Throwable, Unit] =
     for {
       telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
 
       _ <- pending.draft match {
         case ChannelDraft.AwaitingChannelId =>
-          val nextDraft = ChannelDraft.Complete(channelId, name)
+          val nextDraft = ChannelDraft.Complete(channelId, channelName)
           val nextPending = ChannelPending(pending.mode, nextDraft)
           setChannelCompleteDraft(context, nextPending)
         case _ =>

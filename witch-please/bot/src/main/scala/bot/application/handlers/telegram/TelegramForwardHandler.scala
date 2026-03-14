@@ -16,7 +16,7 @@ object TelegramForwardHandler {
       
       _ <- pending match {
         case BotPending.Channel(pending) =>
-          ChannelFlow.setChannel(context, pending, channelId, channelName)
+          ChannelDraftFlow.setChannelForwardDraft(context, channelId, channelName, pending)
         case BotPending.Spread(_) | BotPending.Card(_) | BotPending.CardOfDay(_) =>
           for {
             _ <- ZIO.logError(s"Unknown forward pending action $pending from chat ${context.chatId}")
