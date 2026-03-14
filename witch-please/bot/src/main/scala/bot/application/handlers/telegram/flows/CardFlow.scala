@@ -96,79 +96,7 @@ object CardFlow {
       _ <- selectCards(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
 
-  private def startCardPending(context: TelegramContext, mode: CardMode)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
-    val pending = CardPending(mode, CardDraft.Start)
-    setCardStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
-  }
-  
-  private def setCardStartDraft(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case CardDraft.Start =>
-        val nextDraft = CardDraft.AwaitingTitle
-        val nextPending = CardPending(pending.mode, nextDraft)
-        for {
-          _ <- sessionService.setPending(context.chatId, BotPending.Card(nextPending))
-          _ <- sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-        } yield ()
-      case _ =>
-        ZIO.logError(s"Used card pending $pending instead of start draft chat=${context.chatId}") *>
-          ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of start draft"))
-    }
-
-  def setCardTextDraft(context: TelegramContext, text: String, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      _ <- ZIO.logInfo(s"Handle text card draft ${pending.draft} from chat ${context.chatId}")
-
-      (nextDraft, nextAction) <- pending.draft match {
-        case CardDraft.Start | CardDraft.Complete(_,_,_) =>
-          ZIO.logError(s"Couldn't used card start or complete pending in text draft in chat ${context.chatId}") *>
-            ZIO.fail(new IllegalStateException(s"Couldn't used card start or complete pending in text draft"))
-        case CardDraft.AwaitingTitle =>
-          val nextDraft = CardDraft.AwaitingDescription(text)
-          val nextPending = sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-          ZIO.succeed(nextDraft -> nextPending)       
-        case CardDraft.AwaitingDescription(title) =>
-          val nextDraft = CardDraft.AwaitingPhoto(title, text)
-          val nextPending = sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-          ZIO.succeed(nextDraft -> nextPending)
-        case draft @ CardDraft.AwaitingPhoto(_,_) =>
-          val nextPending =
-            ZIO.logInfo(s"Used text instead of card photo in chat ${context.chatId}") *>
-              telegramApi.sendText(context.chatId, "Принимаю только фото!").unit
-          ZIO.succeed(draft -> nextPending)
-      }
-      nextPending = CardPending(pending.mode, nextDraft)
-      _ <- sessionService.setPending(context.chatId, BotPending.Card(nextPending))
-      _ <- nextAction
-    } yield ()
-
-  def setCardPhotoDraft(context: TelegramContext, photoSourceId: String, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case CardDraft.AwaitingPhoto(title, description) =>
-        val nextDraft = CardDraft.Complete(title, description, photoSourceId)
-        val nextPending = CardPending(pending.mode, nextDraft)
-        setCardCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
-      case _ =>
-        ZIO.logInfo(s"Used photo instead of card text in chat ${context.chatId}") *>
-          telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
-    }
-
-  private def setCardCompleteDraft(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case CardDraft.Complete(title, description, photoSourceId) =>
-        val snapshot = CardSnapshot(title, description, photoSourceId)
-        submitCard(context, pending.mode, snapshot)(telegramApi, tarotApi, sessionService)
-      case _ =>
-        ZIO.logError(s"Used card pending $pending instead of complete draft in chat ${context.chatId}") *>
-          ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of complete draft"))
-    }
-    
-  private def submitCard(context: TelegramContext, mode: CardMode, snapshot: CardSnapshot)(
+  def submitCard(context: TelegramContext, mode: CardMode, snapshot: CardSnapshot)(
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Submit card $mode from chat ${context.chatId}")
@@ -176,13 +104,13 @@ object CardFlow {
       token <- SessionRequire.token(context.chatId)
       spread <- SessionRequire.spread(context.chatId)
       _ <- mode match {
-        case CardMode.Create(position) =>         
+        case CardMode.Create(position) =>
           for {
             cardId <- tarotApi.createCard(CardSnapshot.toCreateRequest(position, snapshot), spread.spreadId, token)
             _ <- sessionService.setCardPosition(context.chatId, CardPosition(position, cardId.id))
             _ <- telegramApi.sendText(context.chatId, s"Карта создана")
           } yield cardId
-        case CardMode.Edit(cardId) =>          
+        case CardMode.Edit(cardId) =>
           for {
             _ <- tarotApi.updateCard(CardSnapshot.toUpdateRequest(snapshot), cardId, token)
             _ <- telegramApi.sendText(context.chatId, s"Карта обновлёна")
@@ -190,37 +118,12 @@ object CardFlow {
       }
       _ <- selectCards(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
     } yield ()
-
-  private def sendCardPendingReply(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      (buttonText, currentValue) <- getCardPendingReply(context, pending)(sessionService)
-      _ <- pending.mode match {
-        case CardMode.Create(_) =>
-          telegramApi.sendReplyText(context.chatId, buttonText)
-        case CardMode.Edit(_) =>
-          CommonFlow.sendEditReply(context, buttonText, currentValue)(telegramApi, tarotApi, sessionService)
-      }
-    } yield ()
-
-  private def getCardPendingReply(context: TelegramContext, pending: CardPending)(sessionService: BotSessionService) =
-    for {
-      session <- sessionService.get(context.chatId)
-      (buttonText, currentValue) <- pending.draft match {
-        case CardDraft.Start =>
-          ZIO.succeed("Напиши название карты" -> session.card.map(_.snapShot.title))
-        case CardDraft.AwaitingTitle =>
-          ZIO.succeed("Укажи подробное описание карты" -> session.spread.map(_.snapShot.cardsCount.toString))
-        case CardDraft.AwaitingDescription(_) =>
-          ZIO.succeed("Прикрепи фото для карты" -> session.spread.map(_.snapShot.description))
-        case CardDraft.AwaitingPhoto(_,_) =>
-          ZIO.logError(s"Card called for AwaitingPhoto state chat=${context.chatId}") *>
-            ZIO.dieMessage("Card called for AwaitingPhoto state")
-        case CardDraft.Complete(_,_,_) =>
-          ZIO.logError(s"Card called for Complete state chat=${context.chatId}") *>
-            ZIO.dieMessage("Card called for Complete state")
-      }
-    } yield (buttonText, currentValue)
+    
+  private def startCardPending(context: TelegramContext, mode: CardMode)(
+    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
+    val pending = CardPending(mode, CardDraft.Start)
+    CardDraftFlow.setCardStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
+  }
     
   private def showCard(context: TelegramContext, card: CardResponse, spread: BotSpread)(telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
     val modifyButtons =

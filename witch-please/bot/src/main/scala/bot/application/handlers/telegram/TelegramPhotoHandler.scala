@@ -55,7 +55,7 @@ object TelegramPhotoHandler {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case CardDraft.AwaitingPhoto(_,_) =>
-        CardFlow.setCardPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
+        CardDraftFlow.setCardPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
       case CardDraft.Start
            | CardDraft.AwaitingTitle
            | CardDraft.AwaitingDescription(_)

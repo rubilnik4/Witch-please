@@ -1,6 +1,6 @@
 package bot.application.handlers.telegram
 
-import bot.application.handlers.telegram.flows.{CardFlow, CardOfDayFlow, SpreadFlow}
+import bot.application.handlers.telegram.flows.{CardDraftFlow, CardFlow, CardOfDayFlow, SpreadFlow}
 import bot.application.handlers.telegram.flows.SpreadFlow.*
 import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
@@ -60,11 +60,11 @@ object TelegramKeepCurrentHandler {
           ZIO.logError(s"Couldn't use card $draft step to keep current in chat ${context.chatId}") *>
             ZIO.fail(new IllegalStateException(s"Couldn't use card $draft step to keep current"))
         case CardDraft.AwaitingTitle =>
-          CardFlow.setCardTextDraft(context, card.snapShot.title, pending)(telegramApi, tarotApi, sessionService)       
+          CardDraftFlow.setCardTextDraft(context, card.snapShot.title, pending)(telegramApi, tarotApi, sessionService)       
         case CardDraft.AwaitingDescription(_) =>
-          CardFlow.setCardTextDraft(context, card.snapShot.description, pending)(telegramApi, tarotApi, sessionService)
+          CardDraftFlow.setCardTextDraft(context, card.snapShot.description, pending)(telegramApi, tarotApi, sessionService)
         case draft @ CardDraft.AwaitingPhoto(_,_) =>
-          CardFlow.setCardPhotoDraft(context, card.snapShot.photoSourceId, pending)(telegramApi, tarotApi, sessionService)
+          CardDraftFlow.setCardPhotoDraft(context, card.snapShot.photoSourceId, pending)(telegramApi, tarotApi, sessionService)
       }
     } yield ()
 

@@ -214,7 +214,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.cardOfDayId.nonEmpty
+        session.cardOfDay.nonEmpty
       )
     },
 
@@ -227,10 +227,10 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        cardOfDayId <- ZIO.fromOption(session.cardOfDayId).orElseFail(new RuntimeException("cardOfDayId not set"))
+        cardOfDay <- ZIO.fromOption(session.cardOfDay).orElseFail(new RuntimeException("cardOfDayId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        cardOfDayMode = CardOfDayMode.Edit(cardOfDayId)
+        cardOfDayMode = CardOfDayMode.Edit(cardOfDay.cardOfDayId)
         cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
@@ -240,7 +240,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.cardOfDayId.nonEmpty,
+        session.cardOfDay.nonEmpty,
         session.pending.isEmpty
       )
     },
@@ -254,17 +254,17 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
         session <- botSessionService.get(chatId)
-        cardOfDayId <- ZIO.fromOption(session.cardOfDayId).orElseFail(new RuntimeException("cardOfDayId not set"))
+        cardOfDay <- ZIO.fromOption(session.cardOfDay).orElseFail(new RuntimeException("cardOfDayId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        postRequest = TestTelegramWebhook.deleteCardOfDayRequest(chatId, cardOfDayId)
+        postRequest = TestTelegramWebhook.deleteCardOfDayRequest(chatId, cardOfDay.cardOfDayId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
         _ <- app.runZIO(request)
 
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
       } yield assertTrue(
-        session.cardOfDayId.isEmpty,
+        session.cardOfDay.isEmpty,
         session.pending.isEmpty
       )
     },
@@ -313,7 +313,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       } yield assertTrue(
         session.spread.isEmpty,
         session.spreadProgress.isEmpty,
-        session.cardOfDayId.isEmpty,
+        session.cardOfDay.isEmpty,
         session.card.isEmpty
       )
     },
@@ -325,6 +325,4 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
   private val testBotStateLayer: ZLayer[Any, Nothing, Ref.Synchronized[TestBotState]] =
     ZLayer.fromZIO(Ref.Synchronized.make(TestBotState(None, None)))
-
-
 }

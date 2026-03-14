@@ -144,12 +144,12 @@ final class BotSessionServiceLive(botSessionRepository: BotSessionRepository) ex
       _ <- botSessionRepository.update(chatId)(session => BotSession.clearCard(session, now))
     } yield ()
 
-  override def setCardOfDay(chatId: Long, cardOfDayId: UUID): ZIO[BotEnv, Throwable, Unit] =
+  override def setCardOfDay(chatId: Long, cardOfDay: BotCardOfDay): ZIO[BotEnv, Throwable, Unit] =
     for {
-      _ <- ZIO.logDebug(s"Set card of day $cardOfDayId for chat $chatId")
+      _ <- ZIO.logDebug(s"Set card of day ${cardOfDay.cardOfDayId} for chat $chatId")
 
       now <- DateTimeService.getDateTimeNow
-      _ <- botSessionRepository.update(chatId)(session => BotSession.withCardOfDay(session, cardOfDayId, now))
+      _ <- botSessionRepository.update(chatId)(session => BotSession.withCardOfDay(session, cardOfDay, now))
     } yield ()
 
   override def clearCardOfDay(chatId: Long): ZIO[BotEnv, Throwable, Unit] =

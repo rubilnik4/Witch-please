@@ -24,7 +24,7 @@ trait BotSessionService {
   def clearCard(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setCardPosition(chatId: Long, position: CardPosition): ZIO[BotEnv, Throwable, Unit]
   def deleteCardPosition(chatId: Long, cardId: UUID): ZIO[BotEnv, Throwable, Unit]
-  def setCardOfDay(chatId: Long, cardOfDayId: UUID): ZIO[BotEnv, Throwable, Unit]
+  def setCardOfDay(chatId: Long, cardOfDay: BotCardOfDay): ZIO[BotEnv, Throwable, Unit]
   def clearCardOfDay(chatId: Long): ZIO[BotEnv, Throwable, Unit]
   def setDate(chatId: Long, date: LocalDate): ZIO[BotEnv, Throwable, Unit]
   def setTime(chatId: Long, time: LocalTime): ZIO[BotEnv, Throwable, Unit]

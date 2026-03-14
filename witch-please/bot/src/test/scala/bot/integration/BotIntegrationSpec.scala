@@ -188,7 +188,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
-        session.cardOfDayId.nonEmpty,
+        session.cardOfDay.nonEmpty,
         session.pending.isEmpty
       )
     },

@@ -54,7 +54,7 @@ object TelegramTextHandler {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case CardDraft.AwaitingTitle | CardDraft.AwaitingDescription(_) =>
-        CardFlow.setCardTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
+        CardDraftFlow.setCardTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
       case CardDraft.Start | CardDraft.AwaitingPhoto(_, _) | CardDraft.Complete(_, _, _) =>
         for {
           _ <- ZIO.logWarning(s"Used card text message instead of ${pending.draft} in chat ${context.chatId}")

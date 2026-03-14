@@ -16,7 +16,7 @@ final case class BotSession(
   spread: Option[BotSpread],
   spreadProgress: Option[SpreadProgress],
   card: Option[BotCard],
-  cardOfDayId: Option[UUID],
+  cardOfDay: Option[BotCardOfDay],
   date: Option[LocalDate],
   time: Option[LocalTime],
   cardOfDayDelay: Option[Duration],
@@ -55,7 +55,7 @@ object BotSession {
     session.copy(
       spread = None,
       spreadProgress = None,
-      cardOfDayId = None,
+      cardOfDay = None,
       card = None,
       pending = None,
       updatedAt = now)
@@ -99,15 +99,15 @@ object BotSession {
       pending = None,
       updatedAt = now)
 
-  def withCardOfDay(session: BotSession, cardOfDayId: UUID, now: Instant): BotSession =
+  def withCardOfDay(session: BotSession, cardOfDay: BotCardOfDay, now: Instant): BotSession =
     session.copy(
-      cardOfDayId = Some(cardOfDayId),
+      cardOfDay = Some(cardOfDay),
       pending = None,
       updatedAt = now)
 
   def clearCardOfDay(session: BotSession, now: Instant): BotSession =
     session.copy(
-      cardOfDayId = None,
+      cardOfDay = None,
       pending = None,
       updatedAt = now)  
       
