@@ -17,25 +17,30 @@ import zio.ZIO
 import java.util.UUID
 
 object CardDraftFlow {
-  def setCardStartDraft(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case CardDraft.Start =>
-        val nextDraft = CardDraft.AwaitingTitle
-        val nextPending = CardPending(pending.mode, nextDraft)
-        for {
-          _ <- sessionService.setPending(context.chatId, BotPending.Card(nextPending))
-          _ <- sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-        } yield ()
-      case _ =>
-        ZIO.logError(s"Used card pending $pending instead of start draft chat=${context.chatId}") *>
-          ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of start draft"))
-    }
+  def setCardStartDraft(context: TelegramContext, pending: CardPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
 
-  def setCardTextDraft(context: TelegramContext, text: String, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+      _ <- pending.draft match {
+        case CardDraft.Start =>
+          val nextDraft = CardDraft.AwaitingTitle
+          val nextPending = CardPending(pending.mode, nextDraft)
+          for {
+            _ <- sessionService.setPending(context.chatId, BotPending.Card(nextPending))
+            _ <- sendCardPendingReply(context, pending)
+          } yield ()
+        case _ =>
+          ZIO.logError(s"Used card pending $pending instead of start draft chat=${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of start draft"))
+      }
+    } yield ()
+
+  def setCardTextDraft(context: TelegramContext, text: String, pending: CardPending): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle text card draft ${pending.draft} from chat ${context.chatId}")
+
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
 
       (nextDraft, nextAction) <- pending.draft match {
         case CardDraft.Start | CardDraft.Complete(_, _, _) =>
@@ -43,11 +48,11 @@ object CardDraftFlow {
             ZIO.fail(new IllegalStateException(s"Couldn't used card start or complete pending in text draft"))
         case CardDraft.AwaitingTitle =>
           val nextDraft = CardDraft.AwaitingDescription(text)
-          val nextPending = sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+          val nextPending = sendCardPendingReply(context, pending)
           ZIO.succeed(nextDraft -> nextPending)
         case CardDraft.AwaitingDescription(title) =>
           val nextDraft = CardDraft.AwaitingPhoto(title, text)
-          val nextPending = sendCardPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+          val nextPending = sendCardPendingReply(context, pending)
           ZIO.succeed(nextDraft -> nextPending)
         case draft@CardDraft.AwaitingPhoto(_, _) =>
           val nextPending =
@@ -60,43 +65,48 @@ object CardDraftFlow {
       _ <- nextAction
     } yield ()
 
-  def setCardPhotoDraft(context: TelegramContext, photoSourceId: String, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case CardDraft.AwaitingPhoto(title, description) =>
-        val nextDraft = CardDraft.Complete(title, description, photoSourceId)
-        val nextPending = CardPending(pending.mode, nextDraft)
-        setCardCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
-      case _ =>
-        ZIO.logInfo(s"Used photo instead of card text in chat ${context.chatId}") *>
-          telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
-    }
+  def setCardPhotoDraft(context: TelegramContext, photoSourceId: String, pending: CardPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      
+      _ <- pending.draft match {
+        case CardDraft.AwaitingPhoto(title, description) =>
+          val nextDraft = CardDraft.Complete(title, description, photoSourceId)
+          val nextPending = CardPending(pending.mode, nextDraft)
+          setCardCompleteDraft(context, nextPending)
+        case _ =>
+          ZIO.logInfo(s"Used photo instead of card text in chat ${context.chatId}") *>
+            telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
+      }
+    } yield ()
 
-  private def setCardCompleteDraft(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def setCardCompleteDraft(context: TelegramContext, pending: CardPending): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case CardDraft.Complete(title, description, photoSourceId) =>
         val snapshot = CardSnapshot(title, description, photoSourceId)
-        CardFlow.submitCard(context, pending.mode, snapshot)(telegramApi, tarotApi, sessionService)
+        CardFlow.submitCard(context, pending.mode, snapshot)
       case _ =>
         ZIO.logError(s"Used card pending $pending instead of complete draft in chat ${context.chatId}") *>
           ZIO.fail(new IllegalStateException(s"Used card pending $pending instead of complete draft"))
     }
 
-  private def sendCardPendingReply(context: TelegramContext, pending: CardPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def sendCardPendingReply(context: TelegramContext, pending: CardPending): ZIO[BotEnv, Throwable, Unit] =
     for {
-      (buttonText, currentValue) <- getCardPendingReply(context, pending)(sessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      
+      (buttonText, currentValue) <- getCardPendingReply(context, pending)
       _ <- pending.mode match {
         case CardMode.Create(_) =>
           telegramApi.sendReplyText(context.chatId, buttonText)
         case CardMode.Edit(_) =>
-          CommonFlow.sendEditReply(context, buttonText, currentValue)(telegramApi, tarotApi, sessionService)
+          CommonFlow.sendEditReply(context, buttonText, currentValue)
       }
     } yield ()
 
-  private def getCardPendingReply(context: TelegramContext, pending: CardPending)(sessionService: BotSessionService) =
+  private def getCardPendingReply(context: TelegramContext, pending: CardPending) =
     for {
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      
       session <- sessionService.get(context.chatId)
       (buttonText, currentValue) <- pending.draft match {
         case CardDraft.Start =>

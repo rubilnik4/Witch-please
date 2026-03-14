@@ -10,12 +10,12 @@ import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object CommonFlow {
-  def sendEditReply(context: TelegramContext, buttonText: String, currentValue: Option[String])(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
+  def sendEditReply(context: TelegramContext, buttonText: String, currentValue: Option[String]): ZIO[BotEnv, Throwable, Unit] = {
     val currentBlock = currentValue.fold("")(value => s"\nТекущее: $value\n")
     val text = s"""$buttonText$currentBlock""".trim
     val keepButton = TelegramInlineKeyboardButton("Оставить текущее", Some(AuthorCommands.KeepCurrent))
     for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       _ <- telegramApi.sendInlineButtons(context.chatId, text, List(keepButton))
     } yield ()
   }    

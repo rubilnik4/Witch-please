@@ -10,25 +10,30 @@ import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object SpreadDraftFlow {
-  def setSpreadStartDraft(context: TelegramContext, pending: SpreadPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case SpreadDraft.Start =>
-        val nextDraft = SpreadDraft.AwaitingTitle
-        val nextPending = SpreadPending(pending.mode, nextDraft)
-        for {
-          _ <- sessionService.setPending(context.chatId, BotPending.Spread(nextPending))
-          _ <- sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
-        } yield ()
-      case _ =>
-        ZIO.logError(s"Used spread pending $pending instead of start draft chat=${context.chatId}") *>
-          ZIO.fail(new IllegalStateException(s"Used spread pending $pending instead of start draft"))
-    }
+  def setSpreadStartDraft(context: TelegramContext, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
 
-  def setSpreadTextDraft(context: TelegramContext, text: String, pending: SpreadPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+      _ <- pending.draft match {
+        case SpreadDraft.Start =>
+          val nextDraft = SpreadDraft.AwaitingTitle
+          val nextPending = SpreadPending(pending.mode, nextDraft)
+          for {
+            _ <- sessionService.setPending(context.chatId, BotPending.Spread(nextPending))
+            _ <- sendSpreadPendingReply(context, pending)
+          } yield ()
+        case _ =>
+          ZIO.logError(s"Used spread pending $pending instead of start draft chat=${context.chatId}") *>
+            ZIO.fail(new IllegalStateException(s"Used spread pending $pending instead of start draft"))
+      }
+    } yield ()
+
+  def setSpreadTextDraft(context: TelegramContext, text: String, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle text spread draft ${pending.draft} from chat ${context.chatId}")
+
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
 
       (nextDraft, nextAction) <- pending.draft match {
         case SpreadDraft.Start | SpreadDraft.Complete(_,_,_,_) =>
@@ -36,13 +41,13 @@ object SpreadDraftFlow {
             ZIO.fail(new IllegalStateException(s"Couldn't used spread start or complete  pending in text draft"))
         case SpreadDraft.AwaitingTitle =>
           val nextDraft = SpreadDraft.AwaitingCardsCount(text)
-          val nextPending = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+          val nextPending = sendSpreadPendingReply(context, pending)
           ZIO.succeed(nextDraft -> nextPending)
         case SpreadDraft.AwaitingCardsCount(title) =>
           text.trim.toIntOption match {
             case Some(cardsCount) if cardsCount > 0 =>
               val nextDraft = SpreadDraft.AwaitingDescription(title, cardsCount)
-              val nextAction = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+              val nextAction = sendSpreadPendingReply(context, pending)
               ZIO.succeed(nextDraft -> nextAction)
             case _ =>
               val nextAction =
@@ -52,7 +57,7 @@ object SpreadDraftFlow {
           }
         case SpreadDraft.AwaitingDescription(title, cardCount) =>
           val nextDraft = SpreadDraft.AwaitingPhoto(title, cardCount, text)
-          val nextPending = sendSpreadPendingReply(context, pending)(telegramApi, tarotApi, sessionService)
+          val nextPending = sendSpreadPendingReply(context, pending)
           ZIO.succeed(nextDraft -> nextPending)
         case draft @ SpreadDraft.AwaitingPhoto(_,_,_) =>
           val nextPending =
@@ -65,43 +70,49 @@ object SpreadDraftFlow {
       _ <- nextAction
     } yield ()
 
-  def setSpreadPhotoDraft(context: TelegramContext, photoSourceId: String, pending: SpreadPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
-    pending.draft match {
-      case SpreadDraft.AwaitingPhoto(title, cardsCount, description) =>
-        val nextDraft = SpreadDraft.Complete(title, cardsCount, description, photoSourceId)
-        val nextPending = SpreadPending(pending.mode, nextDraft)
-        setSpreadCompleteDraft(context, nextPending)(telegramApi, tarotApi, sessionService)
-      case _ =>
-        ZIO.logInfo(s"Used photo instead of spread text in chat ${context.chatId}") *>
-          telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
-    }
+  def setSpreadPhotoDraft(context: TelegramContext, photoSourceId: String, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] = {
+    for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
 
-  private def setSpreadCompleteDraft(context: TelegramContext, pending: SpreadPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+      _ <- pending.draft match {
+        case SpreadDraft.AwaitingPhoto(title, cardsCount, description) =>
+          val nextDraft = SpreadDraft.Complete(title, cardsCount, description, photoSourceId)
+          val nextPending = SpreadPending(pending.mode, nextDraft)
+          setSpreadCompleteDraft(context, nextPending)
+        case _ =>
+          ZIO.logInfo(s"Used photo instead of spread text in chat ${context.chatId}") *>
+            telegramApi.sendText(context.chatId, "Принимаю только текст!").unit
+      }
+    } yield ()
+  }
+
+  private def setSpreadCompleteDraft(context: TelegramContext, pending: SpreadPending) =
     pending.draft match {
       case SpreadDraft.Complete(title, cardsCount, description, photoSourceId) =>
         val snapshot = SpreadSnapshot(title, cardsCount, description, photoSourceId)
-        SpreadFlow.submitSpread(context, pending.mode, snapshot)(telegramApi, tarotApi, sessionService)
+        SpreadFlow.submitSpread(context, pending.mode, snapshot)
       case _ =>
         ZIO.logError(s"Used spread pending $pending instead of complete draft in chat ${context.chatId}") *>
           ZIO.fail(new IllegalStateException(s"Used spread pending $pending instead of complete draft"))
     }
 
-  private def sendSpreadPendingReply(context: TelegramContext, pending: SpreadPending)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def sendSpreadPendingReply(context: TelegramContext, pending: SpreadPending) =
     for {
-      (buttonText, currentValue) <- getSpreadPendingReply(context, pending)(sessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+
+      (buttonText, currentValue) <- getSpreadPendingReply(context, pending)
       _ <- pending.mode match {
         case SpreadMode.Create =>
           telegramApi.sendReplyText(context.chatId, buttonText)
         case SpreadMode.Edit(_) =>
-          CommonFlow.sendEditReply(context, buttonText, currentValue)(telegramApi, tarotApi, sessionService)
+          CommonFlow.sendEditReply(context, buttonText, currentValue)
       }
     } yield ()
 
-  private def getSpreadPendingReply(context: TelegramContext, pending: SpreadPending)(sessionService: BotSessionService) =
+  private def getSpreadPendingReply(context: TelegramContext, pending: SpreadPending) =
     for {
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+
       session <- sessionService.get(context.chatId)
       (buttonText, currentValue) <- pending.draft match {
         case SpreadDraft.Start =>
@@ -119,5 +130,5 @@ object SpreadDraftFlow {
           ZIO.logError(s"Spread called for Complete state chat=${context.chatId}") *>
             ZIO.dieMessage("Spread called for Complete state")
       }
-    } yield (buttonText, currentValue)  
+    } yield (buttonText, currentValue)
 }
