@@ -1,21 +1,21 @@
 package bot.application.handlers.telegram.flows
 
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
-import shared.infrastructure.services.telegram.{TelegramApiService, TelegramPhotoResolver}
+import shared.infrastructure.services.telegram.TelegramPhotoResolver
 import shared.models.photo.PhotoSource
 import zio.ZIO
 
 import java.util.UUID
 
 object PhotoFlow {
-  def showPhoto(context: TelegramContext, photoId: UUID)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def showPhoto(context: TelegramContext, photoId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Show photo $photoId command for chat ${context.chatId}")
 
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       token <- SessionRequire.token(context.chatId)
       
       photo <- tarotApi.getPhoto(photoId, token)

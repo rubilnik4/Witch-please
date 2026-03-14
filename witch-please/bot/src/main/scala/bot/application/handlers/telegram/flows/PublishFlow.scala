@@ -2,19 +2,17 @@ package bot.application.handlers.telegram.flows
 
 import bot.application.handlers.telegram.markup.SchedulerMarkup
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
 import shared.infrastructure.services.common.DateTimeService
-import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 import java.time.YearMonth
 
 object PublishFlow {    
-  def publishSpread(context: TelegramContext)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def publishSpread(context: TelegramContext): ZIO[BotEnv, Throwable, Unit] =
     for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       spread <- SessionRequire.spread(context.chatId)
       progress <- SessionRequire.spreadProgress(context.chatId)
 

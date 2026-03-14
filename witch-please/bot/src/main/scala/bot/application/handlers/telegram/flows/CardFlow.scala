@@ -1,15 +1,13 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
-import bot.domain.models.session.pending.{BotPending, CardDraft, CardPending}
+import bot.domain.models.session.pending.{CardDraft, CardPending}
 import bot.domain.models.session.{BotCard, BotSpread, CardMode, CardSnapshot}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cards.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
@@ -17,23 +15,24 @@ import zio.ZIO
 import java.util.UUID
 
 object CardFlow {
-  def selectCards(context: TelegramContext, spreadId: UUID)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def selectCards(context: TelegramContext, spreadId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Select cards by spread $spreadId from chat ${context.chatId}")
 
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       token <- SessionRequire.token(context.chatId)
 
       _ <- sessionService.clearCard(context.chatId)
       cards <- tarotApi.getCards(spreadId, token)
-      _ <- showCards(context, spreadId, cards)(telegramApi, tarotApi, sessionService)
+      _ <- showCards(context, spreadId, cards)
     } yield ()
     
-  private def showCards(context: TelegramContext, spreadId: UUID, cards: List[CardResponse])(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  private def showCards(context: TelegramContext, spreadId: UUID, cards: List[CardResponse]) =
     for {
       _ <- ZIO.logInfo(s"Get cards command by spread $spreadId for chat ${context.chatId}")
 
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       cardsCount <- SessionRequire.cardsCount(context.chatId)
 
       cardButtons = (1 to cardsCount).map { position =>
@@ -49,11 +48,12 @@ object CardFlow {
       _ <- telegramApi.sendInlineButtons(context.chatId, "Выбери карту или создай новую", buttons)
     } yield ()
 
-  def selectCard(context: TelegramContext, cardId: UUID)
-                (telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def selectCard(context: TelegramContext, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Get card settings command by cardId $cardId for chat ${context.chatId}")
 
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       spread <- SessionRequire.spread(context.chatId)
       token <- SessionRequire.token(context.chatId)
 
@@ -61,28 +61,30 @@ object CardFlow {
       snapShot = CardSnapshot.toSnapShot(card)
       _ <- sessionService.setCard(context.chatId, BotCard(card.id, snapShot))
 
-      _ <- showCard(context, card, spread)(telegramApi)
+      _ <- showCard(context, card, spread)
     } yield ()
     
-  def createCard(context: TelegramContext, position: Int)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def createCard(context: TelegramContext, position: Int): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Create card $position for chat ${context.chatId}")
 
-      _ <- startCardPending(context, CardMode.Create(position))(telegramApi, tarotApi, sessionService)
+      pending = CardPending(CardMode.Create(position), CardDraft.Start)
+      _ <- CardDraftFlow.setCardStartDraft(context, pending)
     } yield ()
 
-  def editCard(context: TelegramContext, cardId: UUID)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def editCard(context: TelegramContext, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Edit card $cardId for chat ${context.chatId}")
-
-      _ <- startCardPending(context, CardMode.Edit(cardId))(telegramApi, tarotApi, sessionService)
+      
+      pending = CardPending(CardMode.Edit(cardId), CardDraft.Start)
+      _ <- CardDraftFlow.setCardStartDraft(context, pending)
     } yield ()
 
-  def deleteCard(context: TelegramContext, cardId: UUID)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def deleteCard(context: TelegramContext, cardId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       spread <- SessionRequire.spread(context.chatId)
       token <- SessionRequire.token(context.chatId)
 
@@ -93,16 +95,19 @@ object CardFlow {
       _ <- sessionService.clearCard(context.chatId)
       _ <- sessionService.deleteCardPosition(context.chatId, cardId)
 
-      _ <- selectCards(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
+      _ <- selectCards(context, spread.spreadId)
     } yield ()
 
-  def submitCard(context: TelegramContext, mode: CardMode, snapshot: CardSnapshot)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
+  def submitCard(context: TelegramContext, mode: CardMode, snapshot: CardSnapshot): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Submit card $mode from chat ${context.chatId}")
 
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       token <- SessionRequire.token(context.chatId)
       spread <- SessionRequire.spread(context.chatId)
+      
       _ <- mode match {
         case CardMode.Create(position) =>
           for {
@@ -116,16 +121,10 @@ object CardFlow {
             _ <- telegramApi.sendText(context.chatId, s"Карта обновлёна")
           } yield cardId
       }
-      _ <- selectCards(context, spread.spreadId)(telegramApi, tarotApi, sessionService)
+      _ <- selectCards(context, spread.spreadId)
     } yield ()
     
-  private def startCardPending(context: TelegramContext, mode: CardMode)(
-    telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] = {
-    val pending = CardPending(mode, CardDraft.Start)
-    CardDraftFlow.setCardStartDraft(context, pending)(telegramApi, tarotApi, sessionService)
-  }
-    
-  private def showCard(context: TelegramContext, card: CardResponse, spread: BotSpread)(telegramApi: TelegramApiService): ZIO[BotEnv, Throwable, Unit] =
+  private def showCard(context: TelegramContext, card: CardResponse, spread: BotSpread) =
     val modifyButtons =
       if (SpreadStatus.isModify(spread.status))
         val editButton = TelegramInlineKeyboardButton("Изменить", Some(AuthorCommands.cardEdit(card.id)))
@@ -141,6 +140,7 @@ object CardFlow {
          | Номер карты: ${card.position + 1}
          |""".stripMargin
     for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)
     } yield ()  
 }
