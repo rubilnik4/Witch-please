@@ -42,7 +42,7 @@ object TelegramTextHandler {
            | SpreadDraft.AwaitingCardsCount(_)
            | SpreadDraft.AwaitingDescription(_,_)
       =>
-        SpreadFlow.setSpreadTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
+        SpreadDraftFlow.setSpreadTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
       case SpreadDraft.Start | SpreadDraft.AwaitingPhoto(_,_,_) | SpreadDraft.Complete(_,_,_,_) =>
         for {
           _ <- ZIO.logWarning(s"Used spread text message instead of ${pending.draft} in chat ${context.chatId}")
@@ -66,7 +66,7 @@ object TelegramTextHandler {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case CardOfDayDraft.AwaitingCardId | CardOfDayDraft.AwaitingTitle(_) | CardOfDayDraft.AwaitingDescription(_,_) =>
-        CardOfDayFlow.setCardOfDayTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
+        CardOfDayDraftFlow.setCardOfDayTextDraft(context, text, pending)(telegramApi, tarotApi, sessionService)
       case CardOfDayDraft.Start | CardOfDayDraft.AwaitingPhoto(_,_,_) | CardOfDayDraft.Complete(_,_,_,_) =>
         for {
           _ <- ZIO.logWarning(s"Used card of day text message instead of ${pending.draft} in chat ${context.chatId}")

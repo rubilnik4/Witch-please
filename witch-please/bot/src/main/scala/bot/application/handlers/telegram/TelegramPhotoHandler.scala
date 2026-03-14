@@ -39,7 +39,7 @@ object TelegramPhotoHandler {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case SpreadDraft.AwaitingPhoto(_,_,_) =>
-        SpreadFlow.setSpreadPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
+        SpreadDraftFlow.setSpreadPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
       case SpreadDraft.Start
            | SpreadDraft.AwaitingTitle
            | SpreadDraft.AwaitingCardsCount(_)
@@ -70,7 +70,7 @@ object TelegramPhotoHandler {
     telegramApi: TelegramApiService, tarotApi: TarotApiService, sessionService: BotSessionService): ZIO[BotEnv, Throwable, Unit] =
     pending.draft match {
       case CardOfDayDraft.AwaitingPhoto(_, _, _) =>
-        CardOfDayFlow.setCardOfDayPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
+        CardOfDayDraftFlow.setCardOfDayPhotoDraft(context, sourceId, pending)(telegramApi, tarotApi, sessionService)
       case CardOfDayDraft.Start
            | CardOfDayDraft.AwaitingCardId
            | CardOfDayDraft.AwaitingTitle(_)
