@@ -15,18 +15,22 @@ object TelegramKeepCurrentHandler {
       _ <- ZIO.logInfo(s"Received keep current command from chat ${context.chatId} for pending action $pending")
 
       _ <- pending match {
+        case BotPending.Channel(pending) =>
+          channelKeepCurrent(context, pending)
         case BotPending.Spread(pending) =>
           spreadKeepCurrent(context, pending)
         case BotPending.Card(pending) =>
           cardKeepCurrent(context, pending)
         case BotPending.CardOfDay(pending) =>
           cardOfDayKeepCurrent(context, pending)
-        case BotPending.ChannelChannelId(_) =>
-          for {
-            _ <- ZIO.logError(s"Unknown keep current pending action $pending from chat ${context.chatId}")
-            _ <- telegramApi.sendText(context.chatId, "Невозможно оставить текущее значение")
-          } yield ()
       }
+    } yield ()
+
+  private def channelKeepCurrent(context: TelegramContext, pending: ChannelPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      _ <- ZIO.logError(s"Unknown keep current pending action $pending from chat ${context.chatId}")
+      _ <- telegramApi.sendText(context.chatId, "Невозможно оставить текущее значение")
     } yield ()
 
   private def spreadKeepCurrent(context: TelegramContext, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] =

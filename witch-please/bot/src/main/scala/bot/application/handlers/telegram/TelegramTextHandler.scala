@@ -1,7 +1,7 @@
 package bot.application.handlers.telegram
 
 import bot.application.handlers.telegram.flows.*
-import bot.domain.models.session.pending.{BotPending, CardDraft, CardOfDayDraft, CardOfDayPending, CardPending, SpreadDraft, SpreadPending}
+import bot.domain.models.session.pending.{BotPending, CardDraft, CardOfDayDraft, CardOfDayPending, CardPending, ChannelPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.*
 import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
@@ -16,18 +16,22 @@ object TelegramTextHandler {
       _ <- ZIO.logInfo(s"Received text from chat ${context.chatId} for pending action $pending")
       
       _ <- pending match {
+        case BotPending.Channel(pending) =>
+          handleChannel(context, pending)
         case BotPending.Spread(pending) =>
           handleSpread(context, text, pending)
         case BotPending.Card(pending) =>
           handleCard(context, text, pending)
         case BotPending.CardOfDay(pending) =>
           handleCardOfDay(context, text, pending)
-        case BotPending.ChannelChannelId(_) =>
-          for {
-            _ <- ZIO.logError(s"Unexpected plain text for ChannelChannelId state int chat ${context.chatId}")
-            _ <- telegramApi.sendText(context.chatId, "Неизвестная команда сообщения каналов. Введите /help")
-          } yield ()
       }
+    } yield ()
+
+  private def handleChannel(context: TelegramContext, pending: ChannelPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      _ <- ZIO.logError(s"Unexpected plain text for channel state $pending in chat ${context.chatId}")
+      _ <- telegramApi.sendText(context.chatId, "Неизвестная команда сообщения каналов. Введите /help")
     } yield ()
 
   private def handleSpread(context: TelegramContext, text: String, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] =

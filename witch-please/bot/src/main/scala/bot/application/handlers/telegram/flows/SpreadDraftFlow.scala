@@ -1,12 +1,9 @@
 package bot.application.handlers.telegram.flows
 
-import bot.domain.models.session.{SpreadMode, SpreadSnapshot}
 import bot.domain.models.session.pending.{BotPending, SpreadDraft, SpreadPending}
+import bot.domain.models.session.{SpreadMode, SpreadSnapshot}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
-import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object SpreadDraftFlow {

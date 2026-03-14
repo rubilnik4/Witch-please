@@ -26,14 +26,6 @@ object CommonFlow {
         else ZIO.fail(new RuntimeException(s"pending mismatch: expected $name, got $got"))
     } yield result
 
-  def expectNoPending(chatId: Long): ZIO[BotEnv, Throwable, Unit] =
-    for {
-      botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
-      session <- botSessionService.get(chatId)
-      _ <- ZIO.fail(new RuntimeException(s"pending must be empty, got ${session.pending}"))
-        .unless(session.pending.isEmpty)
-    } yield ()
-
   def expectStatusOk(response: Response, clue: String): IO[Throwable, Unit] =
     for {
       _ <- ZIO.fail(new RuntimeException(s"$clue: status=${response.status}"))

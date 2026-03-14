@@ -1,7 +1,7 @@
 package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.*
-import bot.domain.models.session.pending.BotPending
+import bot.domain.models.session.pending.{ChannelDraft, ChannelPending}
 import bot.domain.models.session.{BotChannel, ChannelMode}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.SessionRequire
@@ -34,26 +34,34 @@ object ChannelFlow {
     for {
       _ <- ZIO.logInfo(s"Create channel by user ${context.username} from chat ${context.chatId}")
 
-      _ <- startChannelPending(context, ChannelMode.Create)
+      pending = ChannelPending(ChannelMode.Create, ChannelDraft.Start)
+      _ <- ChannelDraftFlow.setChannelStartDraft(context, pending)
     } yield ()
 
   def editChannel(context: TelegramContext, userChannelId: UUID): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Edit user channel $userChannelId for chat ${context.chatId}")
 
-      _ <- startChannelPending(context, ChannelMode.Edit(userChannelId))
+      pending = ChannelPending(ChannelMode.Edit(userChannelId), ChannelDraft.Start)
+      _ <- ChannelDraftFlow.setChannelStartDraft(context, pending)
     } yield ()
-    
-  def setChannel(context: TelegramContext, channelMode: ChannelMode, channelId: Long, name: String): ZIO[BotEnv, Throwable, Unit] =
+
+  def setChannel(context: TelegramContext, pending: ChannelPending, channelId: Long, name: String): ZIO[BotEnv, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo(s"Handle channel $channelId from chat ${context.chatId}")
+      _ <- ChannelDraftFlow.setChannelForwardDraft(context, channelId, name, pending)
+    } yield ()
+
+  def submitChannel(context: TelegramContext, mode: ChannelMode, channelId: Long, name: String): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Submit channel $channelId from chat ${context.chatId}")
 
       telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       tarotApi <- ZIO.serviceWith[BotEnv](_.services.tarotApiService)
       sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
       token <- SessionRequire.token(context.chatId)
 
-      _ <- channelMode match {
+      _ <- mode match {
         case ChannelMode.Create =>
           val request = ChannelCreateRequest(channelId, name)
           for {
@@ -69,17 +77,7 @@ object ChannelFlow {
             _ <- telegramApi.sendText(context.chatId, s"Канал обновлен")
           } yield userChannelId
       }
-
       _ <- SpreadFlow.selectSpreads(context)
-    } yield ()
-
-  private def startChannelPending(context: TelegramContext, channelMode: ChannelMode) =
-    for {
-      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
-      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
-      
-      _ <- sessionService.setPending(context.chatId, BotPending.ChannelChannelId(channelMode))
-      _ <- telegramApi.sendText(context.chatId, s"Добавь бот в свой канал и перешли ему любой пост из этого канала")
     } yield ()
 
   private def showAuthorChannel(context: TelegramContext, userChannel: UserChannelResponse) =
@@ -98,7 +96,6 @@ object ChannelFlow {
       s""" Канал
          | Название: ${userChannel.name}
          |""".stripMargin
-
     for {
       telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
       _ <- telegramApi.sendInlineButtons(context.chatId, summaryText, buttons)

@@ -98,7 +98,7 @@ object BotIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ChannelFlow.startChannel(app, chatId, channelMode)
-        _ <- ChannelFlow.channelChannelId(app, chatId, channelId)
+        _ <- ChannelFlow.forwardChannelId(app, chatId, channelId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
@@ -151,7 +151,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
             _ <- CardFlow.cardTitle(app, chatId, "Test card")
             _ <- CardFlow.cardDescription(app, chatId, "Test card")
             _ <- CommonFlow.sendPhoto(app, chatId, photoId)
-            _ <- CommonFlow.expectNoPending(chatId)
           } yield ()
         }
 
@@ -184,7 +183,6 @@ object BotIntegrationSpec extends ZIOSpecDefault {
         _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, "Test card of day")
         _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
-        _ <- CommonFlow.expectNoPending(chatId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(

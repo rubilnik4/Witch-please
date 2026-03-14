@@ -17,55 +17,61 @@ import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, YearMonth}
 
 object SchedulerFlow {
   def handle(context: TelegramContext, command: ScheduleCommand): ZIO[BotEnv, Throwable, Unit] =
-    command match {
-      case ScheduleCommand.SelectMonth(month) =>
-        for {
-          _ <- ZIO.logInfo(s"Select month $month from chat ${context.chatId}")
+      command match {
+        case ScheduleCommand.SelectMonth(month) =>
+          selectMonth(context, month)
+        case ScheduleCommand.SelectDate(date) =>
+          selectDate(context, date)
+        case ScheduleCommand.SelectTimePage(page) =>
+          for {
+            _ <- ZIO.logInfo(s"Select time page $page from chat ${context.chatId}")
 
-          sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
-          telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
-          _ <- sessionService.clearDateTime(context.chatId)
-
-          projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
-          today <- DateTimeService.currentLocalDate()
-          _ <- ZIO.unless(CalendarService.isPrevMonthEnable(today, month) &&
-                          CalendarService.isNextMonthEnable(today, month, projectConfig.maxFutureTime)) {
-            ZIO.logError(s"Can't select month: $month before current ${today.getMonth}") *>
-              ZIO.fail(new RuntimeException(s"Can't select month: $month before current ${today.getMonth}"))
-          }
-
-          dateButtons <- SchedulerMarkup.monthKeyboard(month)
-          _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи дату публикации расклада", dateButtons)
-        } yield ()     
-      case ScheduleCommand.SelectDate(date) =>
-        for {
-          _ <- ZIO.logInfo(s"Select date $date from chat ${context.chatId}")
-
-          sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
-          projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
-          today <- DateTimeService.currentLocalDate()
-          _ <- ZIO.unless(CalendarService.isDayEnable(today, date, projectConfig.maxFutureTime)) {
-            ZIO.logError(s"Can't select date: $date before current $today") *>
-              ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
-          }
-
-          _ <- sessionService.setDate(context.chatId, date)
-          _ <- showTimeKeyboard(context, date, 0)
-        } yield ()
-      case ScheduleCommand.SelectTimePage(page) =>
-        for {
-          _ <- ZIO.logInfo(s"Select time page $page from chat ${context.chatId}")
-
-          date <- SessionRequire.date(context.chatId)
-          _ <- showTimeKeyboard(context, date, page)
-        } yield ()
+            date <- SessionRequire.date(context.chatId)
+            _ <- showTimeKeyboard(context, date, page)
+          } yield ()
       case ScheduleCommand.SelectTime(time) =>
         selectTime(context, time)
       case ScheduleCommand.SelectCardOfDay(delay) =>
         selectCardOfDayDelay(context, delay)
-      case ScheduleCommand.Confirm =>
-        confirmDateTime(context)
-    }
+        case ScheduleCommand.Confirm =>
+          confirmDateTime(context)
+      }
+
+  private def selectMonth(context: TelegramContext, month: YearMonth): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Select month $month from chat ${context.chatId}")
+
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      _ <- sessionService.clearDateTime(context.chatId)
+
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+      today <- DateTimeService.currentLocalDate()
+      _ <- ZIO.unless(CalendarService.isPrevMonthEnable(today, month) &&
+                      CalendarService.isNextMonthEnable(today, month, projectConfig.maxFutureTime)) {
+        ZIO.logError(s"Can't select month: $month before current ${today.getMonth}") *>
+          ZIO.fail(new RuntimeException(s"Can't select month: $month before current ${today.getMonth}"))
+      }
+
+      dateButtons <- SchedulerMarkup.monthKeyboard(month)
+      _ <- telegramApi.sendInlineGroupButtons(context.chatId, "Укажи дату публикации расклада", dateButtons)
+    } yield ()
+
+  private def selectDate(context: TelegramContext, date: LocalDate): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      _ <- ZIO.logInfo(s"Select date $date from chat ${context.chatId}")
+
+      sessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
+      projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
+      today <- DateTimeService.currentLocalDate()
+      _ <- ZIO.unless(CalendarService.isDayEnable(today, date, projectConfig.maxFutureTime)) {
+        ZIO.logError(s"Can't select date: $date before current $today") *>
+          ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
+      }
+
+      _ <- sessionService.setDate(context.chatId, date)
+      _ <- showTimeKeyboard(context, date, 0)
+    } yield ()
 
   private def selectTime(context: TelegramContext, time: LocalTime) =
     for {

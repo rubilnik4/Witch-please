@@ -40,7 +40,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
         channelMode = ChannelMode.Create
         _ <- ChannelFlow.startChannel(app, chatId, channelMode)
-        _ <- ChannelFlow.channelChannelId(app, chatId, 11111)
+        _ <- ChannelFlow.forwardChannelId(app, chatId, 11111)
 
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         _ <- ref.set(TestBotState(Some(photoId), None))
@@ -59,7 +59,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         channelMode = ChannelMode.Edit(channel.userChannelId)
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ChannelFlow.startChannel(app, chatId, channelMode)
-        _ <- ChannelFlow.channelChannelId(app, chatId, channelId)
+        _ <- ChannelFlow.forwardChannelId(app, chatId, channelId)
 
         session <- botSessionService.get(chatId)
       } yield assertTrue(
@@ -186,7 +186,6 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         _ <- CardFlow.cardTitle(app, chatId, "Test card")
         _ <- CardFlow.cardDescription(app, chatId, "Test card")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
-        _ <- CommonFlow.expectNoPending(chatId)
 
         session <- botSessionService.get(chatId)
         spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))

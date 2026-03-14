@@ -1,7 +1,7 @@
 package bot.application.handlers.telegram
 
 import bot.application.handlers.telegram.flows.*
-import bot.domain.models.session.pending.{BotPending, CardDraft, CardOfDayDraft, CardOfDayPending, CardPending, SpreadDraft, SpreadPending}
+import bot.domain.models.session.pending.{BotPending, CardDraft, CardOfDayDraft, CardOfDayPending, CardPending, ChannelPending, SpreadDraft, SpreadPending}
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
@@ -15,18 +15,22 @@ object TelegramPhotoHandler {
       _ <- ZIO.logInfo(s"Received photo from chat ${context.chatId} for pending action $pending")
       
       _ <- pending match {      
+        case BotPending.Channel(pending) =>
+          handleChannel(context, pending)
         case BotPending.Spread(pending) =>
           handleSpread(context, sourceId, pending)
         case BotPending.Card(pending) =>
           handleCard(context, sourceId, pending)
         case BotPending.CardOfDay(pending) =>
           handleCardOfDay(context, sourceId, pending)
-        case BotPending.ChannelChannelId(_) =>
-          for {
-            _ <- ZIO.logError(s"Unknown photo pending action $pending from chat ${context.chatId}")
-            _ <- telegramApi.sendText(context.chatId, "Неизвестная команда отправки фото")
-          } yield ()
       }
+    } yield ()
+
+  private def handleChannel(context: TelegramContext, pending: ChannelPending): ZIO[BotEnv, Throwable, Unit] =
+    for {
+      telegramApi <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
+      _ <- ZIO.logError(s"Unknown photo pending action $pending from chat ${context.chatId}")
+      _ <- telegramApi.sendText(context.chatId, "Неизвестная команда отправки фото")
     } yield ()
 
   private def handleSpread(context: TelegramContext, sourceId: String, pending: SpreadPending): ZIO[BotEnv, Throwable, Unit] =
