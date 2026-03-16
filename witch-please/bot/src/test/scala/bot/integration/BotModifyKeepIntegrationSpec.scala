@@ -6,12 +6,12 @@ import bot.domain.models.session.*
 import bot.fixtures.BotTestFixtures
 import bot.integration.BotIntegrationSpec.test
 import bot.integration.flows.*
-import bot.layers.{BotEnv, TestBotEnvLayer}
+import bot.infrastructure.services.sessions.SessionRequire
+import bot.layers.TestBotEnvLayer
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.spreads.SpreadStatus
-import shared.models.tarot.spreads.SpreadStatus.Draft
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import zio.*
 import zio.http.*
@@ -40,7 +40,7 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
 
         channelMode = ChannelMode.Create
         _ <- ChannelFlow.startChannel(app, chatId, channelMode)
-        _ <- ChannelFlow.forwardChannelId(app, chatId, 11111)
+        _ <- ChannelFlow.forwardChannelId(app, chatId, channelId)
 
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         _ <- ref.set(TestBotState(Some(photoId), None))
@@ -51,9 +51,8 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -74,8 +73,8 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
           } yield ()
         }
         cardOfDayMode = CardOfDayMode.Create
-        session <- botSessionService.get(chatId)
-        cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
+        cardPosition <- ZIO.fromOption(spreadProgress.createdPositions.headOption)
           .orElseFail(new RuntimeException("cardId not set"))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
@@ -83,10 +82,11 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
         _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         session.spread.exists(_.status == SpreadStatus.Draft),
-        session.spreadProgress.exists(_.cardsCount == spreadCardsCount),
+        spreadProgress.cardsCount == spreadCardsCount,
         session.pending.isEmpty
       )
     },
@@ -95,12 +95,10 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- SessionRequire.spread(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         spreadMode = SpreadMode.Edit(spread.spreadId)
@@ -110,8 +108,8 @@ object BotModifyKeepIntegrationSpec extends ZIOSpecDefault {
         _ <- CommonFlow.keepCurrent(app, chatId) // description
         _ <- CommonFlow.keepCurrent(app, chatId) // photo
 
-        session <- botSessionService.get(chatId)
-        currentSpread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spread not set"))
+        session <- SessionRequire.session(chatId)
+        currentSpread <- SessionRequire.spread(chatId)
       } yield assertTrue(
         currentSpread.snapShot == spread.snapShot,
         session.pending.isEmpty

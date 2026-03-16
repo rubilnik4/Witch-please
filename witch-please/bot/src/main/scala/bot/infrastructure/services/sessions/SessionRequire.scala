@@ -29,12 +29,26 @@ object SessionRequire {
         .orElseFail(new RuntimeException(s"Spread not found in session for chat $chatId"))
     } yield spread
 
+  def channel(chatId: Long): ZIO[BotEnv, Throwable, BotChannel] =
+    for {
+      session <- session(chatId)
+      channel <- ZIO.fromOption(session.channel)
+        .orElseFail(new RuntimeException(s"Channel not found in session for chat $chatId"))
+    } yield channel
+
   def card(chatId: Long): ZIO[BotEnv, Throwable, BotCard] =
     for {
       session <- session(chatId)
       card <- ZIO.fromOption(session.card)
         .orElseFail(new RuntimeException(s"Card not found in session for chat $chatId"))
     } yield card
+
+  def cardOfDay(chatId: Long): ZIO[BotEnv, Throwable, BotCardOfDay] =
+    for {
+      session <- session(chatId)
+      cardOfDay <- ZIO.fromOption(session.cardOfDay)
+        .orElseFail(new RuntimeException(s"Card of day not found in session for chat $chatId"))
+    } yield cardOfDay
     
   def spreadProgress(chatId: Long): ZIO[BotEnv, Throwable, SpreadProgress] =
     for {

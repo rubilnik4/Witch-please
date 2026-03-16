@@ -6,12 +6,12 @@ import bot.domain.models.session.*
 import bot.fixtures.BotTestFixtures
 import bot.integration.BotIntegrationSpec.test
 import bot.integration.flows.*
-import bot.layers.{BotEnv, TestBotEnvLayer}
+import bot.infrastructure.services.sessions.SessionRequire
+import bot.layers.TestBotEnvLayer
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.spreads.SpreadStatus
-import shared.models.tarot.spreads.SpreadStatus.Draft
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import zio.*
 import zio.http.*
@@ -51,17 +51,15 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        channel <- ZIO.fromOption(session.channel).orElseFail(new RuntimeException("channel not set"))
+        channel <- SessionRequire.channel(chatId)
 
         channelMode = ChannelMode.Edit(channel.userChannelId)
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- ChannelFlow.startChannel(app, chatId, channelMode)
         _ <- ChannelFlow.forwardChannelId(app, chatId, channelId)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
       } yield assertTrue(
         session.channel.exists(_.channelId == channelId),
         session.pending.isEmpty
@@ -72,9 +70,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -95,8 +92,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
           } yield ()
         }
         cardOfDayMode = CardOfDayMode.Create
-        session <- botSessionService.get(chatId)
-        cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
+        cardPosition <- ZIO.fromOption(spreadProgress.createdPositions.headOption)
           .orElseFail(new RuntimeException("cardId not set"))
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
@@ -104,10 +101,11 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         session.spread.exists(_.status == SpreadStatus.Draft),
-        session.spreadProgress.exists(_.cardsCount == spreadCardsCount),
+        spreadProgress.cardsCount == spreadCardsCount,
         session.pending.isEmpty
       )
     },
@@ -116,12 +114,11 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        cardId <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.lastOption.map(_.cardId)))
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
+        cardId <- ZIO.fromOption(spreadProgress.createdPositions.lastOption.map(_.cardId))
           .orElseFail(new RuntimeException("cardId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -129,8 +126,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
         _ <- app.runZIO(request)
 
-        session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         spreadProgress.cardsCount == cardsCount + 1,
         spreadProgress.createdPositions.size == cardsCount,
@@ -144,12 +141,10 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- SessionRequire.spread(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         spreadMode = SpreadMode.Edit(spread.spreadId)
@@ -159,8 +154,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         _ <- SpreadFlow.spreadDescription(app, chatId, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
-        session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         spreadProgress.cardsCount == cardsCount,
         spreadProgress.createdPositions.size == cardsCount,
@@ -172,12 +167,11 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        cardId <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.lastOption.map(_.cardId)))
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
+        cardId <- ZIO.fromOption(spreadProgress.createdPositions.lastOption.map(_.cardId))
           .orElseFail(new RuntimeException("cardId not set"))
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
@@ -187,8 +181,8 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         _ <- CardFlow.cardDescription(app, chatId, "Test card")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
-        session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         spreadProgress.cardsCount == cardsCount,
         spreadProgress.createdPositions.size == cardsCount,
@@ -201,17 +195,15 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- SessionRequire.spread(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- CardOfDayFlow.selectCardOfDay(app, chatId, spread.spreadId)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
       } yield assertTrue(
         session.cardOfDay.nonEmpty
       )
@@ -221,23 +213,22 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        cardOfDay <- ZIO.fromOption(session.cardOfDay).orElseFail(new RuntimeException("cardOfDayId not set"))
+        cardOfDay <- SessionRequire.cardOfDay(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         cardOfDayMode = CardOfDayMode.Edit(cardOfDay.cardOfDayId)
-        cardPosition <- ZIO.fromOption(session.spreadProgress.flatMap(_.createdPositions.headOption))
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
+        cardPosition <- ZIO.fromOption(spreadProgress.createdPositions.headOption)
         _ <- CardOfDayFlow.startCardOfDay(app, chatId, cardOfDayMode)
         _ <- CardOfDayFlow.cardOfDayCardId(app, chatId, cardPosition)
         _ <- CardOfDayFlow.cardOfDayTitle(app, chatId, "Test card of day")
         _ <- CardOfDayFlow.cardOfDayDescription(app, chatId, "Test card of day")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
       } yield assertTrue(
         session.cardOfDay.nonEmpty,
         session.pending.isEmpty
@@ -248,20 +239,18 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        cardOfDay <- ZIO.fromOption(session.cardOfDay).orElseFail(new RuntimeException("cardOfDayId not set"))
+        cardOfDay <- SessionRequire.cardOfDay(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         postRequest = TestTelegramWebhook.deleteCardOfDayRequest(chatId, cardOfDay.cardOfDayId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
         _ <- app.runZIO(request)
 
-        session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         session.cardOfDay.isEmpty,
         session.pending.isEmpty
@@ -272,18 +261,16 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- SessionRequire.spread(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         _ <- SpreadFlow.selectSpread(app, chatId, spread.spreadId)
 
-        session <- botSessionService.get(chatId)
-        spreadProgress <- ZIO.fromOption(session.spreadProgress).orElseFail(new RuntimeException("progress not set"))
+        session <- SessionRequire.session(chatId)
+        spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         spreadProgress.cardsCount == cardsCount,
         spreadProgress.createdPositions.size == cardsCount,
@@ -296,19 +283,17 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
         state <- ref.get
-        photoId <- ZIO.fromOption(state.photoId).orElseFail(new RuntimeException("photoId not set"))
+        photoId <- TestBotState.photoId(state)
 
-        botSessionService <- ZIO.serviceWith[BotEnv](_.services.botSessionService)
         chatId <- BotTestFixtures.getChatId
-        session <- botSessionService.get(chatId)
-        spread <- ZIO.fromOption(session.spread).orElseFail(new RuntimeException("spreadId not set"))
+        spread <- SessionRequire.spread(chatId)
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         postRequest = TestTelegramWebhook.deleteSpreadRequest(chatId, spread.spreadId)
         request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
         _ <- app.runZIO(request)
 
-        session <- botSessionService.get(chatId)
+        session <- SessionRequire.session(chatId)
       } yield assertTrue(
         session.spread.isEmpty,
         session.spreadProgress.isEmpty,
