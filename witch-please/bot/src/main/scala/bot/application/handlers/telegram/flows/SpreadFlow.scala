@@ -5,13 +5,11 @@ import bot.domain.models.session.*
 import bot.domain.models.session.pending.*
 import bot.domain.models.telegram.TelegramContext
 import bot.infrastructure.services.datetime.DateFormatter
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
 import shared.api.dto.tarot.cardsOfDay.CardOfDayResponse
 import shared.api.dto.tarot.spreads.*
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.TelegramApiService
 import shared.models.tarot.cards.CardPosition
 import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO

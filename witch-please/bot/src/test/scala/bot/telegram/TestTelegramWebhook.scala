@@ -126,7 +126,10 @@ object TestTelegramWebhook {
     
   def publishSpreadRequest(chatId: Long, spreadId: UUID): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.spreadPublish(spreadId))
-    
+
+  def keepCurrentRequest(chatId: Long): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.KeepCurrent)
+
   def scheduleSelectMonth(chatId: Long, month: YearMonth): TelegramWebhookRequest =
     textRequest(chatId, SchedulerCommands.selectMonth(month))
 

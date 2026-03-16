@@ -16,6 +16,13 @@ object CommonFlow {
       response <- app.runZIO(request)
     } yield response
 
+  def keepCurrent(app: Routes[BotEnv, Response], chatId: Long): ZIO[Scope & BotEnv, Nothing, Response] =
+    val postRequest = TestTelegramWebhook.keepCurrentRequest(chatId)
+    val request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
+    for {
+      response <- app.runZIO(request)
+    } yield response  
+
   def expectPending[A](name: String, chatId: Long)(
     pending: PartialFunction[BotPending, A]): ZIO[BotEnv, Throwable, A] =
     for {
