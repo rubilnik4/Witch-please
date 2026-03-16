@@ -112,6 +112,9 @@ object TestTelegramWebhook {
   def deleteCardRequest(chatId: Long, cardId: UUID): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.cardDelete(cardId))
 
+  def selectCardRequest(chatId: Long, cardId: UUID): TelegramWebhookRequest =
+    textRequest(chatId, AuthorCommands.cardSelect(cardId))
+    
   def createCardOfDayRequest(chatId: Long): TelegramWebhookRequest =
     textRequest(chatId, AuthorCommands.CardOfDayCreate)
 

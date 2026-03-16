@@ -7,6 +7,7 @@ import bot.fixtures.BotTestFixtures
 import bot.integration.BotIntegrationSpec.test
 import bot.integration.flows.*
 import bot.infrastructure.services.sessions.SessionRequire
+import bot.integration.BotModifyKeepIntegrationSpec.cardsCount
 import bot.layers.TestBotEnvLayer
 import bot.models.*
 import bot.telegram.TestTelegramWebhook
@@ -76,13 +77,12 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
 
         app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
         spreadMode = SpreadMode.Create
-        spreadCardsCount = cardsCount + 1
         _ <- SpreadFlow.startSpread(app, chatId, spreadMode)
         _ <- SpreadFlow.spreadTitle(app, chatId, "Test spread")
-        _ <- SpreadFlow.spreadCardCount(app, chatId, spreadCardsCount)
+        _ <- SpreadFlow.spreadCardCount(app, chatId, cardsCount)
         _ <- SpreadFlow.spreadDescription(app, chatId, "Test spread")
         _ <- CommonFlow.sendPhoto(app, chatId, photoId)
-        _ <- ZIO.foreachDiscard(1 to spreadCardsCount) { position =>
+        _ <- ZIO.foreachDiscard(1 to cardsCount) { position =>
           val cardMode = CardMode.Create(position - 1)
           for {
             _ <- CardFlow.startCard(app, chatId, cardMode)
@@ -105,34 +105,7 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         spreadProgress <- SessionRequire.spreadProgress(chatId)
       } yield assertTrue(
         session.spread.exists(_.status == SpreadStatus.Draft),
-        spreadProgress.cardsCount == spreadCardsCount,
-        session.pending.isEmpty
-      )
-    },
-
-    test("delete card") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- TestBotState.photoId(state)
-
-        chatId <- BotTestFixtures.getChatId
-        spreadProgress <- SessionRequire.spreadProgress(chatId)
-        cardId <- ZIO.fromOption(spreadProgress.createdPositions.lastOption.map(_.cardId))
-          .orElseFail(new RuntimeException("cardId not set"))
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        postRequest = TestTelegramWebhook.deleteCardRequest(chatId, cardId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-        _ <- app.runZIO(request)
-
-        session <- SessionRequire.session(chatId)
-        spreadProgress <- SessionRequire.spreadProgress(chatId)
-      } yield assertTrue(
-        spreadProgress.cardsCount == cardsCount + 1,
-        spreadProgress.createdPositions.size == cardsCount,
-        !spreadProgress.createdPositions.exists(_.cardId == cardId),
-        session.card.isEmpty,
+        spreadProgress.cardsCount == cardsCount,
         session.pending.isEmpty
       )
     },
@@ -235,28 +208,6 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("delete card of day") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- TestBotState.photoId(state)
-
-        chatId <- BotTestFixtures.getChatId
-        cardOfDay <- SessionRequire.cardOfDay(chatId)
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        postRequest = TestTelegramWebhook.deleteCardOfDayRequest(chatId, cardOfDay.cardOfDayId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-        _ <- app.runZIO(request)
-
-        session <- SessionRequire.session(chatId)
-        spreadProgress <- SessionRequire.spreadProgress(chatId)
-      } yield assertTrue(
-        session.cardOfDay.isEmpty,
-        session.pending.isEmpty
-      )
-    },
-
     test("select spread flow") {
       for {
         ref <- ZIO.service[Ref.Synchronized[TestBotState]]
@@ -276,29 +227,6 @@ object BotModifyIntegrationSpec extends ZIOSpecDefault {
         spreadProgress.createdPositions.size == cardsCount,
         spreadProgress.createdPositions.map(_.position) == (0 until cardsCount).toSet,
         session.pending.isEmpty
-      )
-    },
-
-    test("delete spread") {
-      for {
-        ref <- ZIO.service[Ref.Synchronized[TestBotState]]
-        state <- ref.get
-        photoId <- TestBotState.photoId(state)
-
-        chatId <- BotTestFixtures.getChatId
-        spread <- SessionRequire.spread(chatId)
-
-        app = ZioHttpInterpreter().toHttp(WebhookEndpoint.endpoints)
-        postRequest = TestTelegramWebhook.deleteSpreadRequest(chatId, spread.spreadId)
-        request = ZIOHttpClient.postRequest(BotApiRoutes.postWebhookPath(""), postRequest)
-        _ <- app.runZIO(request)
-
-        session <- SessionRequire.session(chatId)
-      } yield assertTrue(
-        session.spread.isEmpty,
-        session.spreadProgress.isEmpty,
-        session.cardOfDay.isEmpty,
-        session.card.isEmpty
       )
     },
   ).provideShared(
