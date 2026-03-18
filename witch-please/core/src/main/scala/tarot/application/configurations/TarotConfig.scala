@@ -10,6 +10,7 @@ final case class TarotConfig(
   publish: TarotPublishConfig,
   jwt: JwtConfig,
   telegram: TarotTelegramConfig,
+  s3Storage: Option[S3StorageConfig],
   localStorage: Option[LocalStorageConfig],
   postgres: Option[PostgresConfig],
   telemetry: Option[TelemetryConfig]

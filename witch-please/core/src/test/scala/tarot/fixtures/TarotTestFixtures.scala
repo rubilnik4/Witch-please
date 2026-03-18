@@ -26,9 +26,9 @@ object TarotTestFixtures {
   
   def createPhoto(chatId: Long): ZIO[TarotEnv, TarotError, String] =
     for {
-      fileStorageService <- ZIO.serviceWith[TarotEnv](_.services.fileStorageService)
+      resourceFileService <- ZIO.serviceWith[TarotEnv](_.services.resourceFileService)
       telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
-      photo <- fileStorageService.getResourceFile(resourcePath)
+      photo <- resourceFileService.getResourceFile(resourcePath)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       photoId <- telegramApiService.sendPhoto(chatId, telegramFile).mapError(TarotErrorMapper.toTarotError)

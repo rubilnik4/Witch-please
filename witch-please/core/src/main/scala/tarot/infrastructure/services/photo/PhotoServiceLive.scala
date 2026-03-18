@@ -11,6 +11,7 @@ final class PhotoServiceLive(
   telegram: TelegramApiService, 
   storage: FileStorageService
 ) extends PhotoService:
+  private final val photoPrefix = "photo"
   
   override def fetchAndStore(photoSource: PhotoSource): ZIO[Any, TarotError, PhotoFile] =
     for {
@@ -22,10 +23,9 @@ final class PhotoServiceLive(
       
       telegramFile <- telegram.downloadPhoto(fileId).mapError(TarotErrorMapper.toTarotError)
       fileBytes = FileBytes(telegramFile.fileName, telegramFile.bytes)
-      fileStored <- storage.storeFile(fileBytes)
+      fileStored <- storage.storeFile(photoPrefix, fileBytes)
         .mapError(error => TarotError.StorageError(error.getMessage, error.getCause))
         .tapError(error => ZIO.logError(s"Photo service storage error: ${error.message}"))
-      
     } yield PhotoFile(fileStored, photoSource)
 
   override def fetchAndStore(photoSources: List[PhotoSource], parallelism: Int): ZIO[Any, TarotError, List[PhotoFile]] =

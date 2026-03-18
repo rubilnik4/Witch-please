@@ -9,9 +9,9 @@ object BotTestFixtures {
   
   def getPhoto: ZIO[BotEnv, Throwable, String] =
     for {
-      fileStorageService <- ZIO.serviceWith[BotEnv](_.services.fileStorageService)
+      resourceFileService <- ZIO.serviceWith[BotEnv](_.services.resourceFileService)
       telegramApiService <- ZIO.serviceWith[BotEnv](_.services.telegramApiService)
-      photo <- fileStorageService.getResourceFile(resourcePath)
+      photo <- resourceFileService.getResourceFile(resourcePath)
       telegramFile = TelegramFile(photo.fileName, photo.bytes)
       chatId <- getChatId
       photoId <- telegramApiService.sendPhoto(chatId, telegramFile)

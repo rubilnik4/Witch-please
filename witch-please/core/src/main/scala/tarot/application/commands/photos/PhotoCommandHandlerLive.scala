@@ -9,6 +9,8 @@ import zio.ZIO
 import java.util.UUID
 
 final class PhotoCommandHandlerLive(photoRepository: PhotoRepository) extends PhotoCommandHandler {
+  private val photoPrefix = "photo"
+
   override def deletePhoto(photoId: PhotoId, fileId: UUID): ZIO[TarotEnv, TarotError, Unit] =
     for {
       _ <- ZIO.logInfo(s"Executing delete photo command for $photoId")
@@ -18,7 +20,7 @@ final class PhotoCommandHandlerLive(photoRepository: PhotoRepository) extends Ph
         .when(!deletedFromDb)
 
       fileStorageService <- ZIO.serviceWith[TarotEnv](_.services.fileStorageService)
-      deletedFromStorage <- fileStorageService.deleteFile(fileId)
+      deletedFromStorage <- fileStorageService.deleteFile(photoPrefix, fileId)
         .mapError(err => TarotError.StorageError(err.getMessage, err.getCause))
       _ <- ZIO.logWarning(s"File $fileId not found in storage during delete")
         .when(!deletedFromStorage)

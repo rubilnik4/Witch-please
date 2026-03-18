@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "com.softwaremill.sttp.client3" %% "zio-json" % "3.11.0",
   "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.11.0",
+  "software.amazon.awssdk" % "s3" % "2.25.67",
+  "software.amazon.awssdk" % "url-connection-client" % "2.25.67",
   "io.opentelemetry" % "opentelemetry-sdk" % "1.51.0",
   "io.opentelemetry" % "opentelemetry-sdk-trace" % "1.51.0",
   "io.opentelemetry" % "opentelemetry-exporter-otlp" % "1.51.0",

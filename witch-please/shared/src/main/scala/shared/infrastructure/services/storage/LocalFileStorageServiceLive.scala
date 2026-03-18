@@ -2,17 +2,16 @@ package shared.infrastructure.services.storage
 
 import shared.models.files.*
 import zio.nio.file.{Files, Path}
-import zio.stream.ZStream
 import zio.{Cause, Chunk, ZIO}
 
 import java.util.UUID
 
 final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:  
-  override def storeFile(storedFile: FileBytes): ZIO[Any, Throwable, FileStored] =
+  override def storeFile(prefix: String, fileBytes: FileBytes): ZIO[Any, Throwable, FileStored] =
     val id = UUID.randomUUID()
-    val fullPath = getFullPath(id.toString)
+    val fullPath = getFullPath(prefix, id.toString)
     for {
-      _ <- ZIO.logDebug(s"Attempting to store file: ${storedFile.fileName} at path: $fullPath")
+      _ <- ZIO.logDebug(s"Attempting to store file: ${fileBytes.fileName} at path: $fullPath")
 
       _ <- ZIO
         .fromOption(fullPath.parent)
@@ -23,13 +22,13 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
             .mapError(ex => new RuntimeException(s"Failed to create directory parent for $fullPath", ex))
         }
       
-      _ <- Files.writeBytes(fullPath, Chunk.fromArray(storedFile.bytes))
-        .tapError(ex => ZIO.logErrorCause(s"Failed to write file ${storedFile.fileName} to $fullPath", Cause.fail(ex)))
-        .mapError(ex => new RuntimeException(s"Failed to write file ${storedFile.fileName} to $fullPath", ex))
+      _ <- Files.writeBytes(fullPath, Chunk.fromArray(fileBytes.bytes))
+        .tapError(ex => ZIO.logErrorCause(s"Failed to write file ${fileBytes.fileName} to $fullPath", Cause.fail(ex)))
+        .mapError(ex => new RuntimeException(s"Failed to write file ${fileBytes.fileName} to $fullPath", ex))
     } yield FileStored.Local(id, fullPath.toString)
 
-  override def deleteFile(id: UUID): ZIO[Any, Throwable, Boolean] =
-    val fullPath = getFullPath(id.toString)
+  override def deleteFile(prefix: String, id: UUID): ZIO[Any, Throwable, Boolean] =
+    val fullPath = getFullPath(prefix, id.toString)
     for {
       _ <- ZIO.logDebug(s"Attempting to delete file: $id at path: $fullPath")
 
@@ -38,27 +37,20 @@ final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageServi
         .tapError(ex => ZIO.logErrorCause(s"Failed to delete file $id at path: $fullPath", Cause.fail(ex)))
         .mapError(ex => new RuntimeException(s"Failed to delete file at $fullPath", ex))
     } yield deleted
-    
-  override def getResourceFile(resourcePath: String): ZIO[Any, Throwable, FileBytes] =
+
+  override def getFile(prefix: String, id: UUID): ZIO[Any, Throwable, FileBytes] =
+    val fullPath = getFullPath(prefix, id.toString)
     for {
-      _ <- ZIO.logDebug(s"Attempting to get photo from resource: $resourcePath")
-
-      fileName <- ZIO
-        .fromOption(resourcePath.split("/").lastOption)
-        .tapError(ex =>
-          ZIO.logError(s"Invalid resource path: '$resourcePath' — cannot extract file name"))
-        .orElseFail(new RuntimeException(s"Invalid resource path: '$resourcePath' — cannot extract file name"))
-
-      stream <- ZIO.fromOption(Option(getClass.getClassLoader.getResourceAsStream(resourcePath)))
-        .tapError(_ =>
-          ZIO.logError(s"Resource not found: $resourcePath"))
-        .orElseFail(new RuntimeException(s"Resource not found: $resourcePath"))
-
-      bytes <- ZStream.fromInputStream(stream).runCollect.map(_.toArray)
-        .tapError(ex =>
-          ZIO.logErrorCause(s"Could not read stream: $resourcePath", Cause.fail(ex)))
-        .mapError(ex => new RuntimeException(s"Could not read stream: $resourcePath", ex))
-    } yield FileBytes(fileName, bytes)
+      _ <- ZIO.logDebug(s"Attempting to read file: $id at path: $fullPath")
+      
+      bytes <- Files.readAllBytes(fullPath)
+        .tapError(ex => ZIO.logErrorCause(s"Failed to read file $id at path: $fullPath", Cause.fail(ex)))
+        .mapError(ex => new RuntimeException(s"Failed to read file at $fullPath", ex))
+      fileName = fullPath.filename.toString
+    } yield FileBytes(fileName, bytes.toArray)
   
-  private def getFullPath(fileName: String) =
-    rootPath / fileName
+  private def getFullPath(prefix: String, fileName: String) =
+    rootPath / sanitizePrefix(prefix) / fileName
+
+  private def sanitizePrefix(prefix: String): String =
+    prefix.trim.stripPrefix("/").stripSuffix("/")

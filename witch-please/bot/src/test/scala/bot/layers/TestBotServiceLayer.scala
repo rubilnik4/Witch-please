@@ -5,9 +5,10 @@ import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.*
 import bot.infrastructure.services.BotServiceLayer.telegramConfigLayer
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
-import bot.infrastructure.services.tarot.{TarotApiService, TarotApiServiceLayer, TarotApiUrl}
+import bot.infrastructure.services.tarot.*
 import mocks.TelegramApiServiceMock
 import shared.infrastructure.services.*
+import shared.infrastructure.services.storage.ResourceFileServiceLayer
 import shared.infrastructure.services.telegram.{TelegramApiService, TelegramWebhookLayer}
 import zio.ZLayer
 
@@ -16,7 +17,7 @@ object TestBotServiceLayer {
     (
       TelegramApiServiceMock.live ++
       (BotServiceLayer.telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
-      BotServiceLayer.storageLayer ++
+      ResourceFileServiceLayer.live ++
       TarotApiServiceLayer.live ++
       (BotRepositoryLayer.live >>> BotSessionServiceLayer.live)
     ) >>> ZLayer.fromFunction(BotServiceLive.apply)

@@ -9,7 +9,7 @@ import shared.infrastructure.services.telegram.*
 trait BotService {
   def telegramApiService: TelegramApiService
   def telegramWebhookService: TelegramWebhookService
-  def fileStorageService: FileStorageService
+  def resourceFileService: ResourceFileService
   def tarotApiService: TarotApiService
   def botSessionService: BotSessionService
 }

@@ -3,18 +3,14 @@ package bot.infrastructure.services
 import bot.application.configurations.BotConfig
 import bot.infrastructure.repositories.BotRepositoryLayer
 import bot.infrastructure.services.sessions.{BotSessionService, BotSessionServiceLayer}
-import bot.infrastructure.services.storage.LocalFileStorageLayer
 import bot.infrastructure.services.tarot.*
 import shared.application.configurations.TelegramConfig
 import shared.infrastructure.services.*
-import shared.infrastructure.services.storage.{FileStorageService, FileStorageServiceLayer}
+import shared.infrastructure.services.storage.*
 import shared.infrastructure.services.telegram.*
 import zio.ZLayer
 
 object BotServiceLayer {
-  val storageLayer: ZLayer[BotConfig, Throwable, FileStorageService] =
-    LocalFileStorageLayer.storageLayer >>> FileStorageServiceLayer.localFileStorageServiceLive
-
   val telegramConfigLayer: ZLayer[BotConfig, Throwable, TelegramConfig] =
     ZLayer.fromFunction((config: BotConfig) => config.telegram)
 
@@ -29,7 +25,7 @@ object BotServiceLayer {
       (telegramTokenLayer >>> TelegramApiServiceLayer.live) ++
       (telegramConfigLayer >>> TelegramWebhookLayer.telegramWebhookLive) ++
       (tarotUrlLayer >>> TarotApiServiceLayer.live) ++
-      storageLayer ++
+      ResourceFileServiceLayer.live ++
       (BotRepositoryLayer.live >>> BotSessionServiceLayer.live)
     ) >>> ZLayer.fromFunction(BotServiceLive.apply)
 }
