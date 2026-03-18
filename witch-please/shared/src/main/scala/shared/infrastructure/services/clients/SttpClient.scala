@@ -116,7 +116,7 @@ object SttpClient {
     ZIO.fromEither(response.body).foldZIO(
       {
         case HttpError(body, statusCode) =>
-          ZIO.logError(s"API error [${statusCode.code}]: ${body.toString}") *>
+          logHttpError(statusCode, body.toString) *>
             ZIO.fail(ApiError.HttpCode(statusCode.code, body.toString))
 
         case DeserializationException(body, error) =>
@@ -125,4 +125,14 @@ object SttpClient {
       },
       a => ZIO.succeed(a)
     )
+
+  private def logHttpError(statusCode: StatusCode, body: String): ZIO[Any, Nothing, Unit] =
+    statusCode.code match {
+      case 404 =>
+        ZIO.logDebug(s"API returned not found [${statusCode.code}]: $body")
+      case code if code >= 400 && code < 500 =>
+        ZIO.logWarning(s"API client error [${statusCode.code}]: $body")
+      case _ =>
+        ZIO.logError(s"API server error [${statusCode.code}]: $body")
+    }
 }

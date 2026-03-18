@@ -2,11 +2,8 @@ package bot.application.handlers.telegram.flows
 
 import bot.application.commands.telegram.AuthorCommands
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.BotSessionService
-import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
 import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object CommonFlow {

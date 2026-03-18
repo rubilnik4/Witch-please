@@ -69,19 +69,24 @@ object TelegramKeepCurrentHandler {
 
   private def cardOfDayKeepCurrent(context: TelegramContext, pending: CardOfDayPending): ZIO[BotEnv, Throwable, Unit] =
     for {
-      card <- SessionRequire.card(context.chatId)
+      cardOfDay <- SessionRequire.cardOfDay(context.chatId)
+      progress <- SessionRequire.spreadProgress(context.chatId)
       _ <- pending.draft match {
         case draft @ (CardOfDayDraft.Start | CardOfDayDraft.Complete(_, _, _, _)) =>
           ZIO.logError(s"Couldn't use card of day $draft step to keep current in chat ${context.chatId}") *>
             ZIO.fail(new IllegalStateException(s"Couldn't use card of day $draft step to keep current"))
         case CardOfDayDraft.AwaitingCardId =>
-          CardOfDayDraftFlow.setCardOfDayTextDraft(context, card.snapShot.title, pending)
+          for {
+            createdPosition <- ZIO.fromOption(progress.createdPositions.find(_.cardId == cardOfDay.snapShot.cardId))
+              .orElseFail(new RuntimeException(s"Card position not found for card of day ${cardOfDay.snapShot.cardId} in chat ${context.chatId}"))
+            _ <- CardOfDayDraftFlow.setCardOfDayTextDraft(context, (createdPosition.position + 1).toString, pending)
+          } yield ()
         case CardOfDayDraft.AwaitingTitle(_) =>
-          CardOfDayDraftFlow.setCardOfDayTextDraft(context, card.snapShot.title, pending)
+          CardOfDayDraftFlow.setCardOfDayTextDraft(context, cardOfDay.snapShot.title, pending)
         case CardOfDayDraft.AwaitingDescription(_,_) =>
-          CardOfDayDraftFlow.setCardOfDayTextDraft(context, card.snapShot.description, pending)
+          CardOfDayDraftFlow.setCardOfDayTextDraft(context, cardOfDay.snapShot.description, pending)
         case draft@CardOfDayDraft.AwaitingPhoto(_, _, _) =>
-          CardOfDayDraftFlow.setCardOfDayPhotoDraft(context, card.snapShot.photoSourceId, pending)
+          CardOfDayDraftFlow.setCardOfDayPhotoDraft(context, cardOfDay.snapShot.photoSourceId, pending)
       }
     } yield ()
 }

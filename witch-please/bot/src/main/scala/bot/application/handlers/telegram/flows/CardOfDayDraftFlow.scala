@@ -1,12 +1,10 @@
 package bot.application.handlers.telegram.flows
 
-import bot.domain.models.session.{CardOfDayMode, CardOfDaySnapshot}
 import bot.domain.models.session.pending.{BotPending, CardOfDayDraft, CardOfDayPending}
+import bot.domain.models.session.{CardOfDayMode, CardOfDaySnapshot}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
+import bot.infrastructure.services.sessions.SessionRequire
 import bot.layers.BotEnv
-import shared.infrastructure.services.telegram.TelegramApiService
 import zio.ZIO
 
 object CardOfDayDraftFlow {
@@ -127,7 +125,14 @@ object CardOfDayDraftFlow {
 
       (buttonText, currentValue) <- pending.draft match {
         case CardOfDayDraft.Start =>
-          ZIO.succeed("Укажи номер карты дня для твоего расклада" -> session.cardOfDay.map(_.snapShot.cardId.toString))
+          for {
+            progress <- SessionRequire.spreadProgress(context.chatId)
+            currentValue = session.cardOfDay.flatMap { cardOfDay =>
+              progress.createdPositions
+                .find(_.cardId == cardOfDay.snapShot.cardId)
+                .map(createdPosition => (createdPosition.position + 1).toString)
+            }
+          } yield "Укажи номер карты дня для твоего расклада" -> currentValue
         case CardOfDayDraft.AwaitingCardId =>
           ZIO.succeed("Укажи название карты дня" -> session.cardOfDay.map(_.snapShot.title))
         case CardOfDayDraft.AwaitingTitle(_) =>

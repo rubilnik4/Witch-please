@@ -1,17 +1,9 @@
 package bot.application.handlers.telegram.flows
 
-import bot.application.commands.telegram.{AuthorCommands, TelegramCommands}
 import bot.domain.models.session.pending.{BotPending, CardDraft, CardPending}
-import bot.domain.models.session.{BotCard, BotSpread, CardMode, CardSnapshot}
+import bot.domain.models.session.{CardMode, CardSnapshot}
 import bot.domain.models.telegram.TelegramContext
-import bot.infrastructure.services.sessions.{BotSessionService, SessionRequire}
-import bot.infrastructure.services.tarot.TarotApiService
 import bot.layers.BotEnv
-import shared.api.dto.tarot.cards.*
-import shared.api.dto.telegram.TelegramInlineKeyboardButton
-import shared.infrastructure.services.telegram.TelegramApiService
-import shared.models.tarot.cards.CardPosition
-import shared.models.tarot.spreads.SpreadStatus
 import zio.ZIO
 
 import java.util.UUID
@@ -112,7 +104,7 @@ object CardDraftFlow {
         case CardDraft.Start =>
           ZIO.succeed("Напиши название карты" -> session.card.map(_.snapShot.title))
         case CardDraft.AwaitingTitle =>
-          ZIO.succeed("Укажи подробное описание карты" -> session.card.map(_.snapShot.description.toString))
+          ZIO.succeed("Укажи подробное описание карты" -> session.card.map(_.snapShot.description))
         case CardDraft.AwaitingDescription(_) =>
           ZIO.succeed("Прикрепи фото для карты" -> None)
         case CardDraft.AwaitingPhoto(_,_) =>
