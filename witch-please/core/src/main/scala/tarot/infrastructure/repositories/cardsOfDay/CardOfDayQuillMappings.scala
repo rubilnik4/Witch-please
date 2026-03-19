@@ -2,8 +2,6 @@ package tarot.infrastructure.repositories.cardsOfDay
 
 import io.getquill.MappedEncoding
 import shared.models.tarot.cardOfDay.CardOfDayStatus
-import shared.models.tarot.photo.PhotoOwnerType
-import shared.models.tarot.spreads.SpreadStatus
 
 object CardOfDayQuillMappings {
   given MappedEncoding[CardOfDayStatus, String] = MappedEncoding(_.toString)

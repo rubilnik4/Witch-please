@@ -9,7 +9,6 @@ import shared.api.dto.tarot.users.AuthorResponse
 import shared.infrastructure.services.clients.ZIOHttpClient
 import shared.models.tarot.authorize.ClientType
 import shared.models.tarot.cards.CardPosition
-import shared.models.tarot.photo.PhotoOwnerType
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
@@ -91,9 +90,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         spread <- ZIOHttpClient.getResponse[SpreadResponse](response)
       } yield assertTrue(
-        spread.id == spreadId,
-        spread.photo.ownerId == spreadId,
-        spread.photo.ownerType == PhotoOwnerType.Spread
+        spread.id == spreadId
       )
     },
 
@@ -167,9 +164,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         card <- ZIOHttpClient.getResponse[CardResponse](response)
       } yield assertTrue(
-        card.id == cardPosition.cardId,
-        card.photo.ownerId == cardPosition.cardId,
-        card.photo.ownerType == PhotoOwnerType.Card
+        card.id == cardPosition.cardId
       )
     },
 
@@ -238,9 +233,7 @@ object SpreadIntegrationSpec extends ZIOSpecDefault {
         response <- app.runZIO(request)
         cardOfDay <- ZIOHttpClient.getResponse[CardOfDayResponse](response)
       } yield assertTrue(
-        cardOfDay.id == cardOfDayId,
-        cardOfDay.photo.ownerId == cardOfDayId,
-        cardOfDay.photo.ownerType == PhotoOwnerType.CardOfDay
+        cardOfDay.id == cardOfDayId
       )
     },
 

@@ -1,7 +1,6 @@
 package tarot.infrastructure.repositories.spreads
 
 import io.getquill.MappedEncoding
-import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
 
 object SpreadQuillMappings {

@@ -2,7 +2,6 @@ package tarot.domain.models.spreads
 
 import shared.infrastructure.services.common.DateTimeService
 import shared.models.files.FileStored
-import shared.models.tarot.photo.PhotoOwnerType
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.domain.models.photo.Photo
@@ -29,7 +28,7 @@ object Spread {
   def toDomain(command: CreateSpreadCommand, projectId: ProjectId, photoFile: FileStored): UIO[Spread] =
     val id = UUID.randomUUID()
     val photoSource = command.photo
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, PhotoOwnerType.Spread, id, photoSource.sourceType, photoSource.sourceId)
+    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, photoSource.sourceType, photoSource.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
@@ -47,7 +46,7 @@ object Spread {
 
   def clone(spread: Spread, photoFile: FileStored): UIO[Spread] =
     val id = UUID.randomUUID()
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, PhotoOwnerType.Spread, id, spread.photo.sourceType, spread.photo.sourceId)
+    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, spread.photo.sourceType, spread.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       cloneSpread = Spread(

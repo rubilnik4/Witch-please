@@ -2,10 +2,8 @@ package tarot.infrastructure.repositories.photo
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import shared.models.tarot.photo.PhotoOwnerType
-import tarot.domain.entities.{PhotoEntity, SpreadPhotoEntity}
+import tarot.domain.entities.PhotoEntity
 import tarot.infrastructure.repositories.TarotTableNames
-import tarot.infrastructure.repositories.spreads.SpreadQuillMappings
 import zio.ZIO
 
 import java.sql.SQLException

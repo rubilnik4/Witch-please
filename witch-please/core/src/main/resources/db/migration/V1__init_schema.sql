@@ -7,8 +7,6 @@ CREATE TABLE projects (
 CREATE TABLE photos (
     id UUID PRIMARY KEY,
     file_id UUID NOT NULL,
-    owner_type TEXT NOT NULL CHECK (owner_type IN ('Spread', 'Card', 'CardOfDay')),
-    owner_id UUID NOT NULL,
     storage_type TEXT NOT NULL CHECK (storage_type IN ('Local', 'S3')),
     source_type TEXT NOT NULL CHECK (source_type IN ('Telegram', 'S3')),
     source_id TEXT NOT NULL,
