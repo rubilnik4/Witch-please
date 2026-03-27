@@ -10,7 +10,7 @@ import tarot.domain.models.spreads.*
 import tarot.fixtures.TarotTestFixtures
 import tarot.integration.SpreadIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
-import tarot.models.TestSpreadState
+import tarot.states.TestSpreadState
 import zio.*
 import zio.http.*
 import zio.test.*

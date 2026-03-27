@@ -7,6 +7,14 @@ import zio.{Cause, Chunk, ZIO}
 import java.util.UUID
 
 final class LocalFileStorageServiceLive(rootPath: Path) extends FileStorageService:  
+  override def existFile(prefix: String, id: UUID): ZIO[Any, Throwable, Boolean] =
+    val fullPath = getFullPath(prefix, id.toString)
+    for {
+      _ <- ZIO.logDebug(s"Attempting to check file existence: $id at path: $fullPath")
+
+      exists <- Files.exists(fullPath)
+    } yield exists
+
   override def storeFile(prefix: String, fileBytes: FileBytes): ZIO[Any, Throwable, FileStored] =
     val id = UUID.randomUUID()
     val fullPath = getFullPath(prefix, id.toString)

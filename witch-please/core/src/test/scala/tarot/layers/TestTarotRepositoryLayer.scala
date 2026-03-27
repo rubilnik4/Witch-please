@@ -2,6 +2,8 @@ package tarot.layers
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
 import org.testcontainers.utility.DockerImageName
 import tarot.application.configurations.TarotConfig
 import tarot.infrastructure.repositories.TarotRepositoryLayer
@@ -39,6 +41,19 @@ object TestTarotRepositoryLayer {
       } yield new HikariDataSource(config)
     }
 
+  private val quillLayer: ZLayer[DataSource, Nothing, Quill.Postgres[SnakeCase]] =
+    ZLayer.fromZIO {
+      ZIO.serviceWith[DataSource](dataSource =>
+        new Quill.Postgres(SnakeCase, dataSource)
+      )
+    }
+
+  private val repositoryLayerWithQuill: ZLayer[DataSource, Throwable, Repositories & Quill.Postgres[SnakeCase]] =
+    TarotRepositoryLayer.repositoryLayer ++ quillLayer
+
   val live: ZLayer[TarotConfig, Throwable, Repositories] =
     postgresLayer >>> dataSourceLayer >>> TarotRepositoryLayer.repositoryLayer
+
+  val liveWithQuill: ZLayer[TarotConfig, Throwable, Repositories & Quill.Postgres[SnakeCase]] =
+    postgresLayer >>> dataSourceLayer >>> repositoryLayerWithQuill
 }

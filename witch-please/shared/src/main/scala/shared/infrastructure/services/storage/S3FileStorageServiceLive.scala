@@ -13,6 +13,19 @@ final class S3FileStorageServiceLive(
   bucket: String,
   keyPrefix: Option[String]
 ) extends FileStorageService:
+  override def existFile(prefix: String, id: UUID): ZIO[Any, Throwable, Boolean] =
+    val key = objectKey(prefix, id)
+    for {
+      _ <- ZIO.logDebug(s"Attempting to check file existence: $id in bucket=$bucket key=$key")
+
+      exists <- ZIO.attemptBlocking(client.headObject(headObjectRequest(key))).as(true)
+        .catchSome {
+          case _: NoSuchKeyException => ZIO.succeed(false)
+          case ex: S3Exception if ex.statusCode() == 404 => ZIO.succeed(false)
+        }
+        .tapError(ex => ZIO.logErrorCause(s"Failed to check file existence for s3://$bucket/$key", Cause.fail(ex)))
+        .mapError(ex => new RuntimeException(s"Failed to check file existence for s3://$bucket/$key", ex))
+    } yield exists
 
   override def getFile(prefix: String, id: UUID): ZIO[Any, Throwable, FileBytes] =
     val key = objectKey(prefix, id)
@@ -47,13 +60,7 @@ final class S3FileStorageServiceLive(
     for {
       _ <- ZIO.logDebug(s"Attempting to delete file: $id from bucket=$bucket key=$key")
       
-      exists <- ZIO.attemptBlocking(client.headObject(headObjectRequest(key))).as(true)
-        .catchSome {
-          case _: NoSuchKeyException => ZIO.succeed(false)
-          case ex: S3Exception if ex.statusCode() == 404 => ZIO.succeed(false)
-        }
-        .tapError(ex => ZIO.logErrorCause(s"Failed to check file existence for s3://$bucket/$key", Cause.fail(ex)))
-        .mapError(ex => new RuntimeException(s"Failed to check file existence for s3://$bucket/$key", ex))
+      exists <- existFile(prefix, id)
       _ <- ZIO.when(exists) {
         ZIO.attemptBlocking(client.deleteObject(deleteObjectRequest(key)))
           .tapError(ex => ZIO.logErrorCause(s"Failed to delete file s3://$bucket/$key", Cause.fail(ex)))

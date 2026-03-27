@@ -11,7 +11,7 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.channels.UserChannelId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
-import tarot.models.TestChannelState
+import tarot.states.TestChannelState
 import zio.*
 import zio.http.*
 import zio.json.*

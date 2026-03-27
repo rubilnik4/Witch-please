@@ -16,7 +16,7 @@ import tarot.domain.models.spreads.SpreadId
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.integration.SpreadPublishIntegrationSpec.test
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
-import tarot.models.TestSpreadState
+import tarot.states.TestSpreadState
 import zio.*
 import zio.http.*
 import zio.json.*

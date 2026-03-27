@@ -1,4 +1,4 @@
-package tarot.models
+package tarot.states
 
 import shared.models.tarot.cards.CardPosition
 
@@ -16,7 +16,7 @@ final case class TestSpreadState(
 object TestSpreadState {
   val empty: TestSpreadState =
     TestSpreadState(None, None, None, None, None, None)
-    
+
   extension (state: TestSpreadState)
     def withPhotoSourceId(value: String): TestSpreadState =
       state.copy(photoSourceId = Some(value))

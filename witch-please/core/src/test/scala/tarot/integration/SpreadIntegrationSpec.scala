@@ -14,7 +14,7 @@ import tarot.api.endpoints.*
 import tarot.domain.models.TarotError
 import tarot.fixtures.{TarotTestFixtures, TarotTestRequests}
 import tarot.layers.{TarotEnv, TestTarotEnvLayer}
-import tarot.models.TestSpreadState
+import tarot.states.TestSpreadState
 import zio.*
 import zio.http.*
 import zio.json.*

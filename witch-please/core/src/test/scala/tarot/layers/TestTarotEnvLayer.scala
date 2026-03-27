@@ -1,5 +1,7 @@
 package tarot.layers
 
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
 import shared.infrastructure.telemetry.StubTelemetryLayer
 import shared.infrastructure.telemetry.logging.LoggerLayer
 import shared.infrastructure.telemetry.metrics.TelemetryMeterLayer
@@ -19,13 +21,28 @@ object TestTarotEnvLayer {
     (TestTarotRepositoryLayer.live ++ ZLayer.environment[TarotConfig]) >>>
       (TestTarotServiceLayer.live ++ TarotCommandHandlerLayer.live ++ TarotQueryHandlerLayer.live)
 
+  private val repositoryLayersWithQuill: ZLayer[TarotConfig, Throwable, TarotService & TarotCommandHandler & TarotQueryHandler & Quill.Postgres[SnakeCase]] =
+    (TestTarotRepositoryLayer.liveWithQuill ++ ZLayer.environment[TarotConfig]) >>>
+      ((TestTarotServiceLayer.live ++ TarotCommandHandlerLayer.live ++ TarotQueryHandlerLayer.live) ++
+        ZLayer.service[Quill.Postgres[SnakeCase]])
+
   private val envLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv] =
     (TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++ TarotJobLayer.live ++ repositoryLayers) >>>
       TarotEnvLayer.envLive
+
+  private val envWithQuillLive: ZLayer[TarotConfig & Meter & Tracing, Throwable, TarotEnv & Quill.Postgres[SnakeCase]] =
+    (TelemetryMeterLayer.live ++ TelemetryTracingLayer.live ++ TarotJobLayer.live ++ repositoryLayersWithQuill) >>>
+      (TarotEnvLayer.envLive ++ ZLayer.service[Quill.Postgres[SnakeCase]])
 
   val testEnvLive: ZLayer[Any, Throwable, TarotEnv] =
     TestTarotConfigLayer.testTarotConfigLive >>>
       (TarotTelemetryLayer.telemetryConfigLayer >>> 
         (StubTelemetryLayer.telemetryLive ++ LoggerLayer.consoleLoggerLive) >>>
         envLive)
+
+  val testEnvWithQuillLive: ZLayer[Any, Throwable, TarotEnv & Quill.Postgres[SnakeCase]] =
+    TestTarotConfigLayer.testTarotConfigLive >>>
+      (TarotTelemetryLayer.telemetryConfigLayer >>>
+        (StubTelemetryLayer.telemetryLive ++ LoggerLayer.consoleLoggerLive) >>>
+        envWithQuillLive)
 }

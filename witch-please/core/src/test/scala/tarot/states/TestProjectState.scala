@@ -1,4 +1,4 @@
-package tarot.models
+package tarot.states
 
 import java.util.UUID
 
