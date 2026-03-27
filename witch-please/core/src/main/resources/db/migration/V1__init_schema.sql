@@ -4,15 +4,28 @@ CREATE TABLE projects (
     created_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE photos (
+CREATE TABLE photo_objects (
     id UUID PRIMARY KEY,
     file_id UUID NOT NULL,
+    hash TEXT NOT NULL,
     storage_type TEXT NOT NULL CHECK (storage_type IN ('Local', 'S3')),
-    source_type TEXT NOT NULL CHECK (source_type IN ('Telegram', 'S3')),
-    source_id TEXT NOT NULL,
     path TEXT,
     bucket TEXT,
-    key TEXT
+    key TEXT,
+
+    CONSTRAINT uq_photo_objects_hash UNIQUE (hash),
+
+    CONSTRAINT chk_photo_objects_storage_fields CHECK (
+        (storage_type = 'Local' AND path IS NOT NULL AND bucket IS NULL AND key IS NULL) OR
+        (storage_type = 'S3' AND path IS NULL AND bucket IS NOT NULL AND key IS NOT NULL)
+    )
+);
+
+CREATE TABLE photos (
+    id UUID PRIMARY KEY,
+    photo_object_id UUID NOT NULL REFERENCES photo_objects(id),
+    source_type TEXT NOT NULL CHECK (source_type IN ('Telegram', 'S3')),
+    source_id TEXT NOT NULL
 );
 
 CREATE TABLE users (

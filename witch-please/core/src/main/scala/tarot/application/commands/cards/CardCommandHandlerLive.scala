@@ -35,7 +35,7 @@ final class CardCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      card <- Card.toDomain(command, photoFile.fileStored)
+      card <- Card.toDomain(command, photoFile)
       cardId <- cardRepository.createCard(card)
     } yield cardId
 
@@ -52,11 +52,11 @@ final class CardCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      card = CardUpdate.toDomain(command, photoFile.fileStored)
+      card = CardUpdate.toDomain(command, photoFile)
       _ <- cardRepository.updateCard(command.cardId, card)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(previousCard.photo.id, previousCard.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(previousCard.photo.id)
     } yield ()
 
   override def deleteCard(cardId: CardId): ZIO[TarotEnv, TarotError, Unit] =
@@ -76,7 +76,7 @@ final class CardCommandHandlerLive(
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
       photos = cardOfDayMaybe.map(_.photo).toList
       _ <- ZIO.foreachParDiscard(photos) { photo =>
-        photoCommandHandler.deletePhoto(photo.id, photo.fileId)
+        photoCommandHandler.deletePhoto(photo.id)
       }
     } yield ()
     
@@ -87,7 +87,7 @@ final class CardCommandHandlerLive(
       _ <- cardRepository.deleteCard(card.id)
       
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(card.photo.id, card.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(card.photo.id)
     } yield ()
 
   override def cloneCards(spreadId: SpreadId, cloneSpreadId: SpreadId): ZIO[TarotEnv, TarotError, List[CardCloneId]] =
@@ -104,7 +104,7 @@ final class CardCommandHandlerLive(
         for {
           photoFile <- ZIO.fromOption(photoFiles.find(photoFile => photoFile.photoSource.parentId.contains(card.id.id.toString)))
             .orElseFail(TarotError.NotFound(s"Photo file not found for ${card.id}"))
-          clonedCard <- Card.clone(card, cloneSpreadId, photoFile.fileStored)
+          clonedCard <- Card.clone(card, cloneSpreadId, photoFile)
         } yield (clonedCard, card.id)
       }
       _ <- cardRepository.createCards(clonedCards.map((clonedCard, _) => clonedCard))

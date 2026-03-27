@@ -4,5 +4,6 @@ import shared.models.files.{FileSourceType, FileStored}
 
 final case class PhotoFile(
   fileStored: FileStored,
+  hash: String,
   photoSource: PhotoSource
 )

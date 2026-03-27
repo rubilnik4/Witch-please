@@ -25,9 +25,13 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
         spreadTable
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
-          .filter { case (spread, _) => spread.id == lift(spreadId) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((spread, _), _) => spread.id == lift(spreadId) }
           .take(1)
-          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
+          .map { case ((spread, photo), photoObject) =>
+            SpreadPhotoEntity.from(spread, photo, photoObject)
+          }
       })
       .map(_.headOption)
 
@@ -37,8 +41,12 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
         spreadTable
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
-          .filter { case (spread, _) => spread.projectId == lift(projectId) }
-          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((spread, _), _) => spread.projectId == lift(projectId) }
+          .map { case ((spread, photo), photoObject) =>
+            SpreadPhotoEntity.from(spread, photo, photoObject)
+          }
       })
 
   def getScheduledSpreads(deadline: Instant, limit: Int): ZIO[Any, SQLException, List[SpreadPhotoEntity]] =
@@ -47,13 +55,17 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
         spreadTable
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
-          .filter { case (spread, _) =>
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((spread, _), _) =>
             spread.status == lift(SpreadStatus.Scheduled) &&
             spread.scheduledAt.exists(_ <= lift(deadline))
           }
-          .sortBy { case (spread, _) => spread.scheduledAt }(Ord.asc)
+          .sortBy { case ((spread, _), _) => spread.scheduledAt }(Ord.asc)
           .take(lift(limit))
-          .map { case (spread, photo) => SpreadPhotoEntity(spread, photo) }
+          .map { case ((spread, photo), photoObject) =>
+            SpreadPhotoEntity.from(spread, photo, photoObject)
+          }
       })
 
   def existsSpread(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
@@ -129,4 +141,7 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
 
   private inline def photoTable =
     quote(querySchema[PhotoEntity](TarotTableNames.photos))
+
+  private inline def photoObjectTable =
+    quote(querySchema[PhotoObjectEntity](TarotTableNames.photoObjects))
 }

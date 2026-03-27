@@ -18,15 +18,15 @@ final case class UserEntity(
 )
 
 object UserEntity {
-  def toDomain(user: UserEntity): User =
+  def toDomain(userEntity: UserEntity): User =
     User(
-      id = UserId(user.id),
-      clientId = user.clientId,
-      name = user.name,
-      clientType = user.clientType,
-      secretHash = user.secretHash,
-      active = user.active,
-      createdAt = user.createdAt
+      id = UserId(userEntity.id),
+      clientId = userEntity.clientId,
+      name = userEntity.name,
+      clientType = userEntity.clientType,
+      secretHash = userEntity.secretHash,
+      active = userEntity.active,
+      createdAt = userEntity.createdAt
     )
 
   def toEntity(user: User): UserEntity =

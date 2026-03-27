@@ -28,7 +28,7 @@ final class SpreadCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      spread <- Spread.toDomain(command, projectId, photoFile.fileStored)
+      spread <- Spread.toDomain(command, projectId, photoFile)
       spreadId <- spreadRepository.createSpread(spread)
     } yield spreadId
 
@@ -44,11 +44,11 @@ final class SpreadCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      spread = SpreadUpdate.toDomain(command, photoFile.fileStored)
+      spread = SpreadUpdate.toDomain(command, photoFile)
       _ <- spreadRepository.updateSpread(command.spreadId, spread)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id, previousSpread.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(previousSpread.photo.id)
     } yield ()
 
   override def scheduleSpread(command: ScheduleSpreadCommand): ZIO[TarotEnv, TarotError, Unit] =
@@ -102,7 +102,7 @@ final class SpreadCommandHandlerLive(
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
       photos = spread.photo :: cards.map(_.photo) ++ cardOfDayMaybe.map(_.photo).toList
       _ <- ZIO.foreachParDiscard(photos) { photo =>
-        photoCommandHandler.deletePhoto(photo.id, photo.fileId)
+        photoCommandHandler.deletePhoto(photo.id)
       }
     } yield ()
 
@@ -120,7 +120,7 @@ final class SpreadCommandHandlerLive(
       cardOfDay <- cardOfDayQueryHandler.getCardOfDayBySpread(spreadId)
       
       photoFile <- photoService.fetchAndStore(Photo.toPhotoSource(spread.photo))
-      cloneSpread <- Spread.clone(spread, photoFile.fileStored)
+      cloneSpread <- Spread.clone(spread, photoFile)
       cloneSpreadId <- spreadRepository.createSpread(cloneSpread)
       
       cardCloneIds <- cardCommandHandler.cloneCards(spreadId, cloneSpreadId)

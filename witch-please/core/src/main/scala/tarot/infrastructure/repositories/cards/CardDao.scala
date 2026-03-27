@@ -2,7 +2,7 @@ package tarot.infrastructure.repositories.cards
 
 import io.getquill.*
 import io.getquill.jdbczio.*
-import tarot.domain.entities.{CardEntity, CardPhotoEntity, PhotoEntity}
+import tarot.domain.entities.{CardEntity, CardPhotoEntity, PhotoEntity, PhotoObjectEntity}
 import tarot.domain.models.cards.CardUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.photo.PhotoQuillMappings
@@ -22,9 +22,13 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
         cardTable
           .join(photoTable)
           .on((card, photo) => card.photoId == photo.id)
-          .filter { case (card, _) => card.id == lift(cardId) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((card, _), _) => card.id == lift(cardId) }
           .take(1)
-          .map { case (card, photo) => CardPhotoEntity(card, photo) }
+          .map { case ((card, photo), photoObject) =>
+            CardPhotoEntity.from(card, photo, photoObject)
+          }
       })
       .map(_.headOption)
 
@@ -34,8 +38,12 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
         cardTable
           .join(photoTable)
           .on((card, photo) => card.photoId == photo.id)
-          .filter { case (card, _) => card.spreadId == lift(spreadId) }
-          .map { case (card, photo) => CardPhotoEntity(card, photo) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((card, _), _) => card.spreadId == lift(spreadId) }
+          .map { case ((card, photo), photoObject) =>
+            CardPhotoEntity.from(card, photo, photoObject)
+          }
       })
 
   def getCardIds(spreadId: UUID): ZIO[Any, SQLException, List[UUID]] =
@@ -107,4 +115,7 @@ final class CardDao(quill: Quill.Postgres[SnakeCase]) {
 
   private inline def photoTable =
     quote(querySchema[PhotoEntity](TarotTableNames.photos))
+
+  private inline def photoObjectTable =
+    quote(querySchema[PhotoObjectEntity](TarotTableNames.photoObjects))
 }

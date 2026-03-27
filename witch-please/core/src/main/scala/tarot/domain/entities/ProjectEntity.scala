@@ -12,11 +12,11 @@ final case class ProjectEntity(
 )
 
 object ProjectEntity {
-  def toDomain(project: ProjectEntity): Project =
+  def toDomain(projectEntity: ProjectEntity): Project =
     Project(
-      id = ProjectId(project.id),
-      name = project.name,
-      createdAt = project.createdAt
+      id = ProjectId(projectEntity.id),
+      name = projectEntity.name,
+      createdAt = projectEntity.createdAt
     )
 
   def toEntity(project: Project): ProjectEntity =

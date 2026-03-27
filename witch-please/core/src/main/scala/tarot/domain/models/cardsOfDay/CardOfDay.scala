@@ -1,7 +1,7 @@
 package tarot.domain.models.cardsOfDay
 
 import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileStored
+import shared.models.photo.PhotoFile
 import shared.models.tarot.cardOfDay.CardOfDayStatus
 import tarot.application.commands.cardsOfDay.commands.CreateCardOfDayCommand
 import tarot.domain.models.cards.{Card, CardId}
@@ -26,14 +26,12 @@ final case class CardOfDay(
 )
 
 object CardOfDay {
-  def toDomain(command: CreateCardOfDayCommand, photoFile: FileStored): UIO[CardOfDay] =
-    val id = UUID.randomUUID()
-    val photoSource = command.photo
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, photoSource.sourceType, photoSource.sourceId)
+  def toDomain(command: CreateCardOfDayCommand, photoFile: PhotoFile): UIO[CardOfDay] =
+    val photo = Photo.create(photoFile, command.photo.sourceType, command.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       cardOfDay = CardOfDay(
-        id = CardOfDayId(id),
+        id = CardOfDayId(UUID.randomUUID()),
         cardId = command.cardId,
         spreadId = command.spreadId,
         title = command.title,
@@ -57,13 +55,12 @@ object CardOfDay {
       cardOfDay <- cardOfDayAt
     } yield Duration.between(scheduled, cardOfDay)
 
-  def clone(cardOfDay: CardOfDay, spreadId: SpreadId, cardId: CardId, photoFile: FileStored): UIO[CardOfDay] =
-    val id = UUID.randomUUID()
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, cardOfDay.photo.sourceType, cardOfDay.photo.sourceId)
+  def clone(cardOfDay: CardOfDay, spreadId: SpreadId, cardId: CardId, photoFile: PhotoFile): UIO[CardOfDay] =
+    val photo = Photo.create(photoFile, cardOfDay.photo.sourceType, cardOfDay.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       cloneCardOfDay = CardOfDay(
-        id = CardOfDayId(id),
+        id = CardOfDayId(UUID.randomUUID()),
         cardId = cardId,        
         spreadId = spreadId,
         title = cardOfDay.title,

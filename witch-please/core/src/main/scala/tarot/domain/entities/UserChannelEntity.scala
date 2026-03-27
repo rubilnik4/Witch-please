@@ -18,14 +18,14 @@ final case class UserChannelEntity(
 )
 
 object UserChannelEntity {
-  def toDomain(userChannel: UserChannelEntity): UserChannel =
+  def toDomain(userChannelEntity: UserChannelEntity): UserChannel =
     UserChannel(
-      id = UserChannelId(userChannel.id),
-      userId = UserId(userChannel.userId),
-      channelId = userChannel.channelId,
-      name = userChannel.name,
-      isDefault = userChannel.isDefault,
-      createdAt = userChannel.createdAt
+      id = UserChannelId(userChannelEntity.id),
+      userId = UserId(userChannelEntity.userId),
+      channelId = userChannelEntity.channelId,
+      name = userChannelEntity.name,
+      isDefault = userChannelEntity.isDefault,
+      createdAt = userChannelEntity.createdAt
     )
 
   def toEntity(userChannel: UserChannel): UserChannelEntity =

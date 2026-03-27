@@ -1,7 +1,7 @@
 package tarot.domain.models.spreads
 
 import shared.infrastructure.services.common.DateTimeService
-import shared.models.files.FileStored
+import shared.models.photo.PhotoFile
 import shared.models.tarot.spreads.SpreadStatus
 import tarot.application.commands.spreads.commands.CreateSpreadCommand
 import tarot.domain.models.photo.Photo
@@ -25,14 +25,12 @@ final case class Spread(
 )
 
 object Spread {
-  def toDomain(command: CreateSpreadCommand, projectId: ProjectId, photoFile: FileStored): UIO[Spread] =
-    val id = UUID.randomUUID()
-    val photoSource = command.photo
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, photoSource.sourceType, photoSource.sourceId)
+  def toDomain(command: CreateSpreadCommand, projectId: ProjectId, photoFile: PhotoFile): UIO[Spread] =
+    val photo = Photo.create(photoFile, command.photo.sourceType, command.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       spread = Spread(
-        id = SpreadId(id),
+        id = SpreadId(UUID.randomUUID()),
         projectId = projectId,
         title = command.title,
         cardsCount = command.cardsCount,
@@ -44,9 +42,9 @@ object Spread {
         publishedAt = None)
     } yield spread
 
-  def clone(spread: Spread, photoFile: FileStored): UIO[Spread] =
+  def clone(spread: Spread, photoFile: PhotoFile): UIO[Spread] =
     val id = UUID.randomUUID()
-    val photo = Photo.toPhoto(UUID.randomUUID(), photoFile, spread.photo.sourceType, spread.photo.sourceId)
+    val photo = Photo.create(photoFile, spread.photo.sourceType, spread.photo.sourceId)
     for {
       createdAt <- DateTimeService.getDateTimeNow
       cloneSpread = Spread(

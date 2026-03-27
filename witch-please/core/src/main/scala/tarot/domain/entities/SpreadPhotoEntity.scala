@@ -5,26 +5,61 @@ import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.{Spread, SpreadId}
 import zio.ZIO
 
+import java.time.Instant
+import java.util.UUID
+
 final case class SpreadPhotoEntity(
-  spread: SpreadEntity,
-  photo: PhotoEntity
+  spreadId: UUID,
+  projectId: UUID,
+  title: String,
+  cardCount: Int,
+  description: String,
+  status: shared.models.tarot.spreads.SpreadStatus,
+  createdAt: Instant,
+  scheduledAt: Option[Instant],
+  publishedAt: Option[Instant],
+  photo: PhotoViewEntity
 )
 
 object SpreadPhotoEntity {
-  def toDomain(spreadPhoto: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] = {
+  inline def from(spreadEntity: SpreadEntity, photoEntity: PhotoEntity, photoObjectEntity: PhotoObjectEntity): SpreadPhotoEntity =
+    SpreadPhotoEntity(
+      spreadId = spreadEntity.id,
+      projectId = spreadEntity.projectId,
+      title = spreadEntity.title,
+      cardCount = spreadEntity.cardCount,
+      description = spreadEntity.description,
+      status = spreadEntity.status,
+      createdAt = spreadEntity.createdAt,
+      scheduledAt = spreadEntity.scheduledAt,
+      publishedAt = spreadEntity.publishedAt,
+      photo = PhotoViewEntity(
+        id = photoEntity.id,
+        sourceType = photoEntity.sourceType,
+        sourceId = photoEntity.sourceId,
+        fileId = photoObjectEntity.fileId,
+        hash = photoObjectEntity.hash,
+        storageType = photoObjectEntity.storageType,
+        path = photoObjectEntity.path,
+        bucket = photoObjectEntity.bucket,
+        key = photoObjectEntity.key
+      )
+    )
+
+  def toDomain(spreadPhotoEntity: SpreadPhotoEntity): ZIO[Any, TarotError, Spread] = {
     for {
-      photo <- PhotoEntity.toDomain(spreadPhoto.photo)
+      photo <- PhotoViewEntity.toDomain(spreadPhotoEntity.photo)
       spread = Spread(
-        id = SpreadId(spreadPhoto.spread.id),
-        projectId = ProjectId(spreadPhoto.spread.projectId),
-        title = spreadPhoto.spread.title,
-        cardsCount = spreadPhoto.spread.cardCount,
-        description = spreadPhoto.spread.description,
-        status = spreadPhoto.spread.status,
+        id = SpreadId(spreadPhotoEntity.spreadId),
+        projectId = ProjectId(spreadPhotoEntity.projectId),
+        title = spreadPhotoEntity.title,
+        cardsCount = spreadPhotoEntity.cardCount,
+        description = spreadPhotoEntity.description,
+        status = spreadPhotoEntity.status,
         photo = photo,
-        createdAt = spreadPhoto.spread.createdAt,
-        scheduledAt = spreadPhoto.spread.scheduledAt,
-        publishedAt = spreadPhoto.spread.publishedAt)
+        createdAt = spreadPhotoEntity.createdAt,
+        scheduledAt = spreadPhotoEntity.scheduledAt,
+        publishedAt = spreadPhotoEntity.publishedAt)
     } yield spread
   }
 }

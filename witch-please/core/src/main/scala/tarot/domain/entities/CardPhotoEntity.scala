@@ -5,24 +5,52 @@ import tarot.domain.models.cards.{Card, CardId}
 import tarot.domain.models.spreads.SpreadId
 import zio.ZIO
 
+import java.time.Instant
 import java.util.UUID
 
 final case class CardPhotoEntity(
-  card: CardEntity,
-  photo: PhotoEntity
+  cardId: UUID,
+  position: Int,
+  spreadId: UUID,
+  title: String,
+  description: String,
+  createdAt: Instant,
+  photo: PhotoViewEntity
 )
 
 object CardPhotoEntity {
-  def toDomain(cardPhoto: CardPhotoEntity): ZIO[Any, TarotError, Card] =
+  inline def from(cardEntity: CardEntity, photoEntity: PhotoEntity, photoObjectEntity: PhotoObjectEntity): CardPhotoEntity =
+    CardPhotoEntity(
+      cardId = cardEntity.id,
+      position = cardEntity.position,
+      spreadId = cardEntity.spreadId,
+      title = cardEntity.title,
+      description = cardEntity.description,
+      createdAt = cardEntity.createdAt,
+      photo = PhotoViewEntity(
+        id = photoEntity.id,
+        sourceType = photoEntity.sourceType,
+        sourceId = photoEntity.sourceId,
+        fileId = photoObjectEntity.fileId,
+        hash = photoObjectEntity.hash,
+        storageType = photoObjectEntity.storageType,
+        path = photoObjectEntity.path,
+        bucket = photoObjectEntity.bucket,
+        key = photoObjectEntity.key
+      )
+    )
+
+  def toDomain(cardPhotoEntity: CardPhotoEntity): ZIO[Any, TarotError, Card] =
     for {
-      photo <- PhotoEntity.toDomain(cardPhoto.photo)
+      photo <- PhotoViewEntity.toDomain(cardPhotoEntity.photo)
       card = Card(
-        id = CardId(cardPhoto.card.id),
-        position = cardPhoto.card.position,
-        spreadId = SpreadId(cardPhoto.card.spreadId),
-        title = cardPhoto.card.title,
-        description = cardPhoto.card.description,
+        id = CardId(cardPhotoEntity.cardId),
+        position = cardPhotoEntity.position,
+        spreadId = SpreadId(cardPhotoEntity.spreadId),
+        title = cardPhotoEntity.title,
+        description = cardPhotoEntity.description,
         photo = photo,
-        createdAt = cardPhoto.card.createdAt)
+        createdAt = cardPhotoEntity.createdAt
+      )
     } yield card
 }

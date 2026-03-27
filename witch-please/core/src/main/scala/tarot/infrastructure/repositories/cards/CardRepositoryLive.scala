@@ -7,15 +7,13 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.{Card, CardId, CardUpdate}
 import tarot.domain.models.spreads.SpreadId
-import tarot.infrastructure.repositories.photo.PhotoDao
+import tarot.infrastructure.repositories.photo.{PhotoDao, PhotoObjectDao}
 import zio.*
-
-import java.sql.SQLException
-import java.util.UUID
 
 final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRepository {
   private val cardDao = CardDao(quill)
   private val photoDao = PhotoDao(quill)
+  private val photoObjectDao = PhotoObjectDao(quill)
 
   override def getCard(cardId: CardId): ZIO[Any, TarotError, Option[Card]] =
     for {
@@ -70,7 +68,8 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
 
       cardId <- quill.transaction {
         for {
-          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo))
+          photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(card.photo.photoObject)
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo, photoObjectId))
           cardEntity = CardEntity.toEntity(card)
           cardId <- cardDao.insertCard(cardEntity)
         } yield cardId
@@ -86,9 +85,14 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
 
       cardIds <- quill.transaction {
           for {
-            photoIds <- photoDao.insertPhotos(cards.map(_.photo).map(PhotoEntity.toEntity))
-            cardEntities = cards.map(CardEntity.toEntity) 
-            cardIds <- cardDao.insertCards(cardEntities)
+            cardIds <- ZIO.foreach(cards) { card =>
+              for {
+                photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(card.photo.photoObject)
+                photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo, photoObjectId))
+                cardEntity = CardEntity.toEntity(card)
+                cardId <- cardDao.insertCard(cardEntity)
+              } yield cardId
+            }
           } yield cardIds
         }
         .tapError(e => ZIO.logErrorCause(s"Failed to create cards $ids", Cause.fail(e)))
@@ -101,7 +105,8 @@ final class CardRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardRep
 
       _ <- quill.transaction {
           for {
-            photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo))
+            photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(card.photo.photoObject)
+            photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(card.photo, photoObjectId))
             _ <- cardDao.updateCard(cardId.id, card, photoId)
           } yield ()
         }

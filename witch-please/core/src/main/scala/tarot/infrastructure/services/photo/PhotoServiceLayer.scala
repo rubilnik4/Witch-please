@@ -1,15 +1,14 @@
 package tarot.infrastructure.services.photo
 
-import shared.infrastructure.services.storage.{FileStorageService, FileStorageServiceLayer}
-import shared.infrastructure.services.telegram.{TelegramApiService, TelegramApiServiceLayer}
-import tarot.application.configurations.TarotConfig
-import tarot.infrastructure.services.TarotServiceLayer
+import shared.infrastructure.services.storage.FileStorageService
+import shared.infrastructure.services.telegram.TelegramApiService
+import tarot.infrastructure.repositories.photo.PhotoRepository
 import zio.ZLayer
 
 
 object PhotoServiceLayer {
-  val photoServiceLive: ZLayer[TelegramApiService & FileStorageService, Throwable, PhotoService] =
-      ZLayer.fromFunction { (telegram: TelegramApiService, storage: FileStorageService) =>
-        new PhotoServiceLive(telegram, storage)
+  val photoServiceLive: ZLayer[TelegramApiService & FileStorageService & PhotoRepository, Throwable, PhotoService] =
+      ZLayer.fromFunction { (telegram: TelegramApiService, storage: FileStorageService, photoRepository: PhotoRepository) =>
+        new PhotoServiceLive(telegram, storage, photoRepository)
       }
 }

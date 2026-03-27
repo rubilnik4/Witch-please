@@ -7,8 +7,6 @@ import tarot.domain.models.photo.PhotoId
 import tarot.layers.TarotEnv
 import zio.ZIO
 
-import java.util.UUID
-
 trait PhotoCommandHandler {
-  def deletePhoto(photoId: PhotoId, fileId: UUID): ZIO[TarotEnv, TarotError, Unit]
+  def deletePhoto(photoId: PhotoId): ZIO[TarotEnv, TarotError, Unit]
 }

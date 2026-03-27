@@ -3,16 +3,13 @@ package tarot.api.endpoints
 import shared.api.dto.tarot.TarotApiRoutes
 import shared.api.dto.tarot.common.IdResponse
 import shared.api.dto.tarot.users.*
-import shared.models.tarot.authorize.{ClientType, Role}
+import shared.models.tarot.authorize.ClientType
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.ztapir.*
 import tarot.api.dto.tarot.*
-import tarot.api.dto.tarot.errors.TarotErrorResponseMapper
 import tarot.api.dto.tarot.users.*
 import tarot.api.endpoints.errors.TapirError
-import tarot.api.infrastructure.AuthValidator
-import tarot.application.commands.*
 import tarot.layers.TarotEnv
 import zio.ZIO
 

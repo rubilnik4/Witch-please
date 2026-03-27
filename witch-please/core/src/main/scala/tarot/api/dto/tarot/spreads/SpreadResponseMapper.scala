@@ -2,7 +2,6 @@ package tarot.api.dto.tarot.spreads
 
 import shared.api.dto.tarot.spreads.SpreadResponse
 import tarot.api.dto.tarot.photo.PhotoResponseMapper
-import tarot.domain.models.TarotError
 import tarot.domain.models.spreads.Spread
 
 object SpreadResponseMapper {

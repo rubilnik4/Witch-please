@@ -9,18 +9,17 @@ import tarot.domain.models.projects.ProjectId
 import tarot.domain.models.spreads.*
 import tarot.infrastructure.repositories.cardsOfDay.CardOfDayDao
 import tarot.infrastructure.repositories.cards.CardDao
-import tarot.infrastructure.repositories.photo.PhotoDao
+import tarot.infrastructure.repositories.photo.{PhotoDao, PhotoObjectDao}
 import zio.*
 
-import java.sql.SQLException
 import java.time.Instant
-import java.util.UUID
 
 final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends SpreadRepository {
   private val spreadDao = SpreadDao(quill)
   private val cardDao = CardDao(quill)
   private val cardOfDayDao = CardOfDayDao(quill)
   private val photoDao = PhotoDao(quill)
+  private val photoObjectDao = PhotoObjectDao(quill)
 
   override def getSpread(spreadId: SpreadId): ZIO[Any, TarotError, Option[Spread]] =
     for {
@@ -67,7 +66,8 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
 
       spreadId <- quill.transaction {
         for {
-          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))
+          photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(spread.photo.photoObject)
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo, photoObjectId))
           spreadEntity = SpreadEntity.toEntity(spread)
           spreadId <- spreadDao.insertSpread(spreadEntity)
         } yield spreadId
@@ -120,7 +120,8 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
 
       _ <- quill.transaction {
         for {
-          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo))         
+          photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(spread.photo.photoObject)
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(spread.photo, photoObjectId))
           _ <- spreadDao.updateSpread(spreadId.id, spread, photoId)
         } yield ()
       }

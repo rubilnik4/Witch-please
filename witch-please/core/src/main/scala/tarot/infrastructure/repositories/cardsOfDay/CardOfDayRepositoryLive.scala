@@ -8,16 +8,15 @@ import tarot.domain.models.TarotError.DatabaseError
 import tarot.domain.models.cards.CardId
 import tarot.domain.models.cardsOfDay.*
 import tarot.domain.models.spreads.SpreadId
-import tarot.infrastructure.repositories.photo.PhotoDao
+import tarot.infrastructure.repositories.photo.{PhotoDao, PhotoObjectDao}
 import zio.*
 
-import java.sql.SQLException
 import java.time.Instant
-import java.util.UUID
 
 final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends CardOfDayRepository {
   private val cardOfDayDao = CardOfDayDao(quill)
   private val photoDao = PhotoDao(quill)
+  private val photoObjectDao = PhotoObjectDao(quill)
 
   override def getCardOfDay(cardOfDayId: CardOfDayId): ZIO[Any, TarotError, Option[CardOfDay]] =
     for {
@@ -74,7 +73,8 @@ final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Ca
 
       cardOfDayId <- quill.transaction {
         for {
-          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(cardOfDay.photo))
+          photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(cardOfDay.photo.photoObject)
+          photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(cardOfDay.photo, photoObjectId))
           cardOfDayEntity = CardOfDayEntity.toEntity(cardOfDay)
           cardOfDayId <- cardOfDayDao.insertCardOfDay(cardOfDayEntity)
         } yield cardOfDayId
@@ -89,7 +89,8 @@ final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Ca
 
       _ <- quill.transaction {
           for {
-            photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(cardOfDayUpdate.photo))
+            photoObjectId <- photoObjectDao.findOrCreatePhotoObjectId(cardOfDayUpdate.photo.photoObject)
+            photoId <- photoDao.insertPhoto(PhotoEntity.toEntity(cardOfDayUpdate.photo, photoObjectId))
             _ <- cardOfDayDao.updateCardOfDay(cardOfDayId.id, cardOfDayUpdate, photoId)
           } yield ()
         }

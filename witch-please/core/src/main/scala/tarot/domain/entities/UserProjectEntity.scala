@@ -13,11 +13,11 @@ final case class UserProjectEntity(
 )
 
 object UserProjectEntity {
-  def toDomain(userProject: UserProjectEntity): UserProject =
+  def toDomain(userProjectEntity: UserProjectEntity): UserProject =
     UserProject(
-      userId = UserId(userProject.userId),
-      projectId = ProjectId(userProject.projectId),
-      role = userProject.role
+      userId = UserId(userProjectEntity.userId),
+      projectId = ProjectId(userProjectEntity.projectId),
+      role = userProjectEntity.role
     )
 
   def toEntity(userProject: UserProject): UserProjectEntity =

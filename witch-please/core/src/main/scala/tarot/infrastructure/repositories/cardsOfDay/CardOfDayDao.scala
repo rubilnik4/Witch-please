@@ -4,8 +4,7 @@ import io.getquill.*
 import io.getquill.extras.InstantOps
 import io.getquill.jdbczio.*
 import shared.models.tarot.cardOfDay.CardOfDayStatus
-import tarot.domain.entities.{CardEntity, CardOfDayEntity, CardOfDayPhotoEntity, PhotoEntity, SpreadPhotoEntity}
-import tarot.domain.models.cards.CardUpdate
+import tarot.domain.entities.{CardOfDayEntity, CardOfDayPhotoEntity, PhotoEntity, PhotoObjectEntity}
 import tarot.domain.models.cardsOfDay.CardOfDayUpdate
 import tarot.infrastructure.repositories.TarotTableNames
 import tarot.infrastructure.repositories.photo.PhotoQuillMappings
@@ -26,9 +25,13 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         cardOfDayTable
           .join(photoTable)
           .on((cardOfDay, photo) => cardOfDay.photoId == photo.id)
-          .filter { case (cardOfDay, _) => cardOfDay.id == lift(cardOfDayId) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((cardOfDay, _), _) => cardOfDay.id == lift(cardOfDayId) }
           .take(1)
-          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+          .map { case ((cardOfDay, photo), photoObject) =>
+            CardOfDayPhotoEntity.from(cardOfDay, photo, photoObject)
+          }
       })
       .map(_.headOption)
       
@@ -38,9 +41,13 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         cardOfDayTable
           .join(photoTable)
           .on((cardOfDay, photo) => cardOfDay.photoId == photo.id)
-          .filter { case (cardOfDay, _) => cardOfDay.spreadId == lift(spreadId) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((cardOfDay, _), _) => cardOfDay.spreadId == lift(spreadId) }
           .take(1)
-          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+          .map { case ((cardOfDay, photo), photoObject) =>
+            CardOfDayPhotoEntity.from(cardOfDay, photo, photoObject)
+          }
       })
       .map(_.headOption)
 
@@ -50,9 +57,13 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         cardOfDayTable
           .join(photoTable)
           .on((cardOfDay, photo) => cardOfDay.photoId == photo.id)
-          .filter { case (cardOfDay, _) => cardOfDay.cardId == lift(cardId) }
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((cardOfDay, _), _) => cardOfDay.cardId == lift(cardId) }
           .take(1)
-          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+          .map { case ((cardOfDay, photo), photoObject) =>
+            CardOfDayPhotoEntity.from(cardOfDay, photo, photoObject)
+          }
       })
       .map(_.headOption)
       
@@ -62,13 +73,17 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         cardOfDayTable
           .join(photoTable)
           .on((spread, photo) => spread.photoId == photo.id)
-          .filter { case (cardOfDay, _) =>
+          .join(photoObjectTable)
+          .on { case ((_, photo), photoObject) => photo.photoObjectId == photoObject.id }
+          .filter { case ((cardOfDay, _), _) =>
             cardOfDay.status == lift(CardOfDayStatus.Scheduled) &&
             cardOfDay.scheduledAt.exists(_ <= lift(deadline))
           }
-          .sortBy { case (cardOfDay, _) => cardOfDay.scheduledAt }(Ord.asc)
+          .sortBy { case ((cardOfDay, _), _) => cardOfDay.scheduledAt }(Ord.asc)
           .take(lift(limit))
-          .map { case (cardOfDay, photo) => CardOfDayPhotoEntity(cardOfDay, photo) }
+          .map { case ((cardOfDay, photo), photoObject) =>
+            CardOfDayPhotoEntity.from(cardOfDay, photo, photoObject)
+          }
       })
       
   def existCardOfDay(spreadId: UUID): ZIO[Any, SQLException, Boolean] =
@@ -141,4 +156,7 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
 
   private inline def photoTable =
     quote(querySchema[PhotoEntity](TarotTableNames.photos))
+
+  private inline def photoObjectTable =
+    quote(querySchema[PhotoObjectEntity](TarotTableNames.photoObjects))
 }

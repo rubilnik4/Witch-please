@@ -9,58 +9,27 @@ import java.util.UUID
 
 final case class PhotoEntity(
   id: UUID,
-  fileId: UUID,
-  storageType: FileStoredType,
+  photoObjectId: UUID,
   sourceType: FileSourceType,
-  sourceId: String,
-  path: Option[String],
-  bucket: Option[String],
-  key: Option[String]
+  sourceId: String
 )
 
 object PhotoEntity {
-  def toDomain(photoSource: PhotoEntity): ZIO[Any, TarotError, Photo] =
-    photoSource.storageType match {
-      case FileStoredType.Local =>
-        for {
-          path <- ZIO.fromOption(photoSource.path)
-            .orElseFail(TarotError.SerializationError("Missing 'path' for Local photo source"))
-        } yield Photo.Local(PhotoId(photoSource.id), photoSource.fileId, path, photoSource.sourceType, photoSource.sourceId)
+  def toDomain(photoEntity: PhotoEntity, photoObjectEntity: PhotoObjectEntity): ZIO[Any, TarotError, Photo] =
+    for {
+      photoObject <- PhotoObjectEntity.toDomain(photoObjectEntity)
+    } yield Photo(
+        id = PhotoId(photoEntity.id),
+        photoObject = photoObject,
+        sourceType = photoEntity.sourceType,
+        sourceId = photoEntity.sourceId
+      )
 
-      case FileStoredType.S3 =>
-        for {
-          bucket <- ZIO.fromOption(photoSource.bucket)
-            .orElseFail(TarotError.SerializationError("Missing 'bucket' for S3 photo source"))
-          key <- ZIO.fromOption(photoSource.key)
-            .orElseFail(TarotError.SerializationError("Missing 'key' for S3 photo source"))
-        } yield Photo.S3(PhotoId(photoSource.id), photoSource.fileId, bucket, key, photoSource.sourceType, photoSource.sourceId)
-    }
-
-
-  def toEntity(photoSource: Photo): PhotoEntity =
-    photoSource match {
-      case Photo.Local(id, fileId, path, sourceType, sourceId) =>
-        PhotoEntity(
-          id = id.id,
-          fileId = fileId,
-          storageType = FileStoredType.Local,
-          sourceType = sourceType,
-          sourceId = sourceId,
-          path = Some(path),
-          bucket = None,
-          key = None
-        )
-
-      case Photo.S3(id, fileId, bucket, key, sourceType, sourceId) =>
-        PhotoEntity(
-          id = id.id,
-          fileId = fileId,
-          storageType = FileStoredType.S3,
-          sourceType = sourceType,
-          sourceId = sourceId,
-          path = None,
-          bucket = Some(bucket),
-          key = Some(key)
-        )
-    }
+  def toEntity(photo: Photo, photoObjectId: UUID): PhotoEntity =
+    PhotoEntity(
+      id = photo.id.id,
+      photoObjectId = photoObjectId,
+      sourceType = photo.sourceType,
+      sourceId = photo.sourceId
+    )
 }

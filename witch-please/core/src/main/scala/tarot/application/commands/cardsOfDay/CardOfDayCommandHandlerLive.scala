@@ -33,7 +33,7 @@ final class CardOfDayCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      cardOfDay <- CardOfDay.toDomain(command, photoFile.fileStored)
+      cardOfDay <- CardOfDay.toDomain(command, photoFile)
       cardOfDayId <- cardOfDayRepository.createCardOfDay(cardOfDay)
     } yield cardOfDayId
   
@@ -50,11 +50,11 @@ final class CardOfDayCommandHandlerLive(
 
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
       photoFile <- photoService.fetchAndStore(command.photo)
-      cardOfDay = CardOfDayUpdate.toDomain(command, photoFile.fileStored)
+      cardOfDay = CardOfDayUpdate.toDomain(command, photoFile)
       _ <- cardOfDayRepository.updateCardOfDay(command.cardOfDayId, cardOfDay)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(previousCardOfDay.photo.id, previousCardOfDay.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(previousCardOfDay.photo.id)
     } yield ()
 
   override def deleteCardOfDay(cardOfDayId: CardOfDayId): ZIO[TarotEnv, TarotError, Unit] =
@@ -71,7 +71,7 @@ final class CardOfDayCommandHandlerLive(
       _ <- cardOfDayRepository.deleteCardOfDay(cardOfDay.id)
 
       photoCommandHandler <- ZIO.serviceWith[TarotEnv](_.commandHandlers.photoCommandHandler)
-      _ <- photoCommandHandler.deletePhoto(cardOfDay.photo.id, cardOfDay.photo.fileId)
+      _ <- photoCommandHandler.deletePhoto(cardOfDay.photo.id)
     } yield ()
       
   override def publishCardOfDay(cardOfDayId: CardOfDayId, publishAt: Instant): ZIO[TarotEnv, TarotError, Unit] =
@@ -89,7 +89,7 @@ final class CardOfDayCommandHandlerLive(
       photoService <- ZIO.serviceWith[TarotEnv](_.services.photoService)
      
       photoFile <- photoService.fetchAndStore(Photo.toPhotoSource(cardOfDay.photo))
-      cloneCardOfDay <- CardOfDay.clone(cardOfDay, cloneSpreadId, cloneCardId, photoFile.fileStored)
+      cloneCardOfDay <- CardOfDay.clone(cardOfDay, cloneSpreadId, cloneCardId, photoFile)
       cardOfDayId <- cardOfDayRepository.createCardOfDay(cloneCardOfDay)
     } yield cardOfDayId
 }

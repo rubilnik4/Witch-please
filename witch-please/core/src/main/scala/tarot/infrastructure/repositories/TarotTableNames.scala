@@ -1,6 +1,7 @@
 package tarot.infrastructure.repositories
 
 object TarotTableNames {
+  final val photoObjects = "photo_objects"
   final val spreads = "spreads"
   final val cards = "cards"
   final val cardsOfDay = "cards_of_day"
