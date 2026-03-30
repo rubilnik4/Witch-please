@@ -1,16 +1,18 @@
 package tarot.infrastructure.services.storage
 
 import shared.infrastructure.services.storage.{FileStorageService, FileStorageServiceLayer}
-import tarot.application.configurations.{TarotConfig, TarotStorageType}
+import tarot.application.configurations.TarotConfig
 import zio.{ZIO, ZLayer}
 
 object TarotStorageLayer {
   val live: ZLayer[TarotConfig, Throwable, FileStorageService] =
     ZLayer.fromZIO {
       ZIO.serviceWithZIO[TarotConfig] { config =>
-        config.storage.`type` match {
-          case TarotStorageType.Local => localLayer(config)
-          case TarotStorageType.S3 => s3Layer(config)
+        config.storage.`type`.trim.toLowerCase match {
+          case "local" => localLayer(config)
+          case "s3" => s3Layer(config)
+          case other =>
+            ZIO.fail(new RuntimeException(s"Storage config is invalid: unsupported storage.type '$other', expected 'local' or 's3'"))
         }
       }
     }.flatten
