@@ -7,10 +7,11 @@ import tarot.domain.models.TarotError
 import tarot.domain.models.TarotError.ValidationError
 import tarot.domain.models.spreads.SpreadId
 import tarot.domain.models.users.UserId
-import zio.{IO, ZIO}
+import tarot.layers.TarotEnv
+import zio.ZIO
 
 object SpreadPublishRequestMapper {
-  def fromRequest(request: SpreadPublishRequest, userId: UserId, spreadId: SpreadId): IO[TarotError, ScheduleSpreadCommand] =
+  def fromRequest(request: SpreadPublishRequest, userId: UserId, spreadId: SpreadId): ZIO[TarotEnv, TarotError, ScheduleSpreadCommand] =
     validate(request).as(toCommand(request, userId, spreadId))
 
   private def toCommand(request: SpreadPublishRequest, userId: UserId, spreadId: SpreadId) =
@@ -21,11 +22,13 @@ object SpreadPublishRequestMapper {
         cardOfDayDelayHours = request.cardOfDayDelayHours
     )
       
-  private def validate(request: SpreadPublishRequest): ZIO[Any, TarotError, Unit] =
+  private def validate(request: SpreadPublishRequest): ZIO[TarotEnv, TarotError, Unit] =
     for {
+      config <- ZIO.serviceWith[TarotEnv](_.config.publish)
       now <- DateTimeService.getDateTimeNow
+      minDateTime = now.minus(config.maxPastTime)
       _ <- ZIO
-        .fail(ValidationError("scheduledAt must be in the future"))
-        .when(request.scheduledAt.isBefore(now))
+        .fail(ValidationError(s"scheduledAt must be after $minDateTime"))
+        .when(request.scheduledAt.isBefore(minDateTime))
     } yield ()
 }

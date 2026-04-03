@@ -7,7 +7,7 @@ final case class TarotPublishConfig(
   tick: Duration,
   lookAhead: Duration,
   batchLimit: Int,
-  hardPastTime: Duration,
+  maxPastTime: Duration,
   maxFutureTime: Duration,
   maxCardOfDayDelay: Duration
 )

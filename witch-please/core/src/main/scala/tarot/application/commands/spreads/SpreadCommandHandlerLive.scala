@@ -151,11 +151,11 @@ final class SpreadCommandHandlerLive(
 
       config <- ZIO.serviceWith[TarotEnv](_.config.publish)
       now <- DateTimeService.getDateTimeNow
-      hardPastTime = now.minus(config.hardPastTime)
+      minTime = now.minus(config.maxPastTime)
       maxTime = now.plus(config.maxFutureTime)
-      _ <- ZIO.when(scheduledAt.isBefore(hardPastTime) || scheduledAt.isAfter(maxTime)) {
-        ZIO.logError(s"scheduledAt must be after $hardPastTime and before $maxTime")
-          *> ZIO.fail(ValidationError(s"scheduledAt must be after $hardPastTime and before $maxTime"))
+      _ <- ZIO.when(scheduledAt.isBefore(minTime) || scheduledAt.isAfter(maxTime)) {
+        ZIO.logError(s"scheduledAt must be after $minTime and before $maxTime")
+          *> ZIO.fail(ValidationError(s"scheduledAt must be after $minTime and before $maxTime"))
       }
       _ <- ZIO.when(scheduledAt.isBefore(spread.createdAt)) {
         ZIO.logError(s"scheduledAt must be after creation time ${spread.createdAt}")

@@ -142,7 +142,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
       )
     },
 
-    test("can't publish spread when scheduledAt is before hardPastTime") {
+    test("can't publish spread when scheduledAt is before maxPastTime") {
       for {
         state <- ZIO.serviceWithZIO[Ref.Synchronized[TestSpreadState]](_.get)
         spreadId <- ZIO.fromOption(state.spreadId).orElseFail(TarotError.NotFound("spreadId not set"))
@@ -150,7 +150,7 @@ object SpreadPublishIntegrationSpec extends ZIOSpecDefault {
 
         config <- ZIO.serviceWith[TarotEnv](_.config.publish)
         app = ZioHttpInterpreter().toHttp(SpreadEndpoint.endpoints)
-        publishTime <- DateTimeService.getDateTimeNow.map(time => time.minus(config.hardPastTime))
+        publishTime <- DateTimeService.getDateTimeNow.map(time => time.minus(config.maxPastTime).minus(1.minute))
         publishRequest = TarotTestRequests.spreadPublishRequest(publishTime, config.maxCardOfDayDelay)
         request = ZIOHttpClient.putAuthRequest(TarotApiRoutes.spreadPublishPath("", spreadId), publishRequest, token)
         response <- app.runZIO(request)
