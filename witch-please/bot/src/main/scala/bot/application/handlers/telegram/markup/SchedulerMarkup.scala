@@ -24,7 +24,7 @@ object SchedulerMarkup {
       projectConfig <- ZIO.serviceWith[BotEnv](_.config.project)
 
       today <- DateTimeService.currentLocalDateTime()
-      calendarTime = CalendarService.buildTime(today, date, projectConfig.maxFutureTime, page = page)
+      calendarTime = CalendarService.buildTime(today, date, projectConfig.maxPastTime, projectConfig.maxFutureTime, page = page)
     } yield keyboardTime(calendarTime)
 
   def delayKeyboard(date: LocalDate, page: Int): ZIO[BotEnv, Throwable, List[List[TelegramInlineKeyboardButton]]] =
@@ -33,7 +33,7 @@ object SchedulerMarkup {
       maxDelay = projectConfig.maxCardOfDayDelay
 
       today <- DateTimeService.currentLocalDateTime()
-      calendarTime = CalendarService.buildTime(LocalDateTime.of(date, LocalTime.of(0, 0)), date, Duration.ofDays(1),
+      calendarTime = CalendarService.buildTime(LocalDateTime.of(date, LocalTime.of(0, 0)), date, Duration.ZERO, Duration.ofDays(1),
         page = page, start = LocalTime.of(0, 0), end = LocalTime.MIDNIGHT.plus(maxDelay).plusMinutes(1))
     } yield keyboardDelay(calendarTime)
 

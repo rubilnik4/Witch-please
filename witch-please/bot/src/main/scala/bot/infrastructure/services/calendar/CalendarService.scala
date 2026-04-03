@@ -22,12 +22,12 @@ object CalendarService {
     Calendar(calendarMonth, calendarDays)
   }
 
-  def buildTime(today: LocalDateTime, date: LocalDate, maxFuture: Duration,
+  def buildTime(today: LocalDateTime, date: LocalDate, maxPast: Duration, maxFuture: Duration,
       stepMinutes: CalendarTimeStep = CalendarTimeStep.M30,
       start: LocalTime = LocalTime.of(8, 0), end: LocalTime = LocalTime.of(2, 0),
       page: Int = 0, pageSize: Int = 20): CalendarTimeGrid = {
 
-    val slots = getCalendarTimes(today, date, maxFuture, stepMinutes, start, end).map (time =>
+    val slots = getCalendarTimes(today, date, maxPast, maxFuture, stepMinutes, start, end).map (time =>
       CalendarTimeSlot(time))
 
     val totalPages = math.max(1, Math.ceil(slots.size.toDouble / pageSize).toInt)
@@ -55,9 +55,15 @@ object CalendarService {
     !date.isBefore(today) && !date.isAfter(maxDate)
   }
 
-  def isTimeEnable(today: LocalDateTime, time: LocalDateTime, maxFuture: Duration): Boolean = {
+  def isTimeEnable(today: LocalDateTime, time: LocalDateTime, maxPast: Duration, maxFuture: Duration): Boolean = {
+    val minDateTime = getMinDateTime(today, maxPast)
     val maxDateTime = getMaxDateTime(today, maxFuture)
-    !time.isBefore(today) && !time.isAfter(maxDateTime)
+    !time.isBefore(minDateTime) && !time.isAfter(maxDateTime)
+  }
+
+  def getMinDateTime(today: LocalDateTime, maxPast: Duration): LocalDateTime = {
+    val start = today.atZone(DateTimeService.Zone)
+    start.minus(maxPast).toLocalDateTime
   }
 
   def getMaxDate(today: LocalDate, maxFuture: Duration): LocalDate = {
@@ -71,7 +77,7 @@ object CalendarService {
     start.plus(maxFuture).toLocalDateTime
   }
 
-  private def getCalendarTimes(today: LocalDateTime, date: LocalDate, maxFuture: Duration,
+  private def getCalendarTimes(today: LocalDateTime, date: LocalDate, maxPast: Duration, maxFuture: Duration,
                                stepMinutes: CalendarTimeStep, start: LocalTime, end: LocalTime) =
     val dayStart = date.atStartOfDay()
     val dayEnd = date.plusDays(1).atStartOfDay()
@@ -83,12 +89,13 @@ object CalendarService {
     val maxDateTime = getMaxDateTime(today, maxFuture)
 
     segments.flatMap { case (rawStart, rawEnd) =>
-      getCalendarSlots(today, maxDateTime, maxFuture, stepMinutes, rawStart, rawEnd)
+      getCalendarSlots(today, maxDateTime, maxPast, maxFuture, stepMinutes, rawStart, rawEnd)
     }.distinct.sortBy(time => time)
 
-  private def getCalendarSlots(today: LocalDateTime, maxDateTime: LocalDateTime,maxFuture: Duration,
+  private def getCalendarSlots(today: LocalDateTime, maxDateTime: LocalDateTime, maxPast: Duration, maxFuture: Duration,
       step: CalendarTimeStep, rawStart: LocalDateTime, rawEnd: LocalDateTime): List[LocalTime] = {
-    val segStartClamped = if (rawStart.isBefore(today)) today else rawStart
+    val minDateTime = getMinDateTime(today, maxPast)
+    val segStartClamped = if (rawStart.isBefore(minDateTime)) minDateTime else rawStart
     val segEndClamped = if (rawEnd.isAfter(maxDateTime)) maxDateTime else rawEnd
 
     val segStart = CalendarTimeStep.alignUp(segStartClamped, step)
@@ -97,7 +104,7 @@ object CalendarService {
     if (!segStart.isBefore(segEnd)) Nil
     else
       slotsInRange(step, segStart, segEnd)
-        .filter(dt => isTimeEnable(today, dt, maxFuture))
+        .filter(dt => isTimeEnable(today, dt, maxPast, maxFuture))
         .map(_.toLocalTime)
   }
 

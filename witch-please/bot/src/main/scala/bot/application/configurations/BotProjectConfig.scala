@@ -8,6 +8,7 @@ final case class BotProjectConfig(
   port: Int,
   tarotUrl: String,
   userSecretPepper: String,
+  maxPastTime: Duration,
   maxFutureTime: Duration,
   maxCardOfDayDelay: Duration
 )

@@ -122,7 +122,7 @@ object SchedulerFlow {
 
       dateTime = LocalDateTime.of(date, time)
       today <- DateTimeService.currentLocalDateTime()
-      _ <- ZIO.unless(CalendarService.isTimeEnable(today, dateTime, projectConfig.maxFutureTime)) {
+      _ <- ZIO.unless(CalendarService.isTimeEnable(today, dateTime, projectConfig.maxPastTime, projectConfig.maxFutureTime)) {
         ZIO.logError(s"Can't select datetime: $dateTime before current $today") *>
           ZIO.fail(new RuntimeException(s"Can't select date: $date before current $today"))
       }

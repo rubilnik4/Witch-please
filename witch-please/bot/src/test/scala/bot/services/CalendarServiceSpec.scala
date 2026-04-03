@@ -9,6 +9,7 @@ import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import java.time.*
 
 object CalendarServiceSpec extends ZIOSpecDefault {
+  private val maxPast: Duration = Duration.ofMinutes(5)
   private val maxFuture: Duration = Duration.ofDays(90)
 
   def spec: Spec[TestEnvironment & Scope, Any] = suite("CalendarModel")(
@@ -40,15 +41,16 @@ object CalendarServiceSpec extends ZIOSpecDefault {
     test("filters out past slots for today") {
       val today = LocalDateTime.of(2025, 10, 9, 10, 15)
       val date = today.toLocalDate
+      val minTime = CalendarService.getMinDateTime(today, maxPast).toLocalTime
 
-      val grid = CalendarService.buildTime(today, date, maxFuture)
+      val grid = CalendarService.buildTime(today, date, maxPast, maxFuture)
 
       val allTimes = grid.slots.map(_.time)
-      val firstEnabled = allTimes.find(time => !time.isBefore(today.toLocalTime))
+      val firstEnabled = allTimes.find(time => !time.isBefore(minTime))
 
       assertTrue(
         firstEnabled.nonEmpty,
-        grid.slots.forall(slot => !slot.time.isBefore(today.toLocalTime))
+        grid.slots.forall(slot => !slot.time.isBefore(minTime))
       )
     },
 
@@ -56,7 +58,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 22, 0)
       val tomorrow = today.plusDays(1).toLocalDate
 
-      val grid = CalendarService.buildTime(today, tomorrow, maxFuture)
+      val grid = CalendarService.buildTime(today, tomorrow, maxPast, maxFuture)
 
       assertTrue(grid.slots.nonEmpty)
     },
@@ -68,7 +70,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val limitDate = limit.toLocalDate
       val limitTime = limit.toLocalTime
 
-      val grid = CalendarService.buildTime(today, limitDate, maxFuture, pageSize = 999)
+      val grid = CalendarService.buildTime(today, limitDate, maxPast, maxFuture, pageSize = 999)
       val slots = grid.slots
 
       assertTrue(
@@ -82,7 +84,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 10, 0)
       val date = today.toLocalDate
 
-      val grid = CalendarService.buildTime(today, date, maxFuture, pageSize = pageSize)
+      val grid = CalendarService.buildTime(today, date, maxPast, maxFuture, pageSize = pageSize)
 
       assertTrue(
         grid.slots.size == pageSize,
@@ -95,8 +97,8 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 10, 0)
       val date  = today.toLocalDate
 
-      val gridNeg = CalendarService.buildTime(today, date, maxFuture, page = -1)
-      val gridOver = CalendarService.buildTime(today, date, maxFuture, page = 999)
+      val gridNeg = CalendarService.buildTime(today, date, maxPast, maxFuture, page = -1)
+      val gridOver = CalendarService.buildTime(today, date, maxPast, maxFuture, page = 999)
 
       assertTrue(
         gridNeg.time.page == 0,
@@ -108,7 +110,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 12, 0)
       val date  = LocalDate.of(2025, 10, 9)
 
-      val grid = CalendarService.buildTime(today, date, maxFuture,
+      val grid = CalendarService.buildTime(today, date, maxPast, maxFuture,
         start = LocalTime.of(8, 0), end = LocalTime.of(2, 0), pageSize = 1000)
 
       val times = grid.slots.map(_.time)
@@ -122,7 +124,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today    = LocalDateTime.of(2025, 10, 9, 12, 0)
       val nextDate = LocalDate.of(2025, 10, 10)
 
-      val gridNext = CalendarService.buildTime(today, nextDate, maxFuture,
+      val gridNext = CalendarService.buildTime(today, nextDate, maxPast, maxFuture,
         start = LocalTime.of(8, 0), end = LocalTime.of(2, 0), pageSize = 1000)
 
       val timesNext = gridNext.slots.map(_.time)
@@ -133,7 +135,7 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 8, 0)
       val date  = LocalDate.of(2025, 10, 9)
 
-      val grid = CalendarService.buildTime(today, date, maxFuture,
+      val grid = CalendarService.buildTime(today, date, maxPast, maxFuture,
         stepMinutes = CalendarTimeStep.M30, start = LocalTime.of(8, 7), end = LocalTime.of(10, 2), pageSize = 1000)
 
       val times = grid.slots.map(_.time)
@@ -146,11 +148,11 @@ object CalendarServiceSpec extends ZIOSpecDefault {
       val today = LocalDateTime.of(2025, 10, 9, 12, 0)
       val date  = LocalDate.of(2025, 10, 9)
 
-      val gridCurrent = CalendarService.buildTime(today, date, maxFuture,
+      val gridCurrent = CalendarService.buildTime(today, date, maxPast, maxFuture,
         stepMinutes = CalendarTimeStep.M60, start = LocalTime.of(23, 17), end = LocalTime.of(2, 13), pageSize = 1000)
       val timesCurrent = gridCurrent.slots.map(_.time)
 
-      val gridNext = CalendarService.buildTime(today, date.plusDays(1), maxFuture,
+      val gridNext = CalendarService.buildTime(today, date.plusDays(1), maxPast, maxFuture,
         stepMinutes = CalendarTimeStep.M60, start = LocalTime.of(23, 17), end = LocalTime.of(2, 13), pageSize = 1000)
       val timesNext = gridNext.slots.map(_.time)
 
