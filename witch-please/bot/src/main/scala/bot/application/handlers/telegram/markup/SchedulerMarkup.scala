@@ -68,13 +68,13 @@ object SchedulerMarkup {
       .grouped(7).map(_.toList).toList
 
   private def keyboardTime(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
-    val timeKeyboard = getTimeKeyboard(timeGrid.time)
+    val timeKeyboard = getTimeKeyboard(timeGrid.time, includeQuickButtons = true)
     val slotKeyboard = getTimeSlotKeyboard(timeGrid.slots, SchedulerCommands.selectTime)
     timeKeyboard ::: slotKeyboard
   }
 
   private def keyboardDelay(timeGrid: CalendarTimeGrid): List[List[TelegramInlineKeyboardButton]] = {
-    val timeKeyboard = getTimeKeyboard(timeGrid.time)
+    val timeKeyboard = getTimeKeyboard(timeGrid.time, includeQuickButtons = false)
     val selectDelay: LocalTime => String = time => {
       val delay = Duration.between(LocalTime.MIDNIGHT, time)
       SchedulerCommands.selectCardOfDayDelay(delay)
@@ -83,7 +83,7 @@ object SchedulerMarkup {
     timeKeyboard ::: slotKeyboard
   }
 
-  private def getTimeKeyboard(calendarTime: CalendarTime) = {
+  private def getTimeKeyboard(calendarTime: CalendarTime, includeQuickButtons: Boolean) = {
     val pagePrevButton =
       if (calendarTime.page > 0)
         TelegramInlineKeyboardButton("◀️", Some(SchedulerCommands.selectTimePage(calendarTime.page - 1)))
@@ -102,7 +102,7 @@ object SchedulerMarkup {
     val returnButton = TelegramInlineKeyboardButton("⬅ Дата", Some(SchedulerCommands.selectMonth(month)))
 
     val quickButtons =
-      if (calendarTime.date == calendarTime.today.toLocalDate)
+      if (includeQuickButtons && calendarTime.date == calendarTime.today.toLocalDate)
         List(
           TelegramInlineKeyboardButton("⚡ Сейчас", Some(SchedulerCommands.selectTime(calendarTime.today.toLocalTime))),
           TelegramInlineKeyboardButton("🕧 Полчаса", Some(SchedulerCommands.selectTime(calendarTime.today.toLocalTime.plusMinutes(30)))),
