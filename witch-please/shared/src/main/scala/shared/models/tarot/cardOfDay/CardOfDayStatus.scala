@@ -6,5 +6,6 @@ import zio.json.JsonCodec
 enum CardOfDayStatus derives JsonCodec, Schema {
   case Draft
   case Scheduled
+  case Error
   case Published
 }

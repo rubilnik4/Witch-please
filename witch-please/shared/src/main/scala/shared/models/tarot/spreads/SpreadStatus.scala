@@ -6,6 +6,7 @@ import zio.json.JsonCodec
 enum SpreadStatus derives JsonCodec, Schema {
   case Draft
   case Scheduled
+  case Error
   case Published
   case Archived
 }
@@ -13,7 +14,7 @@ enum SpreadStatus derives JsonCodec, Schema {
 object SpreadStatus {
   def isModify(status: SpreadStatus): Boolean =
     status match {
-      case Draft | Scheduled =>
+      case Draft | Scheduled | Error =>
         true
       case _ =>
         false

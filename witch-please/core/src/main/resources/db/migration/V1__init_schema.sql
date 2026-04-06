@@ -67,7 +67,7 @@ CREATE TABLE spreads (
     title TEXT NOT NULL,
     card_count INT NOT NULL,
     description TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
+    status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Error', 'Published', 'Archived')),
     photo_id UUID NOT NULL REFERENCES photos(id),
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
@@ -76,6 +76,7 @@ CREATE TABLE spreads (
     CONSTRAINT chk_spread_status_times CHECK (
         (status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
         (status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+        (status = 'Error' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
         (status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
         (status = 'Archived')
     )
@@ -112,7 +113,7 @@ CREATE TABLE cards_of_day (
     photo_id UUID NOT NULL REFERENCES photos(id),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Published', 'Archived')),
+    status TEXT NOT NULL CHECK (status IN ('Draft', 'Scheduled', 'Error', 'Published', 'Archived')),
     created_at TIMESTAMPTZ NOT NULL,
     scheduled_at TIMESTAMPTZ,
     published_at TIMESTAMPTZ,
@@ -122,10 +123,11 @@ CREATE TABLE cards_of_day (
     CONSTRAINT chk_cards_of_day_status_times CHECK (
          (status = 'Draft' AND scheduled_at IS NULL AND published_at IS NULL) OR
          (status = 'Scheduled' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
+         (status = 'Error' AND scheduled_at IS NOT NULL AND published_at IS NULL) OR
          (status = 'Published' AND scheduled_at IS NOT NULL AND published_at IS NOT NULL) OR
          (status = 'Archived')
-    )
-);
+     )
+  );
 
 CREATE INDEX idx_cards_of_day_spread_id ON cards_of_day(spread_id);
 CREATE INDEX idx_cards_of_day_card_id ON cards_of_day(card_id);

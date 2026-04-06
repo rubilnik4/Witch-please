@@ -81,7 +81,11 @@ final class SpreadCommandHandlerLive(
       cards <- cardQueryHandler.getCards(spread.id)
 
       telegramPublishService <- ZIO.serviceWith[TarotEnv](_.services.telegramPublishService)
-      _ <- telegramPublishService.publishSpread(userChannel.channelId, spread, cards)
+      _ <- telegramPublishService.publishSpread(userChannel.channelId, spread, cards).catchAll { error =>
+        val spreadStatusUpdate = SpreadStatusUpdate.Error(spread.id)
+        spreadRepository.updateSpreadStatus(spreadStatusUpdate) *>
+          ZIO.fail(error)
+      }
        
       spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
@@ -136,9 +140,9 @@ final class SpreadCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Checking spread before publish for ${spread.id}")
 
-      _ <- ZIO.unless(List(SpreadStatus.Draft, SpreadStatus.Scheduled).contains(spread.status)) {
-        ZIO.logError(s"Spread $spread.id is not in Draft or Scheduled status") *>
-          ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in Draft or Scheduled status"))
+      _ <- ZIO.unless(SpreadStatus.isModify(spread.status)) {
+        ZIO.logError(s"Spread $spread.id is not in modify status") *>
+          ZIO.fail(TarotError.Conflict(s"Spread $spread.id is not in modify status"))
       }
 
       _ <- ZIO.when(cards.size < spread.cardsCount) {
@@ -165,8 +169,7 @@ final class SpreadCommandHandlerLive(
       }
 
       cardOfDayAt <- getCardOfDayAt(scheduledAt, cardOfDayDelay)
-      spreadStatusUpdate = SpreadStatusUpdate.Scheduled(spread.id, scheduledAt, cardOfDay.id, cardOfDayAt)
-      _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)
+      _ <- spreadRepository.scheduleSpread(spread.id, scheduledAt, cardOfDay.id, cardOfDayAt)
     } yield ()
 
   private def getCardOfDayAt(scheduledAt: Instant, cardOfDayDelayHours: Duration) =

@@ -103,6 +103,8 @@ final class CardOfDayRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Ca
       _ <- ZIO.logDebug(s"Updating card of day status $cardOfDayStatusUpdate")
 
       result <- (cardOfDayStatusUpdate match {
+        case CardOfDayStatusUpdate.Error(cardOfDayId) =>
+          cardOfDayDao.updateToError(cardOfDayId.id)
         case CardOfDayStatusUpdate.Published(cardOfDayId, publishedAt) =>
           cardOfDayDao.updateToPublish(cardOfDayId.id, publishedAt)
       })

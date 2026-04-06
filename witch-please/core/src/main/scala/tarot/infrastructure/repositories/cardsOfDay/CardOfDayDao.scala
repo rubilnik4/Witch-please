@@ -113,6 +113,15 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
         )
     })
 
+  def updateToError(cardOfDayId: UUID): ZIO[Any, SQLException, Long] =
+    run(quote {
+      cardOfDayTable
+        .filter(cardOfDay => cardOfDay.id == lift(cardOfDayId) && isErrorStatus(cardOfDay))
+        .update(
+          _.status -> lift(CardOfDayStatus.Error)
+        )
+    })
+
   def updateCardOfDay(cardOfDayId: UUID, cardOfDay: CardOfDayUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {
@@ -146,9 +155,16 @@ final class CardOfDayDao(quill: Quill.Postgres[SnakeCase]) {
       })
       
   private inline def isScheduleStatus(cardOfDay: CardOfDayEntity) =
-    quote(cardOfDay.status == lift(CardOfDayStatus.Draft) || cardOfDay.status == lift(CardOfDayStatus.Scheduled))
+    quote(
+      cardOfDay.status == lift(CardOfDayStatus.Draft) ||
+      cardOfDay.status == lift(CardOfDayStatus.Scheduled) ||
+      cardOfDay.status == lift(CardOfDayStatus.Error)
+    )
 
   private inline def isPublishStatus(cardOfDay: CardOfDayEntity) =
+    quote(cardOfDay.status == lift(CardOfDayStatus.Scheduled) && cardOfDay.publishedAt.isEmpty)
+
+  private inline def isErrorStatus(cardOfDay: CardOfDayEntity) =
     quote(cardOfDay.status == lift(CardOfDayStatus.Scheduled) && cardOfDay.publishedAt.isEmpty)
     
   private inline def cardOfDayTable =

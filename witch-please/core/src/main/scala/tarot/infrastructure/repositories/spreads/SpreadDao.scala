@@ -105,6 +105,15 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
         )
     })
 
+  def updateToError(spreadId: UUID): ZIO[Any, SQLException, Long] =
+    run(quote {
+      spreadTable
+        .filter(spread => spread.id == lift(spreadId) && isErrorStatus(spread))
+        .update(
+          _.status -> lift(SpreadStatus.Error)
+        )
+    })
+
   def updateSpread(spreadId: UUID, spread: SpreadUpdate, photoId: UUID): ZIO[Any, SQLException, Long] =
     run(
       quote {
@@ -128,9 +137,16 @@ final class SpreadDao(quill: Quill.Postgres[SnakeCase]) {
       })
 
   private inline def isScheduleStatus(spread: SpreadEntity) =
-    quote(spread.status == lift(SpreadStatus.Draft) || spread.status == lift(SpreadStatus.Scheduled))
+    quote(
+      spread.status == lift(SpreadStatus.Draft) ||
+      spread.status == lift(SpreadStatus.Scheduled) ||
+      spread.status == lift(SpreadStatus.Error)
+    )
 
   private inline def isPublishStatus(spread: SpreadEntity) =
+    quote(spread.status == lift(SpreadStatus.Scheduled) && spread.publishedAt.isEmpty)
+
+  private inline def isErrorStatus(spread: SpreadEntity) =
     quote(spread.status == lift(SpreadStatus.Scheduled) && spread.publishedAt.isEmpty)
     
   private inline def spreadTable =

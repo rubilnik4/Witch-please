@@ -78,6 +78,20 @@ final class CardOfDayCommandHandlerLive(
     for {
       _ <- ZIO.logInfo(s"Executing publish command for card of day $cardOfDayId")
 
+      cardOfDayQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardOfDayQueryHandler)
+      spreadQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.spreadQueryHandler)
+      userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+      cardOfDay <- cardOfDayQueryHandler.getCardOfDay(cardOfDayId)
+      spread <- spreadQueryHandler.getSpread(cardOfDay.spreadId)
+      userChannel <- userChannelQueryHandler.getUserChannelByProject(spread.projectId)
+
+      telegramPublishService <- ZIO.serviceWith[TarotEnv](_.services.telegramPublishService)
+      _ <- telegramPublishService.publishCardOfDay(userChannel.channelId, cardOfDay).catchAll { error =>
+        val cardOfDayStatusUpdate = CardOfDayStatusUpdate.Error(cardOfDayId)
+        cardOfDayRepository.updateCardOfDayStatus(cardOfDayStatusUpdate) *>
+          ZIO.fail(error)
+      }
+
       cardOfDayStatusUpdate = CardOfDayStatusUpdate.Published(cardOfDayId, publishAt)
       _ <- cardOfDayRepository.updateCardOfDayStatus(cardOfDayStatusUpdate)
     } yield ()

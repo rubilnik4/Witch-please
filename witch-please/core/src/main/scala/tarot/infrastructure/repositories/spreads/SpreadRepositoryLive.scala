@@ -76,42 +76,54 @@ final class SpreadRepositoryLive(quill: Quill.Postgres[SnakeCase]) extends Sprea
         .mapError(e => DatabaseError(s"Failed to create spread ${spread.id}", e.getCause))
     } yield SpreadId(spreadId)
 
+  override def scheduleSpread(spreadId: SpreadId, scheduledAt: Instant, cardOfDayId: tarot.domain.models.cardsOfDay.CardOfDayId, cardOfDayAt: Instant): ZIO[Any, TarotError, Unit] =
+    for {
+      _ <- ZIO.logDebug(s"Scheduling spread $spreadId with card of day $cardOfDayId")
+
+      scheduleResult <- quill.transaction {
+        for {
+          spreadRows <- spreadDao.updateToSchedule(spreadId.id, scheduledAt)
+          cardOfDayRows <-
+            if (spreadRows == 0L) ZIO.succeed((spreadRows, 0L))
+            else cardOfDayDao.updateToSchedule(cardOfDayId.id, cardOfDayAt).map(rows => (spreadRows, rows))
+        } yield cardOfDayRows
+      }
+        .tapError(e => ZIO.logErrorCause(s"Failed to schedule spread $spreadId", Cause.fail(e)))
+        .mapError(e => DatabaseError(s"Failed to schedule spread $spreadId", e))
+
+      (spreadRows, cardOfDayRows) = scheduleResult
+      _ <- ZIO.when(spreadRows == 0L) {
+        ZIO.logError(s"Spread state conflict while scheduling: $spreadId") *>
+          ZIO.fail(TarotError.Conflict(s"Spread state conflict while scheduling: $spreadId"))
+      }
+      _ <- ZIO.when(cardOfDayRows == 0L) {
+        ZIO.logError(s"Card of day state conflict while scheduling: $cardOfDayId") *>
+          ZIO.fail(TarotError.Conflict(s"Card of day state conflict while scheduling: $cardOfDayId"))
+      }
+    } yield ()
+
   override def updateSpreadStatus(spreadStatusUpdate: SpreadStatusUpdate): ZIO[Any, TarotError, Unit] =
     for {
       _ <- ZIO.logDebug(s"Updating spread status $spreadStatusUpdate")
 
-      result <- updateStatus(spreadStatusUpdate)
+      spreadRows <- updateStatus(spreadStatusUpdate)
         .tapError(e => ZIO.logErrorCause(s"Failed to update spread status $spreadStatusUpdate", Cause.fail(e)))
         .mapError(e => DatabaseError("Failed to update spread status", e))
 
-      _ <- result match {
-        case ScheduleUpdateResult.Ok => ZIO.unit
-        case ScheduleUpdateResult.SpreadNotUpdated =>
+      _ <- spreadRows match {
+        case 0L =>
           ZIO.logError(s"Spread state conflict: $spreadStatusUpdate") *>
             ZIO.fail(TarotError.Conflict(s"Spread state conflict: $spreadStatusUpdate"))
-        case ScheduleUpdateResult.CardOfDayNotUpdated =>
-          ZIO.logError(s"Card of day state conflict: $spreadStatusUpdate") *>
-            ZIO.fail(TarotError.Conflict(s"Card of day state conflict: $spreadStatusUpdate"))
+        case _ => ZIO.unit
       }
     } yield ()
 
   private def updateStatus(spreadStatusUpdate: SpreadStatusUpdate) =
     spreadStatusUpdate match {
-      case SpreadStatusUpdate.Scheduled(spreadId, scheduledAt, cardOfDayId, cardOfDayAt) =>
-        quill.transaction {
-          for {
-            spreadRows <- spreadDao.updateToSchedule(spreadId.id, scheduledAt)
-            result <-
-              if (spreadRows == 0L) ZIO.succeed(ScheduleUpdateResult.SpreadNotUpdated)
-              else for {
-                cardRows <- cardOfDayDao.updateToSchedule(cardOfDayId.id, cardOfDayAt)
-              } yield if (cardRows == 0L) ScheduleUpdateResult.CardOfDayNotUpdated else ScheduleUpdateResult.Ok
-          } yield result
-        }
+      case SpreadStatusUpdate.Error(spreadId) =>
+        spreadDao.updateToError(spreadId.id)
       case SpreadStatusUpdate.Published(spreadId, publishedAt) =>
-        for {
-          spreadRows <- spreadDao.updateToPublish(spreadId.id, publishedAt)
-        } yield if (spreadRows == 0L) ScheduleUpdateResult.SpreadNotUpdated else ScheduleUpdateResult.Ok
+        spreadDao.updateToPublish(spreadId.id, publishedAt)
     }
 
   override def updateSpread(spreadId: SpreadId, spread: SpreadUpdate): ZIO[Any, TarotError, Unit] =
