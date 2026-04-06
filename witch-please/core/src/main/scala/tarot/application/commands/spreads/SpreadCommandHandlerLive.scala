@@ -8,7 +8,7 @@ import tarot.domain.models.cards.Card
 import tarot.domain.models.cardsOfDay.CardOfDay
 import tarot.domain.models.photo.Photo
 import tarot.domain.models.spreads.*
-import tarot.domain.models.{TarotError, TarotErrorMapper}
+import tarot.domain.models.TarotError
 import tarot.infrastructure.repositories.spreads.SpreadRepository
 import tarot.layers.TarotEnv
 import zio.*
@@ -76,10 +76,12 @@ final class SpreadCommandHandlerLive(
       _ <- ZIO.logInfo(s"Executing publish command for spread ${spread.id}")
 
       userChannelQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.userChannelQueryHandler)
+      cardQueryHandler <- ZIO.serviceWith[TarotEnv](_.queryHandlers.cardQueryHandler)
       userChannel <- userChannelQueryHandler.getUserChannelByProject(spread.projectId)
+      cards <- cardQueryHandler.getCards(spread.id)
 
-      telegramApiService <- ZIO.serviceWith[TarotEnv](_.services.telegramApiService)
-      _ <- telegramApiService.sendPhoto(userChannel.channelId, spread.photo.sourceId).mapError(TarotErrorMapper.toTarotError)
+      telegramPublishService <- ZIO.serviceWith[TarotEnv](_.services.telegramPublishService)
+      _ <- telegramPublishService.publishSpread(userChannel.channelId, spread, cards)
        
       spreadStatusUpdate = SpreadStatusUpdate.Published(spread.id, publishAt)
       _ <- spreadRepository.updateSpreadStatus(spreadStatusUpdate)

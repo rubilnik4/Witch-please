@@ -4,6 +4,7 @@ import shared.infrastructure.services.storage.{FileStorageService, ResourceFileS
 import shared.infrastructure.services.telegram.TelegramApiService
 import tarot.infrastructure.services.authorize.AuthService
 import tarot.infrastructure.services.photo.*
+import tarot.infrastructure.services.telegram.TelegramPublishService
 
 final case class TarotServiceLive(
   authService: AuthService,
@@ -11,4 +12,5 @@ final case class TarotServiceLive(
   resourceFileService: ResourceFileService,
   fileStorageService: FileStorageService,
   telegramApiService: TelegramApiService,
+  telegramPublishService: TelegramPublishService,
 ) extends TarotService 

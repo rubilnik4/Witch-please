@@ -8,6 +8,7 @@ import tarot.infrastructure.repositories.TarotRepositoryLayer.Repositories
 import tarot.infrastructure.services.authorize.*
 import tarot.infrastructure.services.photo.*
 import tarot.infrastructure.services.storage.TarotStorageLayer
+import tarot.infrastructure.services.telegram.TelegramPublishServiceLive
 import zio.ZLayer
 
 object TarotServiceLayer {
@@ -17,9 +18,12 @@ object TarotServiceLayer {
   private val telegramLayer: ZLayer[TarotConfig, Throwable, TelegramApiService] =
     telegramTokenLayer >>> TelegramApiServiceLayer.live
 
+  private val telegramPublishLayer =
+    ZLayer.succeed(new TelegramPublishServiceLive())
+
   val live: ZLayer[TarotConfig & Repositories, Throwable, TarotService] =
     (
       ((telegramLayer ++ TarotStorageLayer.live) >>> PhotoServiceLayer.photoServiceLive) ++
-        AuthServiceLayer.live ++ TarotStorageLayer.live ++ ResourceFileServiceLayer.live ++ telegramLayer
+        AuthServiceLayer.live ++ TarotStorageLayer.live ++ ResourceFileServiceLayer.live ++ telegramLayer ++ telegramPublishLayer
     ) >>> ZLayer.fromFunction(TarotServiceLive.apply)
 }
