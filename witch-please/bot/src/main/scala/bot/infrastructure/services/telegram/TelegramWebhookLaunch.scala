@@ -6,19 +6,25 @@ import bot.layers.BotEnv
 import zio.{Scope, ZIO, ZLayer}
 
 object TelegramWebhookLaunch {
-  val launch: ZLayer[BotEnv, Throwable, Unit] =
+  val launch: ZLayer[BotEnv, Nothing, Unit] =
     ZLayer.scoped {
       for {
-        telegramConfig <- ZIO.serviceWith[BotEnv](_.config.telegram)
-        telegramWebhookService <- ZIO.serviceWith[BotEnv](_.services.telegramWebhookService)
-
-        _ <- ZIO.logInfo(s"Launching telegram webhook")
-        _ <- telegramWebhookService.setCommands(TelegramCommands.DefaultCommands)
-        _ <- telegramWebhookService.setWebhook(s"${BotApiRoutes.apiPath}/webhook")
-        info <- telegramWebhookService.getWebhookInfo
-        _    <- ZIO.logInfo(s"Webhook info: ${info.url}")
-
-        _ <- Scope.addFinalizer(telegramWebhookService.deleteWebhook().ignore)
+        _ <- launchWebhook()
       } yield ()
+    }
+
+  private def launchWebhook() =
+    (for {
+      telegramWebhookService <- ZIO.serviceWith[BotEnv](_.services.telegramWebhookService)
+
+      _ <- ZIO.logInfo(s"Launching telegram webhook")
+      _ <- telegramWebhookService.setCommands(TelegramCommands.DefaultCommands)
+      _ <- telegramWebhookService.setWebhook(s"${BotApiRoutes.apiPath}/webhook")
+      _ <- Scope.addFinalizer(telegramWebhookService.deleteWebhook().ignore)
+
+      info <- telegramWebhookService.getWebhookInfo
+      _ <- ZIO.logInfo(s"Webhook info: ${info.url}")
+    } yield ()).catchAll { error =>
+      ZIO.logError(s"Telegram webhook launch failed, bot HTTP server will continue without webhook initialization: $error")
     }
 }

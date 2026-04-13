@@ -170,17 +170,21 @@ object SpreadFlow {
     } yield ()
 
   private def getPublishStatusImage(spread: SpreadResponse) =
-    (spread.publishedAt, spread.scheduledAt) match {
-      case (Some(publishedAt), _) => s"🟢"
-      case (None, Some(scheduledAt)) => s"🕒"
-      case (_,_) => s"⚪"
+    spread.status match {
+      case SpreadStatus.Published => s"🟢"
+      case SpreadStatus.Scheduled => s"🕒"
+      case SpreadStatus.Error => s"🔴"
+      case SpreadStatus.Draft => s"⚪"
+      case SpreadStatus.Archived => s"⚫"
     }
 
   private def getPublishStatusText(spread: SpreadResponse) =
-    (spread.publishedAt, spread.scheduledAt) match {
-      case (Some(publishedAt), _) => "опубликован"
-      case (None, Some(scheduledAt)) => "к публикации"
-      case (_, _) => "черновик"
+    spread.status match {
+      case SpreadStatus.Published => "опубликован"
+      case SpreadStatus.Scheduled => "к публикации"
+      case SpreadStatus.Error => "ошибка публикации"
+      case SpreadStatus.Draft => "черновик"
+      case SpreadStatus.Archived => "архив"
     }
 
   private def getScheduledText(spread: SpreadResponse) =
