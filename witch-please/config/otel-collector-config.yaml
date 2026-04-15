@@ -14,10 +14,10 @@ exporters:
     endpoint: "0.0.0.0:9090"
 
   loki:
-    endpoint: http://config-loki:3100/loki/api/v1/push
+    endpoint: http://loki:3100/loki/api/v1/push
   
   otlphttp:
-    endpoint: "http://config-tempo:4318"
+    endpoint: "http://tempo:4318"
     tls:
       insecure: true
 

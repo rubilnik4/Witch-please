@@ -29,7 +29,6 @@ libraryDependencies ++= Seq(
   "io.opentelemetry" % "opentelemetry-sdk-trace" % "1.51.0",
   "io.opentelemetry" % "opentelemetry-exporter-otlp" % "1.51.0",
   "io.opentelemetry" % "opentelemetry-exporter-logging-otlp" % "1.51.0",
-  "io.opentelemetry" % "opentelemetry-exporter-prometheus" % "1.51.0-alpha",
   "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.34.0",
   "org.slf4j" % "slf4j-nop" % "2.0.17",
   "dev.zio" %% "zio-test" % "2.1.19" % Test,
