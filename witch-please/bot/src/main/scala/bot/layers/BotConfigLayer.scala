@@ -10,7 +10,7 @@ object BotConfigLayer {
   val configLive: ZLayer[Any, Config.Error, BotConfig] = {
     val provider = TypesafeConfigProvider.fromTypesafeConfig(loadConfig())
     ZLayer.fromZIO(
-      read(BotConfig.config from provider)
+      read(BotConfig.config.from(provider))
     )
   }
 

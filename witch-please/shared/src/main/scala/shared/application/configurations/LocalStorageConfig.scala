@@ -1,7 +1,7 @@
-package tarot.application.configurations
+package shared.application.configurations
 
-import zio.config.magnolia.deriveConfig
 import zio.Config
+import zio.config.magnolia.deriveConfig
 
 final case class LocalStorageConfig(
   path: String

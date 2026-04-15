@@ -1,6 +1,6 @@
 package tarot.application.configurations
 
-import shared.application.configurations.S3StorageConfig
+import shared.application.configurations.{LocalStorageConfig, S3StorageConfig}
 import zio.Config
 import zio.config.magnolia.deriveConfig
 

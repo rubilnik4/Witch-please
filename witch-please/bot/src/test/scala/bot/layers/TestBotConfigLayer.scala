@@ -13,6 +13,6 @@ object TestBotConfigLayer {
       .resolve()
     val provider = TypesafeConfigProvider.fromTypesafeConfig(typesafeConfig)
     ZLayer.fromZIO(
-      read(BotConfig.config from provider)
+      read(BotConfig.config.from(provider))
     )
 }
