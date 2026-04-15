@@ -1,0 +1,17 @@
+.bsp/
+.idea/
+.metals/
+.bloop/
+.vscode/
+.git/
+.github/
+.coursier/
+.ivy2/
+.sbt/
+project/project/
+project/target/
+target/
+**/target/
+out/
+.env
+*.log

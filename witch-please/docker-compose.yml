@@ -1,27 +1,46 @@
 name: witch
 
 services:
-  app:
-    container_name: witch-app
+  core:
+    profiles: ["app"]
+    container_name: witch-core
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: core/Dockerfile
     depends_on:
       - postgres
       - otel-collector
     ports:
       - "8080:8080"
-      - "9464:9464"
     environment:
       POSTGRES_HOST: witch-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://witch-otel-collector:4317
-      PROMETHEUS_PORT: 9464
-    volumes:
-      - .:/app
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+  bot:
+    profiles: ["app"]
+    container_name: witch-bot
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    depends_on:
+      - core
+      - otel-collector
+    ports:
+      - "8081:8081"
+    environment:
+      TAROT_URL: http://core:8080
+      USER_SECRET_PEPPER: ${USER_SECRET_PEPPER}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_BOT_SECRET: ${TELEGRAM_BOT_SECRET}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
 
   postgres:
     container_name: witch-postgres

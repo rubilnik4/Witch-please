@@ -18,14 +18,22 @@ lazy val shared = project
   .in(file("shared"))
 
 lazy val core = project
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(
     shared % "compile->compile;test->test"
   )
   .in(file("core"))
+  .settings(
+    Compile / mainClass := Some("tarot.MainApp")
+  )
 
 lazy val bot = project
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(
-    core % "compile->compile;test->test",
-    shared % "compile->compile;test->test"
+    shared % "compile->compile;test->test",
+    core % "test->test"
   )
   .in(file("bot"))
+  .settings(
+    Compile / mainClass := Some("bot.MainApp")
+  )
