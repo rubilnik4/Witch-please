@@ -11,9 +11,18 @@ RUN sbt --batch core/stage
 
 FROM eclipse-temurin:17-jre
 
+ARG UID=10001
+ARG GID=10001
+
 WORKDIR /app
 
 COPY --from=builder /workspace/core/target/universal/stage/ ./
+
+RUN groupadd --system --gid ${GID} appgroup \
+  && useradd --system --uid ${UID} --gid appgroup --home-dir /app --shell /usr/sbin/nologin appuser \
+  && chown -R ${UID}:${GID} /app
+
+USER ${UID}:${GID}
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 
