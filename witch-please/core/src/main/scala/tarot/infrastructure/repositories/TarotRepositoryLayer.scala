@@ -8,6 +8,7 @@ import tarot.infrastructure.database.Migration
 import tarot.infrastructure.repositories.cardsOfDay.{CardOfDayRepository, CardOfDayRepositoryLayer}
 import tarot.infrastructure.repositories.cards.{CardRepository, CardRepositoryLayer}
 import tarot.infrastructure.repositories.channels.{UserChannelRepository, UserChannelRepositoryLayer}
+import tarot.infrastructure.repositories.health.{HealthDao, HealthDaoLayer}
 import tarot.infrastructure.repositories.photo.{PhotoRepository, PhotoRepositoryLayer}
 import tarot.infrastructure.repositories.projects.*
 import tarot.infrastructure.repositories.spreads.*
@@ -19,7 +20,7 @@ import javax.sql.DataSource
 object TarotRepositoryLayer {
   type Repositories =
     UserRepository & UserChannelRepository & UserProjectRepository & ProjectRepository & SpreadRepository 
-      & CardRepository & CardOfDayRepository & PhotoRepository
+      & CardRepository & CardOfDayRepository & PhotoRepository & HealthDao
 
   private val dataSourceLayer: ZLayer[TarotConfig, Throwable, DataSource] =
     ZLayer.fromZIO {
@@ -62,7 +63,8 @@ object TarotRepositoryLayer {
       UserRepositoryLayer.live ++
       UserChannelRepositoryLayer.live ++
       UserProjectRepositoryLayer.live ++
-      PhotoRepositoryLayer.live
+      PhotoRepositoryLayer.live ++
+      HealthDaoLayer.live
     
   val live: ZLayer[TarotConfig, Throwable, Repositories] =
     dataSourceLayer >>> repositoryLayer
